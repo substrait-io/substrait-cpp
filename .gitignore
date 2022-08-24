@@ -31,4 +31,4 @@
 *.out
 *.app
 
-src/proto/substrait
+substrait/proto/substrait
