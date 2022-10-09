@@ -1,2 +1,0 @@
-*/ThirdParty/*
-*src/substrait/proto/*
