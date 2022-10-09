@@ -22,7 +22,7 @@ NPROC=$(getconf _NPROCESSORS_ONLN)
 COMPILER_FLAGS=$(get_cxx_flags $CPU_TARGET)
 
 DEPENDENCY_DIR=${DEPENDENCY_DIR:-$(pwd)}
-MACOS_DEPS="ninja flex bison cmake ccache gflags"
+MACOS_DEPS="ninja bison cmake ccache gflags protobuf"
 
 function run_and_time {
   time "$@"
@@ -68,6 +68,12 @@ function install_build_prerequisites {
   pip3 install --user cmake-format regex
 }
 
+function install_deps {
+  if [ "${INSTALL_PREREQUISITES:-Y}" == "Y" ]; then
+    run_and_time install_build_prerequisites
+  fi
+}
+
 (return 2> /dev/null) && return # If script was sourced, don't run commands.
 
 (
@@ -76,10 +82,8 @@ function install_build_prerequisites {
       run_and_time "${cmd}"
     done
   else
-    install_velox_deps
+    install_deps
   fi
 )
 
-echo "All deps for Velox installed! Now try \"make\""
-echo 'To add cmake-format bin to your $PATH, consider adding this to your ~/.profile:'
-echo 'export PATH=$HOME/bin:$HOME/Library/Python/3.7/bin:$PATH'
+echo "All deps installed! Now try \"make\""

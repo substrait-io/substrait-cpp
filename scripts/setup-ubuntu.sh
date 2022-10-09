@@ -65,7 +65,7 @@ function install_protobuf {
   ldconfig
 }
 
-function install_velox_deps {
+function install_deps {
   run_and_time install_protobuf
 }
 
@@ -79,7 +79,7 @@ function install_velox_deps {
       run_and_time "${cmd}"
     done
   else
-    install_velox_deps
+    install_deps
   fi
 )
 
