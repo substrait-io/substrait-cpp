@@ -12,8 +12,8 @@
 
 add_executable(
     substrait_cpp_test
-    SubstraitExtensionTest.cpp
-    SubstraitTypeTest.cpp)
+    ExtensionTest.cpp
+    TypeTest.cpp)
 
 
 add_test(

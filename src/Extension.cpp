@@ -14,15 +14,14 @@
 
 #include "yaml-cpp/yaml.h"
 
-#include "SubstraitExtension.h"
+#include "Extension.h"
 
 namespace YAML {
 
 using namespace io::substrait;
 
 static bool decodeFunctionVariant(
-    const Node& node,
-    SubstraitFunctionVariant& function) {
+    const Node& node, FunctionVariant & function) {
   auto& returnType = node["return"];
   if (returnType && returnType.IsScalar()) {
     /// Return type can be an expression.
@@ -34,22 +33,22 @@ static bool decodeFunctionVariant(
     std::string lastReturnType;
     while (std::getline(ss, lastReturnType, '\n')) {
     }
-    function.returnType = SubstraitType::decode(lastReturnType);
+    function.returnType = Type::decode(lastReturnType);
   }
   auto& args = node["args"];
   if (args && args.IsSequence()) {
     for (auto& arg : args) {
       if (arg["options"]) { // enum argument
-        auto enumArgument = std::make_shared<SubstraitEnumArgument>(
-            arg.as<SubstraitEnumArgument>());
+        auto enumArgument = std::make_shared<EnumArgument>(
+            arg.as<EnumArgument>());
         function.arguments.emplace_back(enumArgument);
       } else if (arg["value"]) { // value argument
-        auto valueArgument = std::make_shared<SubstraitValueArgument>(
-            arg.as<SubstraitValueArgument>());
+        auto valueArgument = std::make_shared<ValueArgument>(
+            arg.as<ValueArgument>());
         function.arguments.emplace_back(valueArgument);
       } else { // type argument
-        auto typeArgument = std::make_shared<SubstraitTypeArgument>(
-            arg.as<SubstraitTypeArgument>());
+        auto typeArgument = std::make_shared<TypeArgument>(
+            arg.as<TypeArgument>());
         function.arguments.emplace_back(typeArgument);
       }
     }
@@ -60,7 +59,7 @@ static bool decodeFunctionVariant(
     auto& min = variadic["min"];
     auto& max = variadic["max"];
     if (min) {
-      function.variadic = std::make_optional<SubstraitFunctionVariadic>(
+      function.variadic = std::make_optional<FunctionVariadic>(
           {min.as<int>(),
            max ? std::make_optional<int>(max.as<int>()) : std::nullopt});
     } else {
@@ -74,8 +73,8 @@ static bool decodeFunctionVariant(
 }
 
 template <>
-struct convert<SubstraitEnumArgument> {
-  static bool decode(const Node& node, SubstraitEnumArgument& argument) {
+struct convert<EnumArgument> {
+  static bool decode(const Node& node, EnumArgument & argument) {
     // 'options' is required property
     auto& options = node["options"];
     if (options && options.IsSequence()) {
@@ -89,12 +88,12 @@ struct convert<SubstraitEnumArgument> {
 };
 
 template <>
-struct convert<SubstraitValueArgument> {
-  static bool decode(const Node& node, SubstraitValueArgument& argument) {
+struct convert<ValueArgument> {
+  static bool decode(const Node& node, ValueArgument & argument) {
     auto& value = node["value"];
     if (value && value.IsScalar()) {
       auto valueType = value.as<std::string>();
-      argument.type = SubstraitType::decode(valueType);
+      argument.type = Type::decode(valueType);
       return true;
     }
     return false;
@@ -102,8 +101,8 @@ struct convert<SubstraitValueArgument> {
 };
 
 template <>
-struct convert<SubstraitTypeArgument> {
-  static bool decode(const Node& node, SubstraitTypeArgument& argument) {
+struct convert<TypeArgument> {
+  static bool decode(const Node& node, TypeArgument & argument) {
     // no properties need to populate for type argument, just return true if
     // 'type' element exists.
     return node["type"];
@@ -111,25 +110,22 @@ struct convert<SubstraitTypeArgument> {
 };
 
 template <>
-struct convert<SubstraitScalarFunctionVariant> {
+struct convert<ScalarFunctionVariant> {
   static bool decode(
-      const Node& node,
-      SubstraitScalarFunctionVariant& function) {
+      const Node& node, ScalarFunctionVariant & function) {
     return decodeFunctionVariant(node, function);
   };
 };
 
 template <>
-struct convert<SubstraitAggregateFunctionVariant> {
+struct convert<AggregateFunctionVariant> {
   static bool decode(
-      const Node& node,
-      SubstraitAggregateFunctionVariant& function) {
+      const Node& node, AggregateFunctionVariant & function) {
     const auto& res = decodeFunctionVariant(node, function);
     if (res) {
       const auto& intermediate = node["intermediate"];
       if (intermediate) {
-        function.intermediate =
-            SubstraitType::decode(intermediate.as<std::string>());
+        function.intermediate = Type::decode(intermediate.as<std::string>());
       }
     }
     return res;
@@ -137,10 +133,10 @@ struct convert<SubstraitAggregateFunctionVariant> {
 };
 
 template <>
-struct convert<io::substrait::SubstraitTypeVariant> {
+struct convert<io::substrait::TypeVariant> {
   static bool decode(
       const Node& node,
-      io::substrait::SubstraitTypeVariant& typeAnchor) {
+      io::substrait::TypeVariant & typeAnchor) {
     auto& name = node["name"];
     if (name && name.IsScalar()) {
       typeAnchor.name = name.as<std::string>();
@@ -164,12 +160,12 @@ std::string getSubstraitExtensionAbsolutePath() {
 
 } // namespace
 
-std::shared_ptr<SubstraitExtension> SubstraitExtension::load() {
+std::shared_ptr<Extension> Extension::load() {
   static const auto registry = loadDefault();
   return registry;
 }
 
-std::shared_ptr<SubstraitExtension> SubstraitExtension::loadDefault() {
+std::shared_ptr<Extension> Extension::loadDefault() {
   static const std::vector<std::string> extensionFiles = {
       "functions_aggregate_approx.yaml",
       "functions_aggregate_generic.yaml",
@@ -188,7 +184,8 @@ std::shared_ptr<SubstraitExtension> SubstraitExtension::loadDefault() {
   return load(extensionRootPath, extensionFiles);
 }
 
-std::shared_ptr<SubstraitExtension> SubstraitExtension::load(
+std::shared_ptr<Extension>
+Extension::load(
     const std::string& basePath,
     const std::vector<std::string>& extensionFiles) {
   std::vector<std::string> yamlExtensionFiles;
@@ -201,9 +198,10 @@ std::shared_ptr<SubstraitExtension> SubstraitExtension::load(
   return load(yamlExtensionFiles);
 }
 
-std::shared_ptr<SubstraitExtension> SubstraitExtension::load(
+std::shared_ptr<Extension>
+Extension::load(
     const std::vector<std::string>& extensionFiles) {
-  auto registry = std::make_shared<SubstraitExtension>();
+  auto registry = std::make_shared<Extension>();
   for (const auto& extensionUri : extensionFiles) {
     const auto& node = YAML::LoadFile(extensionUri);
 
@@ -213,11 +211,11 @@ std::shared_ptr<SubstraitExtension> SubstraitExtension::load(
         const auto functionName = scalarFunctionNode["name"].as<std::string>();
         for (auto& scalaFunctionVariantNode : scalarFunctionNode["impls"]) {
           auto scalarFunctionVariant =
-              scalaFunctionVariantNode.as<SubstraitScalarFunctionVariant>();
+              scalaFunctionVariantNode.as<ScalarFunctionVariant>();
           scalarFunctionVariant.name = functionName;
           scalarFunctionVariant.uri = extensionUri;
           registry->addFunctionVariant(
-              std::make_shared<SubstraitScalarFunctionVariant>(
+              std::make_shared<ScalarFunctionVariant>(
                   scalarFunctionVariant));
         }
       }
@@ -232,11 +230,11 @@ std::shared_ptr<SubstraitExtension> SubstraitExtension::load(
              aggregateFunctionNode["impls"]) {
           auto aggregateFunctionVariant =
               aggregateFunctionVariantNode
-                  .as<SubstraitAggregateFunctionVariant>();
+                  .as<AggregateFunctionVariant>();
           aggregateFunctionVariant.name = functionName;
           aggregateFunctionVariant.uri = extensionUri;
           registry->addFunctionVariant(
-              std::make_shared<SubstraitAggregateFunctionVariant>(
+              std::make_shared<AggregateFunctionVariant>(
                   aggregateFunctionVariant));
         }
       }
@@ -245,36 +243,36 @@ std::shared_ptr<SubstraitExtension> SubstraitExtension::load(
     auto& types = node["types"];
     if (types && types.IsSequence()) {
       for (auto& type : types) {
-        auto typeAnchor = type.as<SubstraitTypeVariant>();
+        auto typeAnchor = type.as<TypeVariant>();
         typeAnchor.uri = extensionUri;
         registry->addTypeVariant(
-            std::make_shared<SubstraitTypeVariant>(typeAnchor));
+            std::make_shared<TypeVariant>(typeAnchor));
       }
     }
   }
   return registry;
 }
 
-void SubstraitExtension::addFunctionVariant(
-    const SubstraitFunctionVariantPtr& functionVariant) {
+void Extension::addFunctionVariant(
+    const FunctionVariantPtr & functionVariant) {
   const auto& functionVariants =
       functionVariantMap_.find(functionVariant->name);
   if (functionVariants != functionVariantMap_.end()) {
     auto& variants = functionVariants->second;
     variants.emplace_back(functionVariant);
   } else {
-    std::vector<SubstraitFunctionVariantPtr> variants;
+    std::vector<FunctionVariantPtr> variants;
     variants.emplace_back(functionVariant);
     functionVariantMap_.insert({functionVariant->name, variants});
   }
 }
 
-void SubstraitExtension::addTypeVariant(
-    const SubstraitTypeVariantPtr& functionVariant) {
+void Extension::addTypeVariant(
+    const TypeVariantPtr & functionVariant) {
   typeVariantMap_.insert({functionVariant->name, functionVariant});
 }
 
-SubstraitTypeVariantPtr SubstraitExtension::lookupType(
+TypeVariantPtr Extension::lookupType(
     const std::string& typeName) const {
   auto typeVariantIter = typeVariantMap_.find(typeName);
   if (typeVariantIter != typeVariantMap_.end()) {
@@ -283,9 +281,10 @@ SubstraitTypeVariantPtr SubstraitExtension::lookupType(
   return nullptr;
 }
 
-SubstraitFunctionVariantPtr SubstraitExtension::lookupFunction(
+FunctionVariantPtr
+Extension::lookupFunction(
     const std::string& name,
-    const std::vector<SubstraitTypePtr>& types) const {
+    const std::vector<TypePtr>& types) const {
   auto functionVariantIter = functionVariantMap_.find(name);
   if (functionVariantIter != functionVariantMap_.end()) {
     for (const auto& candidateFunctionVariant : functionVariantIter->second) {

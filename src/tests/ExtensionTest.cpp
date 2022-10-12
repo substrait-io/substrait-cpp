@@ -15,16 +15,16 @@
 
 #include <gtest/gtest.h>
 
+#include "../Extension.h"
 #include "iostream"
-#include "../SubstraitExtension.h"
 
 using namespace io::substrait;
 
-class SubstraitExtensionTest : public ::testing::Test {
+class ExtensionTest : public ::testing::Test {
 protected:
     void testLookupFunction(
             const std::string &name,
-            const std::vector<SubstraitTypePtr> &arguments,
+            const std::vector<TypePtr> &arguments,
             const std::string &matchedSignature) {
         const auto &functionOption = registry_->lookupFunction(name, arguments);
 
@@ -33,10 +33,10 @@ protected:
     }
 
     /// Load registry from substrait core extension YAML files.
-    SubstraitExtensionPtr registry_ = SubstraitExtension::load();
+    ExtensionPtr registry_ = Extension::load();
 };
 
-TEST_F(SubstraitExtensionTest, comparison_function) {
+TEST_F(ExtensionTest, comparison_function) {
     testLookupFunction("lt", {kI8(), kI8()}, "lt:any1_any1");
     testLookupFunction("lt", {kI16(), kI16()}, "lt:any1_any1");
     testLookupFunction("lt", {kI32(), kI32()}, "lt:any1_any1");
@@ -48,7 +48,7 @@ TEST_F(SubstraitExtensionTest, comparison_function) {
             "between", {kI8(), kI8(), kI8()}, "between:any1_any1_any1");
 }
 
-TEST_F(SubstraitExtensionTest, arithmetic_function) {
+TEST_F(ExtensionTest, arithmetic_function) {
     testLookupFunction("add", {kI8(), kI8()}, "add:opt_i8_i8");
     testLookupFunction(
             "divide",
@@ -59,10 +59,10 @@ TEST_F(SubstraitExtensionTest, arithmetic_function) {
             "divide:opt_opt_opt_fp32_fp32");
 
     testLookupFunction(
-            "avg", {SubstraitType::decode("struct<fp64,i64>")}, "avg:opt_fp32");
+            "avg", {Type::decode("struct<fp64,i64>")}, "avg:opt_fp32");
 }
 
-TEST_F(SubstraitExtensionTest, boolean_function) {
+TEST_F(ExtensionTest, boolean_function) {
     testLookupFunction("and", {kBool(), kBool()}, "and:bool");
     testLookupFunction("or", {kBool(), kBool()}, "or:bool");
     testLookupFunction("not", {kBool()}, "not:bool");
@@ -70,12 +70,12 @@ TEST_F(SubstraitExtensionTest, boolean_function) {
             "xor", {kBool(), kBool()}, "xor:bool_bool");
 }
 
-TEST_F(SubstraitExtensionTest, string_function) {
+TEST_F(ExtensionTest, string_function) {
     testLookupFunction(
             "like", {kString(), kString()}, "like:opt_str_str");
 }
 
-TEST_F(SubstraitExtensionTest, unknowLookup) {
+TEST_F(ExtensionTest, unknowLookup) {
     auto unknown = registry_->lookupType("unknown");
     ASSERT_TRUE(unknown);
     ASSERT_EQ(unknown->name, "unknown");

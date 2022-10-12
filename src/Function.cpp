@@ -12,14 +12,15 @@
  * limitations under the License.
  */
 
-#include "SubstraitFunction.h"
+#include "Function.h"
 #include <sstream>
 
 namespace io::substrait {
 
-std::string SubstraitFunctionVariant::signature(
+std::string
+FunctionVariant::signature(
     const std::string& name,
-    const std::vector<SubstraitFunctionArgumentPtr>& arguments) {
+    const std::vector<FunctionArgumentPtr>& arguments) {
   std::stringstream ss;
   ss << name;
   if (!arguments.empty()) {
@@ -37,8 +38,8 @@ std::string SubstraitFunctionVariant::signature(
   return ss.str();
 }
 
-bool SubstraitFunctionVariant::tryMatch(
-    const std::vector<SubstraitTypePtr>& actualTypes) {
+bool FunctionVariant::tryMatch(
+    const std::vector<TypePtr>& actualTypes) {
   if (variadic.has_value()) {
     // return false if actual types length less than min of variadic
     const auto max = variadic->max;
@@ -50,7 +51,7 @@ bool SubstraitFunctionVariant::tryMatch(
     const auto& variadicArgument = arguments[0];
     // actual type must same as the variadicArgument
     if (const auto& variadicValueArgument =
-            std::dynamic_pointer_cast<const SubstraitValueArgument>(
+            std::dynamic_pointer_cast<const ValueArgument>(
                 variadicArgument)) {
       for (auto& actualType : actualTypes) {
         if (!variadicValueArgument->type->isSameAs(actualType)) {
@@ -60,10 +61,10 @@ bool SubstraitFunctionVariant::tryMatch(
     }
     return true;
   } else {
-    std::vector<std::shared_ptr<const SubstraitValueArgument>> valueArguments;
+    std::vector<std::shared_ptr<const ValueArgument>> valueArguments;
     for (const auto& argument : arguments) {
       if (const auto& variadicValueArgument =
-              std::dynamic_pointer_cast<const SubstraitValueArgument>(
+              std::dynamic_pointer_cast<const ValueArgument>(
                   argument)) {
         valueArguments.emplace_back(variadicValueArgument);
       }
@@ -84,9 +85,9 @@ bool SubstraitFunctionVariant::tryMatch(
   }
 }
 
-bool SubstraitAggregateFunctionVariant::tryMatch(
-    const std::vector<SubstraitTypePtr>& actualTypes) {
-  bool matched = SubstraitFunctionVariant::tryMatch(actualTypes);
+bool AggregateFunctionVariant::tryMatch(
+    const std::vector<TypePtr>& actualTypes) {
+  bool matched = FunctionVariant::tryMatch(actualTypes);
   if (!matched && intermediate) {
     if (actualTypes.size() == 1) {
       return intermediate->isSameAs(actualTypes[0]);
