@@ -32,21 +32,21 @@ get_filename_component(PROTO_DIR ${substrait_proto_directory}/, DIRECTORY)
 
 # Generate Substrait hearders
 add_custom_command(
-        OUTPUT ${PROTO_OUTPUT_FILES}
-        COMMAND protoc --proto_path ${proto_directory}/ --cpp_out ${PROTO_OUTPUT_DIR}
-        ${PROTO_FILES}
-        DEPENDS ${PROTO_DIR}
-        COMMENT "Running PROTO compiler"
-        VERBATIM)
+    OUTPUT ${PROTO_OUTPUT_FILES}
+    COMMAND protoc --proto_path ${proto_directory}/ --cpp_out ${PROTO_OUTPUT_DIR}
+    ${PROTO_FILES}
+    DEPENDS ${PROTO_DIR}
+    COMMENT "Running PROTO compiler"
+    VERBATIM)
 add_custom_target(substrait_proto ALL DEPENDS ${PROTO_OUTPUT_FILES})
 add_dependencies(substrait_proto protobuf::libprotobuf)
 
 
 set(SRCS
-        ${PROTO_SRCS}
-        SubstraitType.cpp
-        SubstraitFunction.cpp
-        SubstraitExtension.cpp)
+    ${PROTO_SRCS}
+    Type.cpp
+    Function.cpp
+    Extension.cpp)
 
 add_library(substrait-cpp ${SRCS})
 
