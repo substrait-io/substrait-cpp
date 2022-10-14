@@ -12,7 +12,6 @@
  * limitations under the License.
  */
 
-
 #include <gtest/gtest.h>
 
 #include "../Extension.h"
@@ -22,61 +21,58 @@ using namespace io::substrait;
 
 class ExtensionTest : public ::testing::Test {
 protected:
-    void testLookupFunction(
-            const std::string &name,
-            const std::vector<TypePtr> &arguments,
-            const std::string &matchedSignature) {
-        const auto &functionOption = registry_->lookupFunction(name, arguments);
+  void testLookupScalarFunction(const std::string &name,
+                                const std::vector<TypePtr> &arguments,
+                                const std::string &matchedSignature) {
+    const auto &functionOption =
+        registry_->lookupScalarFunction(name, arguments);
 
-        ASSERT_TRUE(functionOption != nullptr);
-        ASSERT_EQ(functionOption->signature(), matchedSignature);
-    }
+    ASSERT_TRUE(functionOption != nullptr);
+    ASSERT_EQ(functionOption->signature(), matchedSignature);
+  }
 
-    /// Load registry from substrait core extension YAML files.
-    ExtensionPtr registry_ = Extension::load();
+  /// Load registry from substrait core extension YAML files.
+  ExtensionPtr registry_ = Extension::load();
 };
 
 TEST_F(ExtensionTest, comparison_function) {
-    testLookupFunction("lt", {kI8(), kI8()}, "lt:any1_any1");
-    testLookupFunction("lt", {kI16(), kI16()}, "lt:any1_any1");
-    testLookupFunction("lt", {kI32(), kI32()}, "lt:any1_any1");
-    testLookupFunction("lt", {kI64(), kI64()}, "lt:any1_any1");
-    testLookupFunction("lt", {kFp32(), kFp32()}, "lt:any1_any1");
-    testLookupFunction("lt", {kFp64(), kFp64()}, "lt:any1_any1");
+  testLookupScalarFunction("lt", {kI8(), kI8()}, "lt:any1_any1");
+  testLookupScalarFunction("lt", {kI16(), kI16()}, "lt:any1_any1");
+  testLookupScalarFunction("lt", {kI32(), kI32()}, "lt:any1_any1");
+  testLookupScalarFunction("lt", {kI64(), kI64()}, "lt:any1_any1");
+  testLookupScalarFunction("lt", {kFp32(), kFp32()}, "lt:any1_any1");
+  testLookupScalarFunction("lt", {kFp64(), kFp64()}, "lt:any1_any1");
 
-    testLookupFunction(
-            "between", {kI8(), kI8(), kI8()}, "between:any1_any1_any1");
+  testLookupScalarFunction("between", {kI8(), kI8(), kI8()},
+                           "between:any1_any1_any1");
 }
 
 TEST_F(ExtensionTest, arithmetic_function) {
-    testLookupFunction("add", {kI8(), kI8()}, "add:opt_i8_i8");
-    testLookupFunction(
-            "divide",
-            {
-                    kFp32(),
-                    kFp32(),
-            },
-            "divide:opt_opt_opt_fp32_fp32");
+  testLookupScalarFunction("add", {kI8(), kI8()}, "add:opt_i8_i8");
+  testLookupScalarFunction("divide",
+                           {
+                               kFp32(),
+                               kFp32(),
+                           },
+                           "divide:opt_opt_opt_fp32_fp32");
 
-    testLookupFunction(
-            "avg", {Type::decode("struct<fp64,i64>")}, "avg:opt_fp32");
+  testLookupScalarFunction("avg", {Type::decode("struct<fp64,i64>")},
+                           "avg:opt_fp32");
 }
 
 TEST_F(ExtensionTest, boolean_function) {
-    testLookupFunction("and", {kBool(), kBool()}, "and:bool");
-    testLookupFunction("or", {kBool(), kBool()}, "or:bool");
-    testLookupFunction("not", {kBool()}, "not:bool");
-    testLookupFunction(
-            "xor", {kBool(), kBool()}, "xor:bool_bool");
+  testLookupScalarFunction("and", {kBool(), kBool()}, "and:bool");
+  testLookupScalarFunction("or", {kBool(), kBool()}, "or:bool");
+  testLookupScalarFunction("not", {kBool()}, "not:bool");
+  testLookupScalarFunction("xor", {kBool(), kBool()}, "xor:bool_bool");
 }
 
 TEST_F(ExtensionTest, string_function) {
-    testLookupFunction(
-            "like", {kString(), kString()}, "like:opt_str_str");
+  testLookupScalarFunction("like", {kString(), kString()}, "like:opt_str_str");
 }
 
 TEST_F(ExtensionTest, unknowLookup) {
-    auto unknown = registry_->lookupType("unknown");
-    ASSERT_TRUE(unknown);
-    ASSERT_EQ(unknown->name, "unknown");
+  auto unknown = registry_->lookupType("unknown");
+  ASSERT_TRUE(unknown);
+  ASSERT_EQ(unknown->name, "unknown");
 }

@@ -33,39 +33,61 @@ using TypeVariantMap = std::unordered_map<std::string, TypeVariantPtr>;
 
 class Extension {
 public:
-  /// deserialize default substrait extension.
+  /// Deserialize default substrait extension.
   static std::shared_ptr<Extension> load();
 
-  /// deserialize substrait extension by given basePath and extensionFiles.
+  /// Deserialize substrait extension by given basePath and extensionFiles.
   static std::shared_ptr<Extension>
   load(const std::string &basePath,
        const std::vector<std::string> &extensionFiles);
 
-  /// deserialize substrait extension by given extensionFiles.
+  /// Deserialize substrait extension by given extensionFiles.
   static std::shared_ptr<Extension>
   load(const std::vector<std::string> &extensionFiles);
 
-  /// Add a function variant.
-  void addFunctionVariant(const FunctionVariantPtr &functionVariant);
+  /// Add a scalar function variant.
+  void addScalarFunctionVariant(const FunctionVariantPtr& functionVariant);
+
+  /// Add a aggregate function variant.
+  void addAggregateFunctionVariant(const FunctionVariantPtr& functionVariant);
+
+  /// Add a window function variant.
+  void addWindowFunctionVariant(const FunctionVariantPtr &functionVariant);
 
   /// Add a type variant.
   void addTypeVariant(const TypeVariantPtr &functionVariant);
 
-  /// Lookup function variant by given function name and function types.
+  /// Lookup scalar function variant by given name and function types.
   /// @return matched function variant.
-  FunctionVariantPtr lookupFunction(const std::string &name,
-                                    const std::vector<TypePtr> &types) const;
+  FunctionVariantPtr
+  lookupScalarFunction(const std::string &name,
+                       const std::vector<TypePtr> &types) const;
+
+  /// Lookup aggregate function variant by given name and function types.
+  /// @return matched function variant.
+  FunctionVariantPtr
+  lookupAggregateFunction(const std::string &name,
+                          const std::vector<TypePtr> &types) const;
+
+  /// Lookup window function variant by given name and function types.
+  /// @return matched function variant.
+  FunctionVariantPtr
+  lookupWindowFunction(const std::string &name,
+                       const std::vector<TypePtr> &types) const;
 
   /// Lookup type variant by given type name.
   /// @return matched type variant
   TypeVariantPtr lookupType(const std::string &typeName) const;
 
 private:
-  /// Deserialize default substrait extension.
   static std::shared_ptr<Extension> loadDefault();
-  /// Function variants loaded in registry.
-  FunctionVariantMap functionVariantMap_;
-  /// Type variants loaded in registry.
+
+  FunctionVariantMap scalarFunctionVariantMap_;
+
+  FunctionVariantMap aggregateFunctionVariantMap_;
+
+  FunctionVariantMap windowFunctionVariantMap_;
+
   TypeVariantMap typeVariantMap_;
 };
 
