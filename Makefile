@@ -21,25 +21,6 @@ BUILD_TYPE := Release
 
 all: release
 
-format-fix:
-	ci/scripts/check.py format branch --fix
-
-format-check:
-	clang-format --version
-	ci/scripts/check.py format branch
-
-header-fix:
-	ci/scripts/check.py header branch --fix
-
-header-check:
-	ci/scripts/check.py header branch
-
-lint:
-	ci/scripts/run_cpplint.py                          \
-		--cpplint_binary ci/scripts/cpplint.py         \
-		--exclude_globs ci/scripts/lint_exclusions.txt \
-		--source_dir ci/scripts/lint_inclusions.txt
-
 clean:
 	@rm -rf build-*
 
