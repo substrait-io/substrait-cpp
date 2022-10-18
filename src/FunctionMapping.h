@@ -44,5 +44,5 @@ public:
   }
 };
 
-using FunctionMappingPtr = std::shared_ptr<const FunctionMapping >;
+using FunctionMappingPtr = std::shared_ptr<const FunctionMapping>;
 } // namespace io::substrait

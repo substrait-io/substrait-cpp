@@ -76,66 +76,50 @@ TypePtr Type::decode(const std::string &rawType) {
 
   if (TypeTraits<TypeKind::kList>::typeString == baseType) {
     return std::make_shared<ListType>(nestedTypes[0]);
-  } else if (TypeTraits<TypeKind::kMap>::typeString ==
-             baseType) {
+  } else if (TypeTraits<TypeKind::kMap>::typeString == baseType) {
     return std::make_shared<MapType>(nestedTypes[0], nestedTypes[1]);
-  } else if (TypeTraits<TypeKind::kDecimal>::typeString ==
-             baseType) {
+  } else if (TypeTraits<TypeKind::kDecimal>::typeString == baseType) {
     auto precision =
-        std::dynamic_pointer_cast<const StringLiteralType>(
-            nestedTypes[0]);
-    auto scale = std::dynamic_pointer_cast<const StringLiteralType>(
-        nestedTypes[1]);
+        std::dynamic_pointer_cast<const StringLiteralType>(nestedTypes[0]);
+    auto scale =
+        std::dynamic_pointer_cast<const StringLiteralType>(nestedTypes[1]);
     return std::make_shared<DecimalType>(precision, scale);
-  } else if (TypeTraits<TypeKind::kVarchar>::typeString ==
-             baseType) {
-    auto length = std::dynamic_pointer_cast<const StringLiteralType>(
-        nestedTypes[0]);
+  } else if (TypeTraits<TypeKind::kVarchar>::typeString == baseType) {
+    auto length =
+        std::dynamic_pointer_cast<const StringLiteralType>(nestedTypes[0]);
     return std::make_shared<VarcharType>(length);
-  } else if (TypeTraits<TypeKind::kFixedChar>::typeString ==
-             baseType) {
-    auto length = std::dynamic_pointer_cast<const StringLiteralType>(
-        nestedTypes[0]);
+  } else if (TypeTraits<TypeKind::kFixedChar>::typeString == baseType) {
+    auto length =
+        std::dynamic_pointer_cast<const StringLiteralType>(nestedTypes[0]);
     return std::make_shared<FixedCharType>(length);
-  } else if (TypeTraits<TypeKind::kFixedBinary>::typeString ==
-             baseType) {
-    auto length = std::dynamic_pointer_cast<const StringLiteralType>(
-        nestedTypes[0]);
+  } else if (TypeTraits<TypeKind::kFixedBinary>::typeString == baseType) {
+    auto length =
+        std::dynamic_pointer_cast<const StringLiteralType>(nestedTypes[0]);
     return std::make_shared<FixedBinaryType>(length);
-  } else if (TypeTraits<TypeKind::kStruct>::typeString ==
-             baseType) {
+  } else if (TypeTraits<TypeKind::kStruct>::typeString == baseType) {
     return std::make_shared<StructType>(nestedTypes);
   } else {
     throw std::runtime_error("Unsupported substrait type: " + rawType);
   }
 }
 
-#define SCALAR_TYPE_MAPPING(typeKind)                                \
+#define SCALAR_TYPE_MAPPING(typeKind)                                          \
   {                                                                            \
-    TypeTraits<TypeKind::typeKind>::typeString,              \
+    TypeTraits<TypeKind::typeKind>::typeString,                                \
         std::make_shared<TypeBase<TypeKind::typeKind>>(                        \
-            TypeBase<TypeKind::typeKind>())                  \
+            TypeBase<TypeKind::typeKind>())                                    \
   }
 
-const std::unordered_map<std::string, TypePtr> &
-Type::scalarTypeMapping() {
+const std::unordered_map<std::string, TypePtr> &Type::scalarTypeMapping() {
   static const std::unordered_map<std::string, TypePtr> scalarTypeMap{
-      SCALAR_TYPE_MAPPING(kBool),
-      SCALAR_TYPE_MAPPING(kI8),
-      SCALAR_TYPE_MAPPING(kI16),
-      SCALAR_TYPE_MAPPING(kI32),
-      SCALAR_TYPE_MAPPING(kI64),
-      SCALAR_TYPE_MAPPING(kFp32),
-      SCALAR_TYPE_MAPPING(kFp64),
-      SCALAR_TYPE_MAPPING(kString),
-      SCALAR_TYPE_MAPPING(kBinary),
-      SCALAR_TYPE_MAPPING(kTimestamp),
-      SCALAR_TYPE_MAPPING(kTimestampTz),
-      SCALAR_TYPE_MAPPING(kDate),
-      SCALAR_TYPE_MAPPING(kTime),
-      SCALAR_TYPE_MAPPING(kIntervalDay),
-      SCALAR_TYPE_MAPPING(kIntervalYear),
-      SCALAR_TYPE_MAPPING(kUuid),
+      SCALAR_TYPE_MAPPING(kBool),         SCALAR_TYPE_MAPPING(kI8),
+      SCALAR_TYPE_MAPPING(kI16),          SCALAR_TYPE_MAPPING(kI32),
+      SCALAR_TYPE_MAPPING(kI64),          SCALAR_TYPE_MAPPING(kFp32),
+      SCALAR_TYPE_MAPPING(kFp64),         SCALAR_TYPE_MAPPING(kString),
+      SCALAR_TYPE_MAPPING(kBinary),       SCALAR_TYPE_MAPPING(kTimestamp),
+      SCALAR_TYPE_MAPPING(kTimestampTz),  SCALAR_TYPE_MAPPING(kDate),
+      SCALAR_TYPE_MAPPING(kTime),         SCALAR_TYPE_MAPPING(kIntervalDay),
+      SCALAR_TYPE_MAPPING(kIntervalYear), SCALAR_TYPE_MAPPING(kUuid),
   };
   return scalarTypeMap;
 }
@@ -149,8 +133,7 @@ const std::string FixedBinaryType::signature() const {
   return sign.str();
 }
 
-bool FixedBinaryType::isSameAs(
-    const std::shared_ptr<const Type> &other) const {
+bool FixedBinaryType::isSameAs(const std::shared_ptr<const Type> &other) const {
   if (const auto &type =
           std::dynamic_pointer_cast<const FixedBinaryType>(other)) {
     return true;
@@ -167,10 +150,8 @@ const std::string DecimalType::signature() const {
   return signature.str();
 }
 
-bool DecimalType::isSameAs(
-    const std::shared_ptr<const Type> &other) const {
-  if (const auto &type =
-          std::dynamic_pointer_cast<const DecimalType>(other)) {
+bool DecimalType::isSameAs(const std::shared_ptr<const Type> &other) const {
+  if (const auto &type = std::dynamic_pointer_cast<const DecimalType>(other)) {
     return true;
   }
   return false;
@@ -185,8 +166,7 @@ const std::string FixedCharType::signature() const {
   return sign.str();
 }
 
-bool FixedCharType::isSameAs(
-    const std::shared_ptr<const Type> &other) const {
+bool FixedCharType::isSameAs(const std::shared_ptr<const Type> &other) const {
   if (const auto &type =
           std::dynamic_pointer_cast<const FixedCharType>(other)) {
     return true;
@@ -203,10 +183,8 @@ const std::string VarcharType::signature() const {
   return sign.str();
 }
 
-bool VarcharType::isSameAs(
-    const std::shared_ptr<const Type> &other) const {
-  if (const auto &type =
-          std::dynamic_pointer_cast<const VarcharType>(other)) {
+bool VarcharType::isSameAs(const std::shared_ptr<const Type> &other) const {
+  if (const auto &type = std::dynamic_pointer_cast<const VarcharType>(other)) {
     return true;
   }
   return false;
@@ -228,10 +206,8 @@ const std::string StructType::signature() const {
   return signature.str();
 }
 
-bool StructType::isSameAs(
-    const std::shared_ptr<const Type> &other) const {
-  if (const auto &type =
-          std::dynamic_pointer_cast<const StructType>(other)) {
+bool StructType::isSameAs(const std::shared_ptr<const Type> &other) const {
+  if (const auto &type = std::dynamic_pointer_cast<const StructType>(other)) {
     bool sameSize = type->children_.size() == children_.size();
     if (sameSize) {
       for (int i = 0; i < children_.size(); i++) {
@@ -256,10 +232,8 @@ const std::string MapType::signature() const {
   return signature.str();
 }
 
-bool MapType::isSameAs(
-    const std::shared_ptr<const Type> &other) const {
-  if (const auto &type =
-          std::dynamic_pointer_cast<const MapType>(other)) {
+bool MapType::isSameAs(const std::shared_ptr<const Type> &other) const {
+  if (const auto &type = std::dynamic_pointer_cast<const MapType>(other)) {
     return keyType_->isSameAs(type->keyType_) &&
            valueType_->isSameAs(type->valueType_);
   }
@@ -275,17 +249,14 @@ const std::string ListType::signature() const {
   return signature.str();
 }
 
-bool ListType::isSameAs(
-    const std::shared_ptr<const Type> &other) const {
-  if (const auto &type =
-          std::dynamic_pointer_cast<const ListType>(other)) {
+bool ListType::isSameAs(const std::shared_ptr<const Type> &other) const {
+  if (const auto &type = std::dynamic_pointer_cast<const ListType>(other)) {
     return elementType_->isSameAs(type->elementType_);
   }
   return false;
 }
 
-bool UsedDefinedType::isSameAs(
-    const std::shared_ptr<const Type> &other) const {
+bool UsedDefinedType::isSameAs(const std::shared_ptr<const Type> &other) const {
   if (const auto &type =
           std::dynamic_pointer_cast<const UsedDefinedType>(other)) {
     return type->value_ == value_;
@@ -305,11 +276,9 @@ bool StringLiteralType::isSameAs(
   return false;
 }
 
-#define DEFINE_SCALAR_ACCESSOR(typeKind)                             \
-  std::shared_ptr<const ScalarType<TypeKind::typeKind>>      \
-  typeKind() {                                                                 \
-    return std::make_shared<                                                   \
-        const ScalarType<TypeKind::typeKind>>();             \
+#define DEFINE_SCALAR_ACCESSOR(typeKind)                                       \
+  std::shared_ptr<const ScalarType<TypeKind::typeKind>> typeKind() {           \
+    return std::make_shared<const ScalarType<TypeKind::typeKind>>();           \
   }
 
 DEFINE_SCALAR_ACCESSOR(kBool);

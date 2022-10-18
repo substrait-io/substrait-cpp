@@ -192,7 +192,7 @@ Extension::load(const std::vector<std::string> &extensionFiles) {
   for (const auto &extensionUri : extensionFiles) {
     const auto &node = YAML::LoadFile(extensionUri);
 
-    auto &scalarFunctions = node["scalar_functions"];
+    const auto &scalarFunctions = node["scalar_functions"];
     if (scalarFunctions && scalarFunctions.IsSequence()) {
       for (auto &scalarFunctionNode : scalarFunctions) {
         const auto functionName = scalarFunctionNode["name"].as<std::string>();
@@ -247,7 +247,8 @@ void Extension::addWindowFunctionVariant(
   } else {
     std::vector<FunctionVariantPtr> variants;
     variants.emplace_back(functionVariant);
-    windowFunctionVariantMap_.insert({functionVariant->name, variants});
+    windowFunctionVariantMap_.insert(
+        {functionVariant->name, std::move(variants)});
   }
 }
 

@@ -18,7 +18,7 @@ namespace io::substrait {
 
 FunctionVariantPtr
 FunctionLookup::lookupScalarFunction(const std::string &functionName,
-                                   const std::vector<TypePtr> &types) const {
+                                     const std::vector<TypePtr> &types) const {
   const auto &functionMappings = functionMapping_->scalaMapping();
   const auto &substraitFunctionName =
       functionMappings.find(functionName) != functionMappings.end()
@@ -27,9 +27,8 @@ FunctionLookup::lookupScalarFunction(const std::string &functionName,
   return extension_->lookupScalarFunction(substraitFunctionName, types);
 }
 
-FunctionVariantPtr
-FunctionLookup::lookupAggregateFunction(const std::string &functionName,
-                                      const std::vector<TypePtr> &types) const {
+FunctionVariantPtr FunctionLookup::lookupAggregateFunction(
+    const std::string &functionName, const std::vector<TypePtr> &types) const {
   const auto &functionMappings = functionMapping_->aggregateMapping();
   const auto &substraitFunctionName =
       functionMappings.find(functionName) != functionMappings.end()
@@ -40,7 +39,7 @@ FunctionLookup::lookupAggregateFunction(const std::string &functionName,
 
 FunctionVariantPtr
 FunctionLookup::lookupWindowFunction(const std::string &functionName,
-                                   const std::vector<TypePtr> &types) const {
+                                     const std::vector<TypePtr> &types) const {
   const auto &functionMappings = functionMapping_->windowMapping();
   const auto &substraitFunctionName =
       functionMappings.find(functionName) != functionMappings.end()
