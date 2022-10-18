@@ -316,7 +316,8 @@ void Extension::addScalarFunctionVariant(
   } else {
     std::vector<FunctionVariantPtr> variants;
     variants.emplace_back(functionVariant);
-    scalarFunctionVariantMap_.insert({functionVariant->name, variants});
+    scalarFunctionVariantMap_.insert(
+        {functionVariant->name, std::move(variants)});
   }
 }
 
@@ -331,7 +332,8 @@ void Extension::addAggregateFunctionVariant(
   } else {
     std::vector<FunctionVariantPtr> variants;
     variants.emplace_back(functionVariant);
-    aggregateFunctionVariantMap_.insert({functionVariant->name, variants});
+    aggregateFunctionVariantMap_.insert(
+        {functionVariant->name, std::move(variants)});
   }
 }
 
