@@ -1,6 +1,4 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,6 +23,7 @@ public:
   static const std::shared_ptr<VeloxFunctionMappings> make() {
     return std::make_shared<VeloxFunctionMappings>();
   }
+
   /// scalar function names in difference between  velox and Substrait.
   const FunctionMap scalaMapping() const override {
     static const FunctionMap scalarMappings{

@@ -46,10 +46,10 @@ public:
   load(const std::vector<std::string> &extensionFiles);
 
   /// Add a scalar function variant.
-  void addScalarFunctionVariant(const FunctionVariantPtr& functionVariant);
+  void addScalarFunctionVariant(const FunctionVariantPtr &functionVariant);
 
   /// Add a aggregate function variant.
-  void addAggregateFunctionVariant(const FunctionVariantPtr& functionVariant);
+  void addAggregateFunctionVariant(const FunctionVariantPtr &functionVariant);
 
   /// Add a window function variant.
   void addWindowFunctionVariant(const FunctionVariantPtr &functionVariant);
