@@ -12,7 +12,6 @@
 
 add_executable(
     substrait_cpp_test
-    ExtensionTest.cpp
     TypeTest.cpp
     FunctionLookupTest.cpp)
 
