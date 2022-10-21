@@ -21,7 +21,7 @@ namespace YAML {
 using namespace io::substrait;
 
 static bool decodeFunctionVariant(const Node &node, FunctionVariant &function) {
-  auto &returnType = node["return"];
+  const auto &returnType = node["return"];
   if (returnType && returnType.IsScalar()) {
     /// Return type can be an expression.
     const auto &returnExpr = returnType.as<std::string>();
@@ -34,7 +34,7 @@ static bool decodeFunctionVariant(const Node &node, FunctionVariant &function) {
     }
     function.returnType = Type::decode(lastReturnType);
   }
-  auto &args = node["args"];
+  const auto &args = node["args"];
   if (args && args.IsSequence()) {
     for (auto &arg : args) {
       if (arg["options"]) { // enum argument
@@ -53,7 +53,7 @@ static bool decodeFunctionVariant(const Node &node, FunctionVariant &function) {
     }
   }
 
-  auto &variadic = node["variadic"];
+  const auto &variadic = node["variadic"];
   if (variadic) {
     auto &min = variadic["min"];
     auto &max = variadic["max"];
@@ -74,7 +74,7 @@ static bool decodeFunctionVariant(const Node &node, FunctionVariant &function) {
 template <> struct convert<EnumArgument> {
   static bool decode(const Node &node, EnumArgument &argument) {
     // 'options' is required property
-    auto &options = node["options"];
+    const auto &options = node["options"];
     if (options && options.IsSequence()) {
       auto &required = node["required"];
       argument.required = required && required.as<bool>();
@@ -87,7 +87,7 @@ template <> struct convert<EnumArgument> {
 
 template <> struct convert<ValueArgument> {
   static bool decode(const Node &node, ValueArgument &argument) {
-    auto &value = node["value"];
+    const auto &value = node["value"];
     if (value && value.IsScalar()) {
       auto valueType = value.as<std::string>();
       argument.type = Type::decode(valueType);
@@ -126,7 +126,7 @@ template <> struct convert<AggregateFunctionVariant> {
 
 template <> struct convert<io::substrait::TypeVariant> {
   static bool decode(const Node &node, io::substrait::TypeVariant &typeAnchor) {
-    auto &name = node["name"];
+    const auto &name = node["name"];
     if (name && name.IsScalar()) {
       typeAnchor.name = name.as<std::string>();
       return true;
@@ -207,7 +207,7 @@ Extension::load(const std::vector<std::string> &extensionFiles) {
       }
     }
 
-    auto &aggregateFunctions = node["aggregate_functions"];
+    const auto &aggregateFunctions = node["aggregate_functions"];
     if (aggregateFunctions && aggregateFunctions.IsSequence()) {
       for (auto &aggregateFunctionNode : aggregateFunctions) {
         const auto functionName =
@@ -225,7 +225,7 @@ Extension::load(const std::vector<std::string> &extensionFiles) {
       }
     }
 
-    auto &types = node["types"];
+    const auto &types = node["types"];
     if (types && types.IsSequence()) {
       for (auto &type : types) {
         auto typeAnchor = type.as<TypeVariant>();
