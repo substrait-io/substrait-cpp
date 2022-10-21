@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include "FunctionSignature.h"
 #include "Type.h"
 #include <iostream>
 
@@ -71,7 +72,7 @@ struct FunctionVariant {
   std::optional<FunctionVariadic> variadic;
 
   /// Test if the actual types matched with this function variant.
-  virtual bool tryMatch(const std::vector<TypePtr> &actualTypes);
+  virtual bool tryMatch(const FunctionSignature& signature);
 
   /// Create function signature by given function name and arguments.
   static std::string
@@ -89,7 +90,7 @@ struct ScalarFunctionVariant : public FunctionVariant {};
 struct AggregateFunctionVariant : public FunctionVariant {
   TypePtr intermediate;
 
-  bool tryMatch(const std::vector<TypePtr> &actualTypes) override;
+  bool tryMatch(const FunctionSignature& signature) override;
 };
 
 } // namespace io::substrait

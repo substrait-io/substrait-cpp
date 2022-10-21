@@ -264,48 +264,6 @@ TypeVariantPtr Extension::lookupType(const std::string &typeName) const {
   return nullptr;
 }
 
-FunctionVariantPtr
-Extension::lookupScalarFunction(const std::string &name,
-                                const std::vector<TypePtr> &types) const {
-  auto functionVariantIter = scalarFunctionVariantMap_.find(name);
-  if (functionVariantIter != scalarFunctionVariantMap_.end()) {
-    for (const auto &candidateFunctionVariant : functionVariantIter->second) {
-      if (candidateFunctionVariant->tryMatch(types)) {
-        return candidateFunctionVariant;
-      }
-    }
-  }
-  return nullptr;
-}
-
-FunctionVariantPtr
-Extension::lookupAggregateFunction(const std::string &name,
-                                   const std::vector<TypePtr> &types) const {
-  auto functionVariantIter = aggregateFunctionVariantMap_.find(name);
-  if (functionVariantIter != aggregateFunctionVariantMap_.end()) {
-    for (const auto &candidateFunctionVariant : functionVariantIter->second) {
-      if (candidateFunctionVariant->tryMatch(types)) {
-        return candidateFunctionVariant;
-      }
-    }
-  }
-  return nullptr;
-}
-
-FunctionVariantPtr
-Extension::lookupWindowFunction(const std::string &name,
-                                const std::vector<TypePtr> &types) const {
-  auto functionVariantIter = windowFunctionVariantMap_.find(name);
-  if (functionVariantIter != windowFunctionVariantMap_.end()) {
-    for (const auto &candidateFunctionVariant : functionVariantIter->second) {
-      if (candidateFunctionVariant->tryMatch(types)) {
-        return candidateFunctionVariant;
-      }
-    }
-  }
-  return nullptr;
-}
-
 void Extension::addScalarFunctionVariant(
     const FunctionVariantPtr &functionVariant) {
   const auto &functionVariants =

@@ -15,6 +15,7 @@
 #pragma once
 
 #include "Function.h"
+#include "FunctionSignature.h"
 #include "Type.h"
 
 namespace io::substrait {
@@ -57,27 +58,21 @@ public:
   /// Add a type variant.
   void addTypeVariant(const TypeVariantPtr &functionVariant);
 
-  /// Lookup scalar function variant by given name and function types.
-  /// @return matched function variant.
-  FunctionVariantPtr
-  lookupScalarFunction(const std::string &name,
-                       const std::vector<TypePtr> &types) const;
-
-  /// Lookup aggregate function variant by given name and function types.
-  /// @return matched function variant.
-  FunctionVariantPtr
-  lookupAggregateFunction(const std::string &name,
-                          const std::vector<TypePtr> &types) const;
-
-  /// Lookup window function variant by given name and function types.
-  /// @return matched function variant.
-  FunctionVariantPtr
-  lookupWindowFunction(const std::string &name,
-                       const std::vector<TypePtr> &types) const;
-
   /// Lookup type variant by given type name.
   /// @return matched type variant
   TypeVariantPtr lookupType(const std::string &typeName) const;
+
+  const FunctionVariantMap &scalaFunctionVariantMap() const {
+    return scalarFunctionVariantMap_;
+  }
+
+  const FunctionVariantMap &windowFunctionVariantMap() const {
+    return windowFunctionVariantMap_;
+  }
+
+  const FunctionVariantMap &aggregateFunctionVariantMap() const {
+    return aggregateFunctionVariantMap_;
+  }
 
 private:
   static std::shared_ptr<Extension> loadDefault();

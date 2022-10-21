@@ -18,15 +18,14 @@
 namespace io::substrait {
 
 std::string
-FunctionVariant::signature(
-    const std::string& name,
-    const std::vector<FunctionArgumentPtr>& arguments) {
+FunctionVariant::signature(const std::string &name,
+                           const std::vector<FunctionArgumentPtr> &arguments) {
   std::stringstream ss;
   ss << name;
   if (!arguments.empty()) {
     ss << ":";
     for (auto it = arguments.begin(); it != arguments.end(); ++it) {
-      const auto& typeSign = (*it)->toTypeString();
+      const auto &typeSign = (*it)->toTypeString();
       if (it == arguments.end() - 1) {
         ss << typeSign;
       } else {
@@ -38,8 +37,8 @@ FunctionVariant::signature(
   return ss.str();
 }
 
-bool FunctionVariant::tryMatch(
-    const std::vector<TypePtr>& actualTypes) {
+bool FunctionVariant::tryMatch(const FunctionSignature &signature) {
+  const auto &actualTypes = signature.getArguments();
   if (variadic.has_value()) {
     // return false if actual types length less than min of variadic
     const auto max = variadic->max;
@@ -48,24 +47,21 @@ bool FunctionVariant::tryMatch(
       return false;
     }
 
-    const auto& variadicArgument = arguments[0];
+    const auto &variadicArgument = arguments[0];
     // actual type must same as the variadicArgument
-    if (const auto& variadicValueArgument =
-            std::dynamic_pointer_cast<const ValueArgument>(
-                variadicArgument)) {
-      for (auto& actualType : actualTypes) {
+    if (const auto &variadicValueArgument =
+            std::dynamic_pointer_cast<const ValueArgument>(variadicArgument)) {
+      for (auto &actualType : actualTypes) {
         if (!variadicValueArgument->type->isSameAs(actualType)) {
           return false;
         }
       }
     }
-    return true;
   } else {
     std::vector<std::shared_ptr<const ValueArgument>> valueArguments;
-    for (const auto& argument : arguments) {
-      if (const auto& variadicValueArgument =
-              std::dynamic_pointer_cast<const ValueArgument>(
-                  argument)) {
+    for (const auto &argument : arguments) {
+      if (const auto &variadicValueArgument =
+              std::dynamic_pointer_cast<const ValueArgument>(argument)) {
         valueArguments.emplace_back(variadicValueArgument);
       }
     }
@@ -76,19 +72,24 @@ bool FunctionVariant::tryMatch(
     }
 
     for (auto i = 0; i < actualTypes.size(); i++) {
-      const auto& valueArgument = valueArguments[i];
+      const auto &valueArgument = valueArguments[i];
       if (!valueArgument->type->isSameAs(actualTypes[i])) {
         return false;
       }
     }
+  }
+  const auto &sigReturnType = signature.getReturnType();
+  if (this->returnType && sigReturnType) {
+    return returnType->isSameAs(sigReturnType);
+  } else {
     return true;
   }
 }
 
-bool AggregateFunctionVariant::tryMatch(
-    const std::vector<TypePtr>& actualTypes) {
-  bool matched = FunctionVariant::tryMatch(actualTypes);
+bool AggregateFunctionVariant::tryMatch(const FunctionSignature &signature) {
+  bool matched = FunctionVariant::tryMatch(signature);
   if (!matched && intermediate) {
+    const auto &actualTypes = signature.getArguments();
     if (actualTypes.size() == 1) {
       return intermediate->isSameAs(actualTypes[0]);
     }

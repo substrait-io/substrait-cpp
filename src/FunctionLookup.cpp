@@ -17,35 +17,24 @@
 namespace io::substrait {
 
 FunctionVariantPtr
-FunctionLookup::lookupScalarFunction(const std::string &functionName,
-                                     const std::vector<TypePtr> &types) const {
-  const auto &functionMappings = functionMapping_->scalaMapping();
-  const auto &substraitFunctionName =
-      functionMappings.find(functionName) != functionMappings.end()
-          ? functionMappings.at(functionName)
-          : functionName;
-  return extension_->lookupScalarFunction(substraitFunctionName, types);
-}
+FunctionLookup::lookupFunction(const FunctionSignature &signature) const {
+  const auto &functionMappings = getFunctionMap();
 
-FunctionVariantPtr FunctionLookup::lookupAggregateFunction(
-    const std::string &functionName, const std::vector<TypePtr> &types) const {
-  const auto &functionMappings = functionMapping_->aggregateMapping();
   const auto &substraitFunctionName =
-      functionMappings.find(functionName) != functionMappings.end()
-          ? functionMappings.at(functionName)
-          : functionName;
-  return extension_->lookupAggregateFunction(substraitFunctionName, types);
-}
+      functionMappings.find(signature.getName()) != functionMappings.end()
+          ? functionMappings.at(signature.getName())
+          : signature.getName();
 
-FunctionVariantPtr
-FunctionLookup::lookupWindowFunction(const std::string &functionName,
-                                     const std::vector<TypePtr> &types) const {
-  const auto &functionMappings = functionMapping_->windowMapping();
-  const auto &substraitFunctionName =
-      functionMappings.find(functionName) != functionMappings.end()
-          ? functionMappings.at(functionName)
-          : functionName;
-  return extension_->lookupWindowFunction(substraitFunctionName, types);
+  const auto &functionVariants = getFunctionVariants();
+  auto functionVariantIter = functionVariants.find(substraitFunctionName);
+  if (functionVariantIter != functionVariants.end()) {
+    for (const auto &candidateFunctionVariant : functionVariantIter->second) {
+      if (candidateFunctionVariant->tryMatch(signature)) {
+        return candidateFunctionVariant;
+      }
+    }
+  }
+  return nullptr;
 }
 
 } // namespace io::substrait

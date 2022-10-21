@@ -47,7 +47,9 @@ set(SRCS
     Type.cpp
     Function.cpp
     Extension.cpp
-    FunctionMapping.h FunctionLookup.cpp FunctionLookup.h)
+    FunctionMapping.h
+    FunctionLookup.cpp
+    FunctionSignature.h)
 
 add_library(substrait-cpp ${SRCS})
 
