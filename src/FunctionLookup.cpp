@@ -21,9 +21,9 @@ FunctionLookup::lookupFunction(const FunctionSignature &signature) const {
   const auto &functionMappings = getFunctionMap();
 
   const auto &substraitFunctionName =
-      functionMappings.find(signature.getName()) != functionMappings.end()
-          ? functionMappings.at(signature.getName())
-          : signature.getName();
+      functionMappings.find(signature.name) != functionMappings.end()
+          ? functionMappings.at(signature.name)
+          : signature.name;
 
   const auto &functionVariants = getFunctionVariants();
   auto functionVariantIter = functionVariants.find(substraitFunctionName);

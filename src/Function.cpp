@@ -38,7 +38,7 @@ FunctionVariant::signature(const std::string &name,
 }
 
 bool FunctionVariant::tryMatch(const FunctionSignature &signature) {
-  const auto &actualTypes = signature.getArguments();
+  const auto &actualTypes = signature.arguments;
   if (variadic.has_value()) {
     // return false if actual types length less than min of variadic
     const auto max = variadic->max;
@@ -78,7 +78,7 @@ bool FunctionVariant::tryMatch(const FunctionSignature &signature) {
       }
     }
   }
-  const auto &sigReturnType = signature.getReturnType();
+  const auto &sigReturnType = signature.returnType;
   if (this->returnType && sigReturnType) {
     return returnType->isSameAs(sigReturnType);
   } else {
@@ -89,7 +89,7 @@ bool FunctionVariant::tryMatch(const FunctionSignature &signature) {
 bool AggregateFunctionVariant::tryMatch(const FunctionSignature &signature) {
   bool matched = FunctionVariant::tryMatch(signature);
   if (!matched && intermediate) {
-    const auto &actualTypes = signature.getArguments();
+    const auto &actualTypes = signature.arguments;
     if (actualTypes.size() == 1) {
       return intermediate->isSameAs(actualTypes[0]);
     }

@@ -24,25 +24,10 @@
 
 namespace io::substrait {
 
-class FunctionSignature {
-public:
-  /// construct the substrait function signature with function name, return type
-  /// and arguments.
-  FunctionSignature(const std::string &name,
-                    const std::vector<TypePtr> &arguments,
-                    const TypePtr &returnType)
-      : name_(name), arguments_(arguments), returnType_(returnType) {}
-
-  const std::string getName() const { return name_; }
-
-  const std::vector<TypePtr> getArguments() const { return arguments_; }
-
-  const TypePtr getReturnType() const { return returnType_; }
-
-private:
-  const std::string name_;
-  const std::vector<TypePtr> arguments_;
-  const TypePtr returnType_;
+struct FunctionSignature {
+  std::string name;
+  std::vector<TypePtr> arguments;
+  TypePtr returnType;
 };
 
 } // namespace io::substrait
