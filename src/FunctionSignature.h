@@ -19,7 +19,6 @@
 
 #pragma once
 
-#include "FunctionMapping.h"
 #include "Type.h"
 
 namespace io::substrait {
