@@ -56,7 +56,7 @@ function install_build_prerequisites {
       pkg=${BASH_REMATCH[1]}
       ver=${BASH_REMATCH[2]}
       echo "Installing '${pkg}' at '${ver}'"
-      tap="velox/local-${pkg}"
+      tap="local-${pkg}"
       brew tap-new "${tap}"
       brew extract "--version=${ver}" "${pkg}" "${tap}"
       brew install "${tap}/${pkg}@${ver}"
