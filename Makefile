@@ -19,13 +19,12 @@
 
 BUILD_TYPE := Release
 
-all: release
+all: debug
 
 clean:
 	@rm -rf build-*
 
 build-common:
-
 	@mkdir -p build-${BUILD_TYPE}
 	@cd build-${BUILD_TYPE} && \
 	cmake -Wno-dev \

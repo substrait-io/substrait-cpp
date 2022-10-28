@@ -20,21 +20,14 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+option(
+        BUILD_TESTING
+        "Enable substrait-cpp tests. This will enable all other build options automatically."
+        ON)
+
 find_package(Protobuf REQUIRED)
 include_directories(${PROTOBUF_INCLUDE_DIRS})
 
-# GCC needs to link a library to enable std::filesystem.
-if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
-  set(FILESYSTEM "stdc++fs")
-
-  # Ensure we have gcc at least 8+.
-  if(CMAKE_CXX_COMPILER_VERSION LESS 8.0)
-    message(
-      FATAL_ERROR "Substrait-CPP requires gcc > 8. Found ${CMAKE_CXX_COMPILER_VERSION}")
-  endif()
-else()
-  set(FILESYSTEM "")
-endif()
-
 add_subdirectory(third_party)
-add_subdirectory(src)
+include_directories(include)
+add_subdirectory(core)

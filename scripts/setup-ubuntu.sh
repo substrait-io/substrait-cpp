@@ -16,11 +16,8 @@ set -eufx -o pipefail
 SCRIPTDIR=$(dirname "${BASH_SOURCE[0]}")
 source $SCRIPTDIR/setup-helper-functions.sh
 
-# Folly must be built with the same compiler flags so that some low level types
-# are the same size.
 CPU_TARGET="${CPU_TARGET:-avx}"
 export COMPILER_FLAGS=$(get_cxx_flags $CPU_TARGET)
-FB_OS_VERSION=v2022.07.11.00
 NPROC=$(getconf _NPROCESSORS_ONLN)
 DEPENDENCY_DIR=${DEPENDENCY_DIR:-$(pwd)}
 
@@ -31,8 +28,7 @@ sudo --preserve-env apt install -y \
   ccache \
   ninja-build \
   checkinstall \
-  git \
-  libgtest-dev
+  git
 
 function run_and_time {
   time "$@"
@@ -54,7 +50,6 @@ function prompt {
   ) 2> /dev/null
 }
 
-
 function install_protobuf {
   wget https://github.com/protocolbuffers/protobuf/releases/download/v21.4/protobuf-all-21.4.tar.gz
   tar -xzf protobuf-all-21.4.tar.gz
@@ -69,9 +64,7 @@ function install_deps {
   run_and_time install_protobuf
 }
 
-
 (return 2> /dev/null) && return # If script was sourced, don't run commands.
-
 
 (
   if [[ $# -ne 0 ]]; then
@@ -82,7 +75,5 @@ function install_deps {
     install_deps
   fi
 )
-
-
 
 echo "All deps installed! Now try \"make\""
