@@ -12,11 +12,11 @@
  * limitations under the License.
  */
 
-#include "type/Type.h"
+#include "substrait/type/Type.h"
 #include <algorithm>
 #include <sstream>
 #include <stdexcept>
-#include "common/Exceptions.h"
+#include "substrait/common/Exceptions.h"
 
 namespace io::substrait {
 

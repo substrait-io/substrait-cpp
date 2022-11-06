@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include "function/FunctionLookup.h"
+#include "substrait/function/FunctionLookup.h"
 #include <gtest/gtest.h>
 #include <iostream>
 
@@ -21,7 +21,7 @@ using namespace io::substrait;
 class VeloxFunctionMappings : public FunctionMapping {
  public:
   /// scalar function names in difference between  velox and Substrait.
-  const FunctionMap& scalaMapping() const override {
+  [[nodiscard]] const FunctionMap& scalaMapping() const override {
     static const FunctionMap scalarMappings{
         {"plus", "add"},
         {"minus", "subtract"},
@@ -36,7 +36,7 @@ class VeloxFunctionMappings : public FunctionMapping {
 
 class FunctionLookupTest : public ::testing::Test {
  protected:
-  std::string getExtensionAbsolutePath() {
+  static std::string getExtensionAbsolutePath() {
     const std::string absolute_path = __FILE__;
     auto const pos = absolute_path.find_last_of('/');
     return absolute_path.substr(0, pos) +
@@ -124,8 +124,8 @@ TEST_F(FunctionLookupTest, aggregate) {
 
 TEST_F(FunctionLookupTest, logical) {
   testScalarFunctionLookup({"and", {}, BOOL()}, "and:bool");
-  testScalarFunctionLookup({"and", {BOOL()},BOOL()}, "and:bool");
-  testScalarFunctionLookup({"and", {BOOL(), BOOL()},BOOL()}, "and:bool");
+  testScalarFunctionLookup({"and", {BOOL()}, BOOL()}, "and:bool");
+  testScalarFunctionLookup({"and", {BOOL(), BOOL()}, BOOL()}, "and:bool");
 
   testScalarFunctionLookup({"or", {BOOL(), BOOL()}, BOOL()}, "or:bool");
   testScalarFunctionLookup({"not", {BOOL()}, BOOL()}, "not:bool");

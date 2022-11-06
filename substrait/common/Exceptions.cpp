@@ -12,16 +12,16 @@
  * limitations under the License.
  */
 
-#include "common/Exceptions.h"
+#include "substrait/common/Exceptions.h"
 #include "fmt/format.h"
 
 namespace io::substrait::common {
 
 SubstraitException::SubstraitException(
-    std::string exceptionCode,
-    std::string& exceptionMessage,
+    const std::string& exceptionCode,
+    const std::string& exceptionMessage,
     Type exceptionType,
-    std::string exceptionName)
+    const std::string& exceptionName)
     : msg_(fmt::format(
           "Exception: {}\nError Code: {}\nType: {}\nReason: {}\n"
           "Function: {}\nFile: {}\n:Line: {}\n",

@@ -14,23 +14,23 @@
 
 #pragma once
 
-#include "function/FunctionSignature.h"
-#include "type/Type.h"
+#include "substrait/function/FunctionSignature.h"
+#include "substrait/type/Type.h"
 
 namespace io::substrait {
 
 struct FunctionArgument {
-  virtual bool isRequired() const = 0;
+  [[nodiscard]] virtual bool isRequired() const = 0;
 
   /// Convert argument type to short type string based on
   /// https://substrait.io/extensions/#function-signature-compound-names
-  virtual std::string toTypeString() const = 0;
+  [[nodiscard]] virtual std::string toTypeString() const = 0;
 
   virtual bool isWildcardType() const {
     return false;
   };
 
-  virtual bool isValueArgument() const {
+  [[nodiscard]] virtual bool isValueArgument() const {
     return false;
   }
 };
@@ -38,23 +38,23 @@ struct FunctionArgument {
 using FunctionArgumentPtr = std::shared_ptr<FunctionArgument>;
 
 struct EnumArgument : public FunctionArgument {
-  bool required;
+  bool required{};
 
-  bool isRequired() const override {
+  [[nodiscard]] bool isRequired() const override {
     return required;
   }
 
-  std::string toTypeString() const override {
+  [[nodiscard]] std::string toTypeString() const override {
     return required ? "req" : "opt";
   }
 };
 
 struct TypeArgument : public FunctionArgument {
-  std::string toTypeString() const override {
+  [[nodiscard]] std::string toTypeString() const override {
     return "type";
   }
 
-  bool isRequired() const override {
+  [[nodiscard]] bool isRequired() const override {
     return true;
   }
 };
@@ -62,19 +62,19 @@ struct TypeArgument : public FunctionArgument {
 struct ValueArgument : public FunctionArgument {
   ParameterizedTypePtr type;
 
-  std::string toTypeString() const override {
+  [[nodiscard]] std::string toTypeString() const override {
     return type->signature();
   }
 
-  bool isRequired() const override {
+  [[nodiscard]] bool isRequired() const override {
     return true;
   }
 
-  bool isWildcardType() const override {
+  [[nodiscard]] bool isWildcardType() const override {
     return type->isWildcard();
   }
 
-  bool isValueArgument() const override {
+  [[nodiscard]] bool isValueArgument() const override {
     return true;
   }
 };
@@ -100,7 +100,7 @@ struct FunctionVariant {
       const std::vector<FunctionArgumentPtr>& arguments);
 
   /// Create function signature by function name and arguments.
-  const std::string signature() const {
+  [[nodiscard]] const std::string signature() const {
     return signature(name, arguments);
   }
 };
@@ -112,7 +112,6 @@ struct ScalarFunctionVariant : public FunctionVariant {};
 struct AggregateFunctionVariant : public FunctionVariant {
   ParameterizedTypePtr intermediate;
   bool deterministic;
-
 
   bool tryMatch(const FunctionSignature& signature) override;
 };

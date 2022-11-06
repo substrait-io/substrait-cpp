@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "type/Type.h"
+#include "substrait/type/Type.h"
 
 namespace io::substrait {
 
