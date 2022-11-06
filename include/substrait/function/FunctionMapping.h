@@ -26,19 +26,19 @@ using FunctionMap = std::unordered_map<std::string, std::string>;
 class FunctionMapping {
  public:
   /// Scalar function names in difference between engine own and substrait.
-  virtual const FunctionMap& scalaMapping() const {
+  [[nodiscard]] virtual const FunctionMap& scalaMapping() const {
     static const FunctionMap scalaFunctionMap{};
     return scalaFunctionMap;
   }
 
   /// Scalar function names in difference between engine own and substrait.
-  virtual const FunctionMap& aggregateMapping() const {
+  [[nodiscard]] virtual const FunctionMap& aggregateMapping() const {
     static const FunctionMap aggregateFunctionMap{};
     return aggregateFunctionMap;
   }
 
   /// Window function names in difference between engine own and substrait.
-  virtual const FunctionMap& windowMapping() const {
+  [[nodiscard]] virtual const FunctionMap& windowMapping() const {
     static const FunctionMap windowFunctionMap{};
     return windowFunctionMap;
   }

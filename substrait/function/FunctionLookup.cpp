@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include "function/FunctionLookup.h"
+#include "substrait/function/FunctionLookup.h"
 
 namespace io::substrait {
 

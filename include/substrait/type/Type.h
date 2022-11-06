@@ -199,30 +199,31 @@ struct TypeTraits<TypeKind::kUserDefined> {
 
 class ParameterizedType {
  public:
-  ParameterizedType(bool nullable = false) : nullable_(nullable) {}
+  explicit ParameterizedType(bool nullable = false) : nullable_(nullable) {}
 
-  virtual std::string signature() const = 0;
+  [[nodiscard]] virtual std::string signature() const = 0;
 
-  virtual TypeKind kind() const = 0;
+  [[nodiscard]] virtual TypeKind kind() const = 0;
 
   /// Deserialize substrait raw type string into Substrait extension  type.
   /// @param rawType - substrait extension raw string type
   static std::shared_ptr<const ParameterizedType> decode(
       const std::string& rawType);
 
-  const bool& nullable() const {
+  [[nodiscard]] const bool& nullable() const {
     return nullable_;
   }
 
-  bool nullMatch(const std::shared_ptr<const ParameterizedType>& type) const {
+  [[nodiscard]] bool nullMatch(
+      const std::shared_ptr<const ParameterizedType>& type) const {
     return nullable() || nullable() == type->nullable();
   }
   /// Test type is a Wildcard type or not.
-  virtual bool isWildcard() const {
+  [[nodiscard]] virtual bool isWildcard() const {
     return false;
   }
 
-  virtual bool isMatch(
+  [[nodiscard]] virtual bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const = 0;
 
  private:
@@ -233,7 +234,7 @@ using ParameterizedTypePtr = std::shared_ptr<const ParameterizedType>;
 
 class Type : public ParameterizedType {
  public:
-  Type(bool nullable = false) : ParameterizedType(nullable) {}
+  explicit Type(bool nullable = false) : ParameterizedType(nullable) {}
 };
 
 using TypePtr = std::shared_ptr<const Type>;
@@ -242,17 +243,17 @@ using TypePtr = std::shared_ptr<const Type>;
 template <TypeKind Kind>
 class TypeBase : public Type {
  public:
-  TypeBase(bool nullable = false) : Type(nullable) {}
+  explicit TypeBase(bool nullable = false) : Type(nullable) {}
 
-  std::string signature() const override {
+  [[nodiscard]] std::string signature() const override {
     return TypeTraits<Kind>::signature;
   }
 
-  virtual TypeKind kind() const override {
+  [[nodiscard]] TypeKind kind() const override {
     return Kind;
   }
 
-  bool isMatch(
+  [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override {
     return kind() == type->kind() && nullMatch(type);
   }
@@ -261,7 +262,7 @@ class TypeBase : public Type {
 template <TypeKind Kind>
 class ScalarType : public TypeBase<Kind> {
  public:
-  ScalarType(bool nullable) : TypeBase<Kind>(nullable) {}
+  explicit ScalarType(bool nullable) : TypeBase<Kind>(nullable) {}
 };
 
 class Decimal : public TypeBase<TypeKind::kDecimal> {
@@ -271,17 +272,17 @@ class Decimal : public TypeBase<TypeKind::kDecimal> {
         precision_(precision),
         scale_(scale) {}
 
-  std::string signature() const override;
+  [[nodiscard]] std::string signature() const override;
 
-  const int& precision() const {
+  [[nodiscard]] const int& precision() const {
     return precision_;
   }
 
-  const int& scale() const {
+  [[nodiscard]] const int& scale() const {
     return scale_;
   }
 
-  bool isMatch(
+  [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
  private:
@@ -291,16 +292,16 @@ class Decimal : public TypeBase<TypeKind::kDecimal> {
 
 class FixedBinary : public TypeBase<TypeKind::kFixedBinary> {
  public:
-  FixedBinary(int length, bool nullable = false)
+  explicit FixedBinary(int length, bool nullable = false)
       : TypeBase<TypeKind::kFixedBinary>(nullable), length_(length) {}
 
-  const int& length() const {
+  [[nodiscard]] const int& length() const {
     return length_;
   }
 
-  std::string signature() const override;
+  [[nodiscard]] std::string signature() const override;
 
-  bool isMatch(
+  [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
  private:
@@ -309,16 +310,16 @@ class FixedBinary : public TypeBase<TypeKind::kFixedBinary> {
 
 class FixedChar : public TypeBase<TypeKind::kFixedChar> {
  public:
-  FixedChar(int length, bool nullable = false)
+  explicit FixedChar(int length, bool nullable = false)
       : TypeBase<TypeKind::kFixedChar>(nullable), length_(length){};
 
-  const int& length() const {
+  [[nodiscard]] const int& length() const {
     return length_;
   }
 
-  std::string signature() const override;
+  [[nodiscard]] std::string signature() const override;
 
-  bool isMatch(
+  [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
  private:
@@ -327,16 +328,16 @@ class FixedChar : public TypeBase<TypeKind::kFixedChar> {
 
 class Varchar : public TypeBase<TypeKind::kVarchar> {
  public:
-  Varchar(int length, bool nullable = false)
+  explicit Varchar(int length, bool nullable = false)
       : TypeBase<TypeKind::kVarchar>(nullable), length_(length){};
 
-  const int& length() const {
+  [[nodiscard]] const int& length() const {
     return length_;
   }
 
-  std::string signature() const override;
+  [[nodiscard]] std::string signature() const override;
 
-  bool isMatch(
+  [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
  private:
@@ -345,17 +346,17 @@ class Varchar : public TypeBase<TypeKind::kVarchar> {
 
 class List : public TypeBase<TypeKind::kList> {
  public:
-  List(TypePtr elementType, bool nullable = false)
+  explicit List(TypePtr elementType, bool nullable = false)
       : TypeBase<TypeKind::kList>(nullable),
         elementType_(std::move(elementType)){};
 
-  const TypePtr& elementType() const {
+  [[nodiscard]] const TypePtr& elementType() const {
     return elementType_;
   }
 
-  std::string signature() const override;
+  [[nodiscard]] std::string signature() const override;
 
-  bool isMatch(
+  [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
  private:
@@ -364,16 +365,16 @@ class List : public TypeBase<TypeKind::kList> {
 
 class Struct : public TypeBase<TypeKind::kStruct> {
  public:
-  Struct(std::vector<TypePtr> types, bool nullable = false)
+  explicit Struct(std::vector<TypePtr> types, bool nullable = false)
       : TypeBase<TypeKind::kStruct>(nullable), children_(std::move(types)) {}
 
-  std::string signature() const override;
+  [[nodiscard]] std::string signature() const override;
 
-  const std::vector<TypePtr>& children() const {
+  [[nodiscard]] const std::vector<TypePtr>& children() const {
     return children_;
   }
 
-  bool isMatch(
+  [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
  private:
@@ -387,17 +388,17 @@ class Map : public TypeBase<TypeKind::kMap> {
         keyType_(std::move(keyType)),
         valueType_(std::move(valueType)) {}
 
-  const TypePtr& keyType() const {
+  [[nodiscard]] const TypePtr& keyType() const {
     return keyType_;
   }
 
-  const TypePtr& valueType() const {
+  [[nodiscard]] const TypePtr& valueType() const {
     return valueType_;
   }
 
-  std::string signature() const override;
+  [[nodiscard]] std::string signature() const override;
 
-  bool isMatch(
+  [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
  private:
@@ -408,7 +409,8 @@ class Map : public TypeBase<TypeKind::kMap> {
 /// ParameterizedType represent a type in
 class ParameterizedTypeBase : public ParameterizedType {
  public:
-  ParameterizedTypeBase(bool nullable = false) : ParameterizedType(nullable) {}
+  explicit ParameterizedTypeBase(bool nullable = false)
+      : ParameterizedType(nullable) {}
 };
 
 class UsedDefinedType : public ParameterizedTypeBase {
@@ -416,19 +418,19 @@ class UsedDefinedType : public ParameterizedTypeBase {
   UsedDefinedType(std::string value, bool nullable)
       : ParameterizedTypeBase(nullable), value_(std::move(value)) {}
 
-  const std::string& value() const {
+  [[nodiscard]] const std::string& value() const {
     return value_;
   }
 
-  TypeKind kind() const override {
+  [[nodiscard]] TypeKind kind() const override {
     return TypeKind::kUserDefined;
   }
 
-  std::string signature() const override {
+  [[nodiscard]] std::string signature() const override {
     return TypeTraits<TypeKind::kUserDefined>::signature;
   }
 
-  bool isMatch(
+  [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
  private:
@@ -439,26 +441,26 @@ class UsedDefinedType : public ParameterizedTypeBase {
 /// A string literal type can present the 'any1'.
 class StringLiteral : public ParameterizedTypeBase {
  public:
-  StringLiteral(std::string value)
+  explicit StringLiteral(std::string value)
       : ParameterizedTypeBase(false), value_(std::move(value)) {}
 
-  std::string signature() const override {
+  [[nodiscard]] std::string signature() const override {
     return value_;
   }
 
-  TypeKind kind() const override {
+  [[nodiscard]] TypeKind kind() const override {
     return TypeKind::KIND_NOT_SET;
   }
 
-  const std::string& value() const {
+  [[nodiscard]] const std::string& value() const {
     return value_;
   }
 
-  bool isWildcard() const override {
+  [[nodiscard]] bool isWildcard() const override {
     return value_.find("any") == 0 || value_ == "T";
   }
 
-  bool isMatch(
+  [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
  private:
@@ -477,21 +479,21 @@ class ParameterizedDecimal : public ParameterizedTypeBase {
         precision_(std::move(precision)),
         scale_(std::move(scale)) {}
 
-  std::string signature() const override;
+  [[nodiscard]] std::string signature() const override;
 
-  const StringLiteralPtr& precision() const {
+  [[nodiscard]] const StringLiteralPtr& precision() const {
     return precision_;
   }
 
-  TypeKind kind() const override {
+  [[nodiscard]] TypeKind kind() const override {
     return TypeKind::kDecimal;
   }
 
-  const StringLiteralPtr& scale() const {
+  [[nodiscard]] const StringLiteralPtr& scale() const {
     return scale_;
   }
 
-  bool isMatch(
+  [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
  private:
@@ -501,20 +503,22 @@ class ParameterizedDecimal : public ParameterizedTypeBase {
 
 class ParameterizedFixedBinary : public ParameterizedTypeBase {
  public:
-  ParameterizedFixedBinary(StringLiteralPtr length, bool nullable = false)
+  explicit ParameterizedFixedBinary(
+      StringLiteralPtr length,
+      bool nullable = false)
       : ParameterizedTypeBase(nullable), length_(std::move(length)) {}
 
-  const StringLiteralPtr& length() const {
+  [[nodiscard]] const StringLiteralPtr& length() const {
     return length_;
   }
 
-  TypeKind kind() const override {
+  [[nodiscard]] TypeKind kind() const override {
     return TypeKind::kFixedBinary;
   }
 
-  std::string signature() const override;
+  [[nodiscard]] std::string signature() const override;
 
-  bool isMatch(
+  [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
  private:
@@ -523,20 +527,22 @@ class ParameterizedFixedBinary : public ParameterizedTypeBase {
 
 class ParameterizedFixedChar : public ParameterizedTypeBase {
  public:
-  ParameterizedFixedChar(StringLiteralPtr length, bool nullable = false)
+  explicit ParameterizedFixedChar(
+      StringLiteralPtr length,
+      bool nullable = false)
       : ParameterizedTypeBase(nullable), length_(std::move(length)) {}
 
-  const StringLiteralPtr& length() const {
+  [[nodiscard]] const StringLiteralPtr& length() const {
     return length_;
   }
 
-  TypeKind kind() const override {
+  [[nodiscard]] TypeKind kind() const override {
     return TypeKind::kFixedChar;
   }
 
-  std::string signature() const override;
+  [[nodiscard]] std::string signature() const override;
 
-  bool isMatch(
+  [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
  private:
@@ -545,20 +551,20 @@ class ParameterizedFixedChar : public ParameterizedTypeBase {
 
 class ParameterizedVarchar : public ParameterizedTypeBase {
  public:
-  ParameterizedVarchar(const StringLiteralPtr& length, bool nullable = false)
-      : ParameterizedTypeBase(nullable), length_(length) {}
+  explicit ParameterizedVarchar(StringLiteralPtr length, bool nullable = false)
+      : ParameterizedTypeBase(nullable), length_(std::move(length)) {}
 
-  const StringLiteralPtr& length() const {
+  [[nodiscard]] const StringLiteralPtr& length() const {
     return length_;
   }
 
-  TypeKind kind() const override {
+  [[nodiscard]] TypeKind kind() const override {
     return TypeKind::kVarchar;
   }
 
-  std::string signature() const override;
+  [[nodiscard]] std::string signature() const override;
 
-  bool isMatch(
+  [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
  private:
@@ -567,20 +573,22 @@ class ParameterizedVarchar : public ParameterizedTypeBase {
 
 class ParameterizedList : public ParameterizedTypeBase {
  public:
-  ParameterizedList(ParameterizedTypePtr elementType, bool nullable = false)
+  explicit ParameterizedList(
+      ParameterizedTypePtr elementType,
+      bool nullable = false)
       : ParameterizedTypeBase(nullable), elementType_(std::move(elementType)){};
 
-  const ParameterizedTypePtr& elementType() const {
+  [[nodiscard]] const ParameterizedTypePtr& elementType() const {
     return elementType_;
   }
 
-  TypeKind kind() const override {
+  [[nodiscard]] TypeKind kind() const override {
     return TypeKind::kList;
   }
 
-  std::string signature() const override;
+  [[nodiscard]] std::string signature() const override;
 
-  bool isMatch(
+  [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
  private:
@@ -589,22 +597,22 @@ class ParameterizedList : public ParameterizedTypeBase {
 
 class ParameterizedStruct : public ParameterizedTypeBase {
  public:
-  ParameterizedStruct(
+  explicit ParameterizedStruct(
       std::vector<ParameterizedTypePtr> types,
       bool nullable = false)
       : ParameterizedTypeBase(nullable), children_(std::move(types)) {}
 
-  std::string signature() const override;
+  [[nodiscard]] std::string signature() const override;
 
-  const std::vector<ParameterizedTypePtr>& children() const {
+  [[nodiscard]] const std::vector<ParameterizedTypePtr>& children() const {
     return children_;
   }
 
-  TypeKind kind() const override {
+  [[nodiscard]] TypeKind kind() const override {
     return TypeKind::kStruct;
   }
 
-  bool isMatch(
+  [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
  private:
@@ -621,20 +629,20 @@ class ParameterizedMap : public ParameterizedTypeBase {
         keyType_(std::move(keyType)),
         valueType_(std::move(valueType)) {}
 
-  const ParameterizedTypePtr& keyType() const {
+  [[nodiscard]] const ParameterizedTypePtr& keyType() const {
     return keyType_;
   }
 
-  TypeKind kind() const override {
+  [[nodiscard]] TypeKind kind() const override {
     return TypeKind::kMap;
   }
-  const ParameterizedTypePtr& valueType() const {
+  [[nodiscard]] const ParameterizedTypePtr& valueType() const {
     return valueType_;
   }
 
-  std::string signature() const override;
+  [[nodiscard]] std::string signature() const override;
 
-  bool isMatch(
+  [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
  private:

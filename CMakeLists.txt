@@ -30,4 +30,4 @@ include_directories(${PROTOBUF_INCLUDE_DIRS})
 
 add_subdirectory(third_party)
 include_directories(include)
-add_subdirectory(core)
+add_subdirectory(substrait)

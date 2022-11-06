@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include "type/Type.h"
+#include "substrait/type/Type.h"
 #include <gtest/gtest.h>
 
 using namespace io::substrait;
