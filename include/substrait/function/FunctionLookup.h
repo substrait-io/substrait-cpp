@@ -14,7 +14,6 @@
 
 #pragma once
 
-#include <utility>
 
 #include "substrait/function/Extension.h"
 #include "substrait/function/FunctionMapping.h"
