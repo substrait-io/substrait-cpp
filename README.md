@@ -24,12 +24,6 @@ $ ./scripts/setup-ubuntu.sh
 $ make
 ```
 
-## Community
-
-The main communication channel with the substrait through the
-[substrait chanel](http://substrait.slack.com).
-
-
 ## License
 
 substrait-cpp is licensed under the Apache 2.0 License. A copy of the license
