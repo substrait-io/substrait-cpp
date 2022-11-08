@@ -37,18 +37,25 @@ inline constexpr auto kInvalidState = "INVALID_STATE";
 // An error raised when unreachable code point was executed.
 inline constexpr auto kUnreachableCode = "UNREACHABLE_CODE";
 
-// An error raised when a requested operation is not yet supported.
+// An error raised when a requested operation is not implemented.
 inline constexpr auto kNotImplemented = "NOT_IMPLEMENTED";
-
-// An error raised when a method has been passed an illegal or inappropriate
-// argument.
-inline constexpr auto kIllegalArgument = "ILLEGAL_ARGUMENT";
 
 } // namespace error_code
 
 class SubstraitException : public std::exception {
  public:
-  enum class Type { kUser = 0, kSystem = 1 };
+
+  enum class Type {
+    // Errors where the root cause of the problem is either because of bad input
+    // or an unsupported pattern of use are classified with USER. Examples
+    // of errors in this category include syntax errors, unavailable names or
+    // objects.
+    kUser = 0,
+
+    // Errors where the root cause of the problem is some unreliable aspect of the
+    // system are classified with SYSTEM.
+    kSystem = 1
+  };
 
   SubstraitException(
       const std::string& exceptionCode,
@@ -132,10 +139,10 @@ std::string errorMessage(fmt::string_view fmt, const Args&... args) {
       substrait::common::error_code::kNotImplemented, \
       ##__VA_ARGS__)
 
-#define SUBSTRAIT_ILLEGAL_ARGUMENT(...)                      \
+#define SUBSTRAIT_IVALID_ARGUMENT(...)                      \
   SUBSTRAIT_THROW(                                           \
       substrait::common::SubstraitUserError,           \
-      substrait::common::error_code::kIllegalArgument, \
+      substrait::common::error_code::kInvalidArgument, \
       ##__VA_ARGS__)
 
 } // namespace substrait::common

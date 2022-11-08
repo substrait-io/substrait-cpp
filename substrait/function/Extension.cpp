@@ -17,7 +17,7 @@
 
 bool decodeFunctionVariant(
     const YAML::Node& node,
-    substrait::FunctionVariant& function) {
+    substrait::FunctionImplementation& function) {
   const auto& returnType = node["return"];
   if (returnType && returnType.IsScalar()) {
     /// Return type can be an expression.
@@ -111,19 +111,19 @@ struct YAML::convert<substrait::TypeArgument> {
 };
 
 template <>
-struct YAML::convert<substrait::ScalarFunctionVariant> {
+struct YAML::convert<substrait::ScalarFunctionImplementation> {
   static bool decode(
       const Node& node,
-      substrait::ScalarFunctionVariant& function) {
+      substrait::ScalarFunctionImplementation& function) {
     return decodeFunctionVariant(node, function);
   };
 };
 
 template <>
-struct YAML::convert<substrait::AggregateFunctionVariant> {
+struct YAML::convert<substrait::AggregateFunctionImplementation> {
   static bool decode(
       const Node& node,
-      substrait::AggregateFunctionVariant& function) {
+      substrait::AggregateFunctionImplementation& function) {
     const auto& res = decodeFunctionVariant(node, function);
     if (res) {
       const auto& intermediate = node["intermediate"];
@@ -192,11 +192,11 @@ std::shared_ptr<Extension> Extension::load(
         const auto functionName = scalarFunctionNode["name"].as<std::string>();
         for (auto& scalaFunctionVariantNode : scalarFunctionNode["impls"]) {
           auto scalarFunctionVariant =
-              scalaFunctionVariantNode.as<ScalarFunctionVariant>();
+              scalaFunctionVariantNode.as<ScalarFunctionImplementation>();
           scalarFunctionVariant.name = functionName;
           scalarFunctionVariant.uri = extensionUri;
           extension->addScalarFunctionVariant(
-              std::make_shared<ScalarFunctionVariant>(scalarFunctionVariant));
+              std::make_shared<ScalarFunctionImplementation>(scalarFunctionVariant));
         }
       }
     }
@@ -209,11 +209,11 @@ std::shared_ptr<Extension> Extension::load(
         for (auto& aggregateFunctionVariantNode :
              aggregateFunctionNode["impls"]) {
           auto aggregateFunctionVariant =
-              aggregateFunctionVariantNode.as<AggregateFunctionVariant>();
+              aggregateFunctionVariantNode.as<AggregateFunctionImplementation>();
           aggregateFunctionVariant.name = functionName;
           aggregateFunctionVariant.uri = extensionUri;
           extension->addAggregateFunctionVariant(
-              std::make_shared<AggregateFunctionVariant>(
+              std::make_shared<AggregateFunctionImplementation>(
                   aggregateFunctionVariant));
         }
       }
@@ -232,14 +232,14 @@ std::shared_ptr<Extension> Extension::load(
 }
 
 void Extension::addWindowFunctionVariant(
-    const FunctionVariantPtr& functionVariant) {
+    const FunctionImplementationPtr& functionVariant) {
   const auto& functionVariants =
       windowFunctionVariantMap_.find(functionVariant->name);
   if (functionVariants != windowFunctionVariantMap_.end()) {
     auto& variants = functionVariants->second;
     variants.emplace_back(functionVariant);
   } else {
-    std::vector<FunctionVariantPtr> variants;
+    std::vector<FunctionImplementationPtr> variants;
     variants.emplace_back(functionVariant);
     windowFunctionVariantMap_.insert(
         {functionVariant->name, std::move(variants)});
@@ -259,14 +259,14 @@ TypeVariantPtr Extension::lookupType(const std::string& typeName) const {
 }
 
 void Extension::addScalarFunctionVariant(
-    const FunctionVariantPtr& functionVariant) {
+    const FunctionImplementationPtr& functionVariant) {
   const auto& functionVariants =
       scalarFunctionVariantMap_.find(functionVariant->name);
   if (functionVariants != scalarFunctionVariantMap_.end()) {
     auto& variants = functionVariants->second;
     variants.emplace_back(functionVariant);
   } else {
-    std::vector<FunctionVariantPtr> variants;
+    std::vector<FunctionImplementationPtr> variants;
     variants.emplace_back(functionVariant);
     scalarFunctionVariantMap_.insert(
         {functionVariant->name, std::move(variants)});
@@ -274,14 +274,14 @@ void Extension::addScalarFunctionVariant(
 }
 
 void Extension::addAggregateFunctionVariant(
-    const FunctionVariantPtr& functionVariant) {
+    const FunctionImplementationPtr& functionVariant) {
   const auto& functionVariants =
       aggregateFunctionVariantMap_.find(functionVariant->name);
   if (functionVariants != aggregateFunctionVariantMap_.end()) {
     auto& variants = functionVariants->second;
     variants.emplace_back(functionVariant);
   } else {
-    std::vector<FunctionVariantPtr> variants;
+    std::vector<FunctionImplementationPtr> variants;
     variants.emplace_back(functionVariant);
     aggregateFunctionVariantMap_.insert(
         {functionVariant->name, std::move(variants)});

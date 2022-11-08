@@ -24,7 +24,7 @@ class FunctionLookup {
   explicit FunctionLookup(ExtensionPtr extension)
       : extension_(std::move(extension)) {}
 
-  [[nodiscard]] virtual FunctionVariantPtr lookupFunction(
+  [[nodiscard]] virtual FunctionImplementationPtr lookupFunction(
       const FunctionSignature& signature) const;
 
   virtual ~FunctionLookup() = default;

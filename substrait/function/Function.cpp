@@ -17,7 +17,8 @@
 
 namespace substrait {
 
-std::string FunctionVariant::signature(
+namespace {
+std::string signatureFor(
     const std::string& name,
     const std::vector<FunctionArgumentPtr>& arguments) {
   std::stringstream ss;
@@ -36,8 +37,10 @@ std::string FunctionVariant::signature(
 
   return ss.str();
 }
+}
 
-bool FunctionVariant::tryMatch(const FunctionSignature& signature) {
+
+bool FunctionImplementation::tryMatch(const FunctionSignature& signature) {
   const auto& actualTypes = signature.arguments;
   if (variadic.has_value()) {
     // return false if actual types length less than min of variadic
@@ -86,8 +89,12 @@ bool FunctionVariant::tryMatch(const FunctionSignature& signature) {
   }
 }
 
-bool AggregateFunctionVariant::tryMatch(const FunctionSignature& signature) {
-  bool matched = FunctionVariant::tryMatch(signature);
+std::string FunctionImplementation::signature() const {
+  return signatureFor(name, arguments);
+}
+
+bool AggregateFunctionImplementation::tryMatch(const FunctionSignature& signature) {
+  bool matched = FunctionImplementation::tryMatch(signature);
   if (!matched && intermediate) {
     const auto& actualTypes = signature.arguments;
     if (actualTypes.size() == 1) {
