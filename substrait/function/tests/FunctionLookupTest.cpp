@@ -12,27 +12,11 @@
  * limitations under the License.
  */
 
-#include "substrait/function/FunctionLookup.h"
-#include <gtest/gtest.h>
 #include <iostream>
+#include <gtest/gtest.h>
+#include "substrait/function/FunctionLookup.h"
 
-using namespace io::substrait;
-
-class VeloxFunctionMappings : public FunctionMapping {
- public:
-  /// scalar function names in difference between  velox and Substrait.
-  [[nodiscard]] const FunctionMap& scalaMapping() const override {
-    static const FunctionMap scalarMappings{
-        {"plus", "add"},
-        {"minus", "subtract"},
-        {"mod", "modulus"},
-        {"eq", "equal"},
-        {"neq", "not_equal"},
-        {"substr", "substring"},
-    };
-    return scalarMappings;
-  };
-};
+using namespace substrait;
 
 class FunctionLookupTest : public ::testing::Test {
  protected:
@@ -45,12 +29,10 @@ class FunctionLookupTest : public ::testing::Test {
 
   void SetUp() override {
     ExtensionPtr extension_ = Extension::load(getExtensionAbsolutePath());
-    FunctionMappingPtr mappings_ =
-        std::make_shared<const VeloxFunctionMappings>();
     scalarFunctionLookup_ =
-        std::make_shared<ScalarFunctionLookup>(extension_, mappings_);
+        std::make_shared<ScalarFunctionLookup>(extension_);
     aggregateFunctionLookup_ =
-        std::make_shared<AggregateFunctionLookup>(extension_, mappings_);
+        std::make_shared<AggregateFunctionLookup>(extension_);
   }
 
   void testScalarFunctionLookup(
@@ -105,8 +87,6 @@ TEST_F(FunctionLookupTest, arithmetic_function) {
       {"add", {TINYINT(), TINYINT()}, TINYINT()}, "add:opt_i8_i8");
 
   testScalarFunctionLookup(
-      {"plus", {TINYINT(), TINYINT()}, TINYINT()}, "add:opt_i8_i8");
-  testScalarFunctionLookup(
       {"divide",
        {
            FLOAT(),
@@ -139,6 +119,6 @@ TEST_F(FunctionLookupTest, string_function) {
       {"like", {VARCHAR(3), VARCHAR(4)}, BOOL()},
       "like:opt_vchar<L1>_vchar<L2>");
   testScalarFunctionLookup(
-      {"substr", {STRING(), INTEGER(), INTEGER()}, STRING()},
+      {"substring", {STRING(), INTEGER(), INTEGER()}, STRING()},
       "substring:str_i32_i32");
 }

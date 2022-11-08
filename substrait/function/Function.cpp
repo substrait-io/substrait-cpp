@@ -12,10 +12,10 @@
  * limitations under the License.
  */
 
-#include "substrait/function/Function.h"
 #include <sstream>
+#include "substrait/function/Function.h"
 
-namespace io::substrait {
+namespace substrait {
 
 std::string FunctionVariant::signature(
     const std::string& name,
@@ -97,4 +97,4 @@ bool AggregateFunctionVariant::tryMatch(const FunctionSignature& signature) {
   return matched;
 }
 
-} // namespace io::substrait
+} // namespace substrait

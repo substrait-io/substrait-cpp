@@ -12,12 +12,12 @@
  * limitations under the License.
  */
 
+#include <yaml-cpp/yaml.h>
 #include "substrait/function/Extension.h"
-#include "yaml-cpp/yaml.h"
 
 bool decodeFunctionVariant(
     const YAML::Node& node,
-    io::substrait::FunctionVariant& function) {
+    substrait::FunctionVariant& function) {
   const auto& returnType = node["return"];
   if (returnType && returnType.IsScalar()) {
     /// Return type can be an expression.
@@ -29,22 +29,22 @@ bool decodeFunctionVariant(
     std::string lastReturnType;
     while (std::getline(ss, lastReturnType, '\n')) {
     }
-    function.returnType = io::substrait::Type::decode(lastReturnType);
+    function.returnType = substrait::Type::decode(lastReturnType);
   }
   const auto& args = node["args"];
   if (args && args.IsSequence()) {
     for (auto& arg : args) {
       if (arg["options"]) { // enum argument
-        auto enumArgument = std::make_shared<io::substrait::EnumArgument>(
-            arg.as<io::substrait::EnumArgument>());
+        auto enumArgument = std::make_shared<substrait::EnumArgument>(
+            arg.as<substrait::EnumArgument>());
         function.arguments.emplace_back(enumArgument);
       } else if (arg["value"]) { // value argument
-        auto valueArgument = std::make_shared<io::substrait::ValueArgument>(
-            arg.as<io::substrait::ValueArgument>());
+        auto valueArgument = std::make_shared<substrait::ValueArgument>(
+            arg.as<substrait::ValueArgument>());
         function.arguments.emplace_back(valueArgument);
       } else { // type argument
-        auto typeArgument = std::make_shared<io::substrait::TypeArgument>(
-            arg.as<io::substrait::TypeArgument>());
+        auto typeArgument = std::make_shared<substrait::TypeArgument>(
+            arg.as<substrait::TypeArgument>());
         function.arguments.emplace_back(typeArgument);
       }
     }
@@ -55,7 +55,7 @@ bool decodeFunctionVariant(
     auto& min = variadic["min"];
     auto& max = variadic["max"];
     if (min) {
-      function.variadic = std::make_optional<io::substrait::FunctionVariadic>(
+      function.variadic = std::make_optional<substrait::FunctionVariadic>(
           {min.as<int>(),
            max ? std::make_optional<int>(max.as<int>()) : std::nullopt});
     } else {
@@ -69,8 +69,8 @@ bool decodeFunctionVariant(
 }
 
 template <>
-struct YAML::convert<io::substrait::EnumArgument> {
-  static bool decode(const Node& node, io::substrait::EnumArgument& argument) {
+struct YAML::convert<substrait::EnumArgument> {
+  static bool decode(const Node& node, substrait::EnumArgument& argument) {
     // 'options' is required property
     const auto& options = node["options"];
     if (options && options.IsSequence()) {
@@ -84,12 +84,12 @@ struct YAML::convert<io::substrait::EnumArgument> {
 };
 
 template <>
-struct YAML::convert<io::substrait::ValueArgument> {
-  static bool decode(const Node& node, io::substrait::ValueArgument& argument) {
+struct YAML::convert<substrait::ValueArgument> {
+  static bool decode(const Node& node, substrait::ValueArgument& argument) {
     const auto& value = node["value"];
     if (value && value.IsScalar()) {
       auto valueType = value.as<std::string>();
-      argument.type = io::substrait::Type::decode(valueType);
+      argument.type = substrait::Type::decode(valueType);
       return true;
     }
     return false;
@@ -97,10 +97,10 @@ struct YAML::convert<io::substrait::ValueArgument> {
 };
 
 template <>
-struct YAML::convert<io::substrait::TypeArgument> {
+struct YAML::convert<substrait::TypeArgument> {
   static bool decode(
       const YAML::Node& node,
-      io::substrait::TypeArgument& argument) {
+      substrait::TypeArgument& argument) {
     // no properties need to populate for type argument, just return true if
     // 'type' element exists.
     if (node["type"]) {
@@ -111,25 +111,25 @@ struct YAML::convert<io::substrait::TypeArgument> {
 };
 
 template <>
-struct YAML::convert<io::substrait::ScalarFunctionVariant> {
+struct YAML::convert<substrait::ScalarFunctionVariant> {
   static bool decode(
       const Node& node,
-      io::substrait::ScalarFunctionVariant& function) {
+      substrait::ScalarFunctionVariant& function) {
     return decodeFunctionVariant(node, function);
   };
 };
 
 template <>
-struct YAML::convert<io::substrait::AggregateFunctionVariant> {
+struct YAML::convert<substrait::AggregateFunctionVariant> {
   static bool decode(
       const Node& node,
-      io::substrait::AggregateFunctionVariant& function) {
+      substrait::AggregateFunctionVariant& function) {
     const auto& res = decodeFunctionVariant(node, function);
     if (res) {
       const auto& intermediate = node["intermediate"];
       if (intermediate) {
         function.intermediate =
-            io::substrait::ParameterizedType::decode(intermediate.as<std::string>());
+            substrait::ParameterizedType::decode(intermediate.as<std::string>());
       }
     }
     return res;
@@ -137,8 +137,8 @@ struct YAML::convert<io::substrait::AggregateFunctionVariant> {
 };
 
 template <>
-struct YAML::convert<io::substrait::TypeVariant> {
-  static bool decode(const Node& node, io::substrait::TypeVariant& typeAnchor) {
+struct YAML::convert<substrait::TypeVariant> {
+  static bool decode(const Node& node, substrait::TypeVariant& typeAnchor) {
     const auto& name = node["name"];
     if (name && name.IsScalar()) {
       typeAnchor.name = name.as<std::string>();
@@ -148,7 +148,7 @@ struct YAML::convert<io::substrait::TypeVariant> {
   }
 };
 
-namespace io::substrait {
+namespace substrait {
 
 std::shared_ptr<Extension> Extension::load(const std::string& basePath) {
   static const std::vector<std::string> extensionFiles{
@@ -288,4 +288,4 @@ void Extension::addAggregateFunctionVariant(
   }
 }
 
-} // namespace io::substrait
+} // namespace substrait

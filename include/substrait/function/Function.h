@@ -14,10 +14,10 @@
 
 #pragma once
 
-#include "substrait/function/FunctionSignature.h"
 #include "substrait/type/Type.h"
+#include "substrait/function/FunctionSignature.h"
 
-namespace io::substrait {
+namespace substrait {
 
 struct FunctionArgument {
   [[nodiscard]] virtual bool isRequired() const = 0;
@@ -26,7 +26,7 @@ struct FunctionArgument {
   /// https://substrait.io/extensions/#function-signature-compound-names
   [[nodiscard]] virtual std::string toTypeString() const = 0;
 
-  virtual bool isWildcardType() const {
+  [[nodiscard]] virtual bool isWildcardType() const {
     return false;
   };
 
@@ -100,7 +100,7 @@ struct FunctionVariant {
       const std::vector<FunctionArgumentPtr>& arguments);
 
   /// Create function signature by function name and arguments.
-  [[nodiscard]] const std::string signature() const {
+  [[nodiscard]] std::string signature() const {
     return signature(name, arguments);
   }
 };
@@ -116,4 +116,4 @@ struct AggregateFunctionVariant : public FunctionVariant {
   bool tryMatch(const FunctionSignature& signature) override;
 };
 
-} // namespace io::substrait
+} // namespace substrait
