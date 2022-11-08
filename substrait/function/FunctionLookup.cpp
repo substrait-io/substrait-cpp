@@ -19,10 +19,10 @@ namespace substrait {
 FunctionImplementationPtr FunctionLookup::lookupFunction(
     const FunctionSignature& signature) const {
 
-  const auto& functionVariants = getFunctionVariants();
-  auto functionVariantIter = functionVariants.find(signature.name);
-  if (functionVariantIter != functionVariants.end()) {
-    for (const auto& candidateFunctionVariant : functionVariantIter->second) {
+  const auto& functionImpls = getFunctionVariants();
+  auto functionImplsIter = functionImpls.find(signature.name);
+  if (functionImplsIter != functionImpls.end()) {
+    for (const auto& candidateFunctionVariant : functionImplsIter->second) {
       if (candidateFunctionVariant->tryMatch(signature)) {
         return candidateFunctionVariant;
       }
