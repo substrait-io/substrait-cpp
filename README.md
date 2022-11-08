@@ -33,4 +33,4 @@ The main communication channel with the substrait through the
 ## License
 
 substrait-cpp is licensed under the Apache 2.0 License. A copy of the license
-[can be found here.](LICENSE)
+[can be found here.](https://www.apache.org/licenses/LICENSE-2.0.html)
