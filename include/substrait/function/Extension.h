@@ -14,6 +14,11 @@
 
 #pragma once
 
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
 #include "substrait/function/Function.h"
 #include "substrait/function/FunctionSignature.h"
 #include "substrait/type/Type.h"
