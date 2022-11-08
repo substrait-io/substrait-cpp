@@ -16,7 +16,7 @@
 
 #include <memory>
 #include <utility>
-#include "fmt/format.h"
+#include <fmt/format.h>
 
 namespace io::substrait::common {
 namespace error_code {
