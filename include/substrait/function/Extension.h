@@ -33,7 +33,7 @@ struct TypeVariant {
 using TypeVariantPtr = std::shared_ptr<TypeVariant>;
 
 using FunctionVariantMap =
-    std::unordered_map<std::string, std::vector<FunctionVariantPtr>>;
+    std::unordered_map<std::string, std::vector<FunctionImplementationPtr>>;
 
 using TypeVariantMap = std::unordered_map<std::string, TypeVariantPtr>;
 
@@ -53,13 +53,13 @@ class Extension {
       const std::vector<std::string>& extensionFiles);
 
   /// Add a scalar function variant.
-  void addScalarFunctionVariant(const FunctionVariantPtr& functionVariant);
+  void addScalarFunctionVariant(const FunctionImplementationPtr& functionVariant);
 
   /// Add a aggregate function variant.
-  void addAggregateFunctionVariant(const FunctionVariantPtr& functionVariant);
+  void addAggregateFunctionVariant(const FunctionImplementationPtr& functionVariant);
 
   /// Add a window function variant.
-  void addWindowFunctionVariant(const FunctionVariantPtr& functionVariant);
+  void addWindowFunctionVariant(const FunctionImplementationPtr& functionVariant);
 
   /// Add a type variant.
   void addTypeVariant(const TypeVariantPtr& functionVariant);

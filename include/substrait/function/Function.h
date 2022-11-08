@@ -33,6 +33,14 @@ struct FunctionArgument {
   [[nodiscard]] virtual bool isValueArgument() const {
     return false;
   }
+
+  [[nodiscard]] virtual bool isEnumArgument() const {
+    return false;
+  }
+
+  [[nodiscard]] virtual bool isTypeArgument() const {
+    return false;
+  }
 };
 
 using FunctionArgumentPtr = std::shared_ptr<FunctionArgument>;
@@ -47,6 +55,10 @@ struct EnumArgument : public FunctionArgument {
   [[nodiscard]] std::string toTypeString() const override {
     return required ? "req" : "opt";
   }
+
+  [[nodiscard]] bool isEnumArgument() const override {
+    return true;
+  }
 };
 
 struct TypeArgument : public FunctionArgument {
@@ -55,6 +67,10 @@ struct TypeArgument : public FunctionArgument {
   }
 
   [[nodiscard]] bool isRequired() const override {
+    return true;
+  }
+
+  [[nodiscard]] bool isTypeArgument() const override {
     return true;
   }
 };
@@ -84,7 +100,7 @@ struct FunctionVariadic {
   std::optional<int> max;
 };
 
-struct FunctionVariant {
+struct FunctionImplementation {
   std::string name;
   std::string uri;
   std::vector<FunctionArgumentPtr> arguments;
@@ -94,22 +110,15 @@ struct FunctionVariant {
   /// Test if the actual types matched with this function variant.
   virtual bool tryMatch(const FunctionSignature& signature);
 
-  /// Create function signature by given function name and arguments.
-  static std::string signature(
-      const std::string& name,
-      const std::vector<FunctionArgumentPtr>& arguments);
-
   /// Create function signature by function name and arguments.
-  [[nodiscard]] std::string signature() const {
-    return signature(name, arguments);
-  }
+  [[nodiscard]] std::string signature() const;
 };
 
-using FunctionVariantPtr = std::shared_ptr<FunctionVariant>;
+using FunctionImplementationPtr = std::shared_ptr<FunctionImplementation>;
 
-struct ScalarFunctionVariant : public FunctionVariant {};
+struct ScalarFunctionImplementation : public FunctionImplementation {};
 
-struct AggregateFunctionVariant : public FunctionVariant {
+struct AggregateFunctionImplementation : public FunctionImplementation {
   ParameterizedTypePtr intermediate;
   bool deterministic;
 

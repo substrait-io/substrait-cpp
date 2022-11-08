@@ -16,7 +16,7 @@
 
 namespace substrait {
 
-FunctionVariantPtr FunctionLookup::lookupFunction(
+FunctionImplementationPtr FunctionLookup::lookupFunction(
     const FunctionSignature& signature) const {
 
   const auto& functionVariants = getFunctionVariants();
