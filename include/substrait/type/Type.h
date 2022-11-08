@@ -394,7 +394,6 @@ class Map : public TypeBase<TypeKind::kMap> {
   const TypePtr valueType_;
 };
 
-/// ParameterizedType represent a type in
 class ParameterizedTypeBase : public ParameterizedType {
  public:
   explicit ParameterizedTypeBase(bool nullable = false)
