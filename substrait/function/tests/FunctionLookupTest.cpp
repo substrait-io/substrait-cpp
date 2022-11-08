@@ -38,21 +38,21 @@ class FunctionLookupTest : public ::testing::Test {
   void testScalarFunctionLookup(
       const FunctionSignature& inputSignature,
       const std::string& outputSignature) {
-    const auto& functionVariant =
+    const auto& functionImpl =
         scalarFunctionLookup_->lookupFunction(inputSignature);
 
-    ASSERT_TRUE(functionVariant != nullptr);
-    ASSERT_EQ(functionVariant->signature(), outputSignature);
+    ASSERT_TRUE(functionImpl != nullptr);
+    ASSERT_EQ(functionImpl->signature(), outputSignature);
   }
 
   void testAggregateFunctionLookup(
       const FunctionSignature& inputSignature,
       const std::string& outputSignature) {
-    const auto& functionVariant =
+    const auto& functionImpl =
         aggregateFunctionLookup_->lookupFunction(inputSignature);
 
-    ASSERT_TRUE(functionVariant != nullptr);
-    ASSERT_EQ(functionVariant->signature(), outputSignature);
+    ASSERT_TRUE(functionImpl != nullptr);
+    ASSERT_EQ(functionImpl->signature(), outputSignature);
   }
 
  private:
