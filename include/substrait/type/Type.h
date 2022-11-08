@@ -20,7 +20,7 @@
 #include <utility>
 #include <vector>
 
-namespace io::substrait {
+namespace substrait {
 
 enum class TypeKind : int8_t {
   kBool = 1,
@@ -698,4 +698,4 @@ std::shared_ptr<const Map> MAP(
 
 std::shared_ptr<const Struct> ROW(const std::vector<TypePtr>& children);
 
-} // namespace io::substrait
+} // namespace substrait

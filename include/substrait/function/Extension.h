@@ -23,7 +23,7 @@
 #include "substrait/function/FunctionSignature.h"
 #include "substrait/type/Type.h"
 
-namespace io::substrait {
+namespace substrait {
 
 struct TypeVariant {
   std::string name;
@@ -92,4 +92,4 @@ class Extension {
 
 using ExtensionPtr = std::shared_ptr<const Extension>;
 
-} // namespace io::substrait
+} // namespace substrait

@@ -12,13 +12,13 @@
  * limitations under the License.
  */
 
-#include "substrait/type/Type.h"
 #include <algorithm>
 #include <sstream>
 #include <stdexcept>
+#include "substrait/type/Type.h"
 #include "substrait/common/Exceptions.h"
 
-namespace io::substrait {
+namespace substrait {
 
 namespace {
 
@@ -526,4 +526,4 @@ bool UsedDefinedType::isMatch(
   return true;
 }
 
-} // namespace io::substrait
+} // namespace substrait

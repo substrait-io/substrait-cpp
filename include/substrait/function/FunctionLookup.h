@@ -14,18 +14,15 @@
 
 #pragma once
 
-
 #include "substrait/function/Extension.h"
-#include "substrait/function/FunctionMapping.h"
 #include "substrait/function/FunctionSignature.h"
 
-namespace io::substrait {
+namespace substrait {
 
 class FunctionLookup {
  public:
-  FunctionLookup(ExtensionPtr extension, FunctionMappingPtr functionMapping)
-      : extension_(std::move(extension)),
-        functionMapping_(std::move(functionMapping)) {}
+  explicit FunctionLookup(ExtensionPtr extension)
+      : extension_(std::move(extension)) {}
 
   [[nodiscard]] virtual FunctionVariantPtr lookupFunction(
       const FunctionSignature& signature) const;
@@ -33,11 +30,7 @@ class FunctionLookup {
   virtual ~FunctionLookup() = default;
 
  protected:
-  [[nodiscard]] virtual FunctionMap getFunctionMap() const = 0;
-
   [[nodiscard]] virtual FunctionVariantMap getFunctionVariants() const = 0;
-
-  const FunctionMappingPtr functionMapping_;
 
   ExtensionPtr extension_{};
 };
@@ -46,16 +39,10 @@ using FunctionLookupPtr = std::shared_ptr<const FunctionLookup>;
 
 class ScalarFunctionLookup : public FunctionLookup {
  public:
-  ScalarFunctionLookup(
-      const ExtensionPtr& extension,
-      const FunctionMappingPtr& functionMapping)
-      : FunctionLookup(extension, functionMapping) {}
+  ScalarFunctionLookup(const ExtensionPtr& extension)
+      : FunctionLookup(extension) {}
 
  protected:
-  [[nodiscard]] FunctionMap getFunctionMap() const override {
-    return functionMapping_->scalaMapping();
-  }
-
   [[nodiscard]] FunctionVariantMap getFunctionVariants() const override {
     return extension_->scalaFunctionVariantMap();
   }
@@ -63,16 +50,10 @@ class ScalarFunctionLookup : public FunctionLookup {
 
 class AggregateFunctionLookup : public FunctionLookup {
  public:
-  AggregateFunctionLookup(
-      const ExtensionPtr& extension,
-      const FunctionMappingPtr& functionMapping)
-      : FunctionLookup(extension, functionMapping) {}
+  explicit AggregateFunctionLookup(const ExtensionPtr& extension)
+      : FunctionLookup(extension) {}
 
  protected:
-  [[nodiscard]] FunctionMap getFunctionMap() const override {
-    return functionMapping_->aggregateMapping();
-  }
-
   [[nodiscard]] FunctionVariantMap getFunctionVariants() const override {
     return extension_->aggregateFunctionVariantMap();
   }
@@ -80,19 +61,13 @@ class AggregateFunctionLookup : public FunctionLookup {
 
 class WindowFunctionLookup : public FunctionLookup {
  public:
-  WindowFunctionLookup(
-      const ExtensionPtr& extension,
-      const FunctionMappingPtr& functionMapping)
-      : FunctionLookup(extension, functionMapping) {}
+  explicit WindowFunctionLookup(const ExtensionPtr& extension)
+      : FunctionLookup(extension) {}
 
  protected:
-  [[nodiscard]] FunctionMap getFunctionMap() const override {
-    return functionMapping_->windowMapping();
-  }
-
   [[nodiscard]] FunctionVariantMap getFunctionVariants() const override {
     return extension_->windowFunctionVariantMap();
   }
 };
 
-} // namespace io::substrait
+} // namespace substrait

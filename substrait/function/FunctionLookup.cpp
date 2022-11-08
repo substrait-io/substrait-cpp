@@ -14,19 +14,13 @@
 
 #include "substrait/function/FunctionLookup.h"
 
-namespace io::substrait {
+namespace substrait {
 
 FunctionVariantPtr FunctionLookup::lookupFunction(
     const FunctionSignature& signature) const {
-  const auto& functionMappings = getFunctionMap();
-
-  const auto& substraitFunctionName =
-      functionMappings.find(signature.name) != functionMappings.end()
-      ? functionMappings.at(signature.name)
-      : signature.name;
 
   const auto& functionVariants = getFunctionVariants();
-  auto functionVariantIter = functionVariants.find(substraitFunctionName);
+  auto functionVariantIter = functionVariants.find(signature.name);
   if (functionVariantIter != functionVariants.end()) {
     for (const auto& candidateFunctionVariant : functionVariantIter->second) {
       if (candidateFunctionVariant->tryMatch(signature)) {
@@ -37,4 +31,4 @@ FunctionVariantPtr FunctionLookup::lookupFunction(
   return nullptr;
 }
 
-} // namespace io::substrait
+} // namespace substrait

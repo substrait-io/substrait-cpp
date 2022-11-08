@@ -12,10 +12,10 @@
  * limitations under the License.
  */
 
-#include "substrait/common/Exceptions.h"
 #include <fmt/format.h>
+#include "substrait/common/Exceptions.h"
 
-namespace io::substrait::common {
+namespace substrait::common {
 
 SubstraitException::SubstraitException(
     const std::string& exceptionCode,
@@ -33,4 +33,4 @@ SubstraitException::SubstraitException(
           __FILE__,
           std::to_string(__LINE__))) {}
 
-} // namespace io::substrait::common
+} // namespace substrait::common

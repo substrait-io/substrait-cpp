@@ -12,10 +12,10 @@
  * limitations under the License.
  */
 
-#include "substrait/type/Type.h"
 #include <gtest/gtest.h>
+#include "substrait/type/Type.h"
 
-using namespace io::substrait;
+using namespace substrait;
 
 class TypeTest : public ::testing::Test {
  protected:
@@ -26,7 +26,7 @@ class TypeTest : public ::testing::Test {
     ASSERT_EQ(type->signature(), signature);
   }
 
-  void testType(
+  static void testType(
       const ParameterizedTypePtr& type,
       TypeKind kind,
       const std::string& signature) {
