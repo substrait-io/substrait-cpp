@@ -5,29 +5,6 @@
 
 namespace substrait {
 
-namespace {
-std::string signatureFor(
-    const std::string& name,
-    const std::vector<FunctionArgumentPtr>& arguments) {
-  std::stringstream ss;
-  ss << name;
-  if (!arguments.empty()) {
-    ss << ":";
-    for (auto it = arguments.begin(); it != arguments.end(); ++it) {
-      const auto& typeSign = (*it)->toTypeString();
-      if (it == arguments.end() - 1) {
-        ss << typeSign;
-      } else {
-        ss << typeSign << "_";
-      }
-    }
-  }
-
-  return ss.str();
-}
-}
-
-
 bool FunctionImplementation::tryMatch(const FunctionSignature& signature) {
   const auto& actualTypes = signature.arguments;
   if (variadic.has_value()) {
@@ -78,7 +55,21 @@ bool FunctionImplementation::tryMatch(const FunctionSignature& signature) {
 }
 
 std::string FunctionImplementation::signature() const {
-  return signatureFor(name, arguments);
+  std::stringstream ss;
+  ss << name;
+  if (!arguments.empty()) {
+    ss << ":";
+    for (auto it = arguments.begin(); it != arguments.end(); ++it) {
+      const auto& typeSign = (*it)->toTypeString();
+      if (it == arguments.end() - 1) {
+        ss << typeSign;
+      } else {
+        ss << typeSign << "_";
+      }
+    }
+  }
+
+  return ss.str();
 }
 
 bool AggregateFunctionImplementation::tryMatch(const FunctionSignature& signature) {
