@@ -81,8 +81,6 @@ ParameterizedTypePtr ParameterizedType::decode(const std::string& rawType) {
       return std::make_shared<const ScalarType<TypeKind::kDate>>(nullable);
     } else if (TypeTraits<TypeKind::kTime>::typeString == baseType) {
       return std::make_shared<const ScalarType<TypeKind::kTime>>(nullable);
-    } else if (matchingType.rfind("unknown", 0) == 0) {
-      return std::make_shared<const UsedDefinedType>(rawType, nullable);
     } else {
       return std::make_shared<const StringLiteral>(rawType);
     }
@@ -471,7 +469,7 @@ std::shared_ptr<const FixedChar> FCHAR(int len) {
   return std::make_shared<const FixedChar>(len, false);
 }
 
-std::shared_ptr<const FixedBinary> FBinary(int len) {
+std::shared_ptr<const FixedBinary> FIXED_BINARY(int len) {
   return std::make_shared<const FixedBinary>(len, false);
 }
 
@@ -485,11 +483,11 @@ std::shared_ptr<const Map> MAP(
   return std::make_shared<const Map>(keyType, valueType, false);
 }
 
-std::shared_ptr<const Struct> ROW(const std::vector<TypePtr>& children) {
+std::shared_ptr<const Struct> STRUCT(const std::vector<TypePtr>& children) {
   return std::make_shared<const Struct>(children, false);
 }
 
-std::shared_ptr<const FixedChar> FChar(int len) {
+std::shared_ptr<const FixedChar> FIXED_CHAR(int len) {
   return std::make_shared<const FixedChar>(len);
 }
 
@@ -504,14 +502,6 @@ bool StringLiteral::isMatch(
     }
     return false;
   }
-}
-
-bool UsedDefinedType::isMatch(
-    const std::shared_ptr<const ParameterizedType>& type) const {
-  if (auto udt = std::dynamic_pointer_cast<const UsedDefinedType>(type)) {
-    return value_ == udt->value_ && nullable() == udt->nullable();
-  }
-  return true;
 }
 
 } // namespace substrait

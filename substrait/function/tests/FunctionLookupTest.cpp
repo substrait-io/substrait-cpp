@@ -87,7 +87,7 @@ TEST_F(FunctionLookupTest, arithmetic_function) {
 TEST_F(FunctionLookupTest, aggregate) {
   // for intermediate type
   testAggregateFunctionLookup(
-      {"avg", {ROW({DOUBLE(), BIGINT()})}, FLOAT()}, "avg:opt_fp32");
+      {"avg", {STRUCT({DOUBLE(), BIGINT()})}, FLOAT()}, "avg:opt_fp32");
 }
 
 TEST_F(FunctionLookupTest, logical) {

@@ -12,21 +12,21 @@ namespace error_code {
 //====================== User Error Codes ======================:
 
 // An error raised when an argument verification fails
-inline constexpr auto kInvalidArgument = "INVALID_ARGUMENT";
+inline constexpr const char* kInvalidArgument = "INVALID_ARGUMENT";
 
 // An error raised when a requested operation is not supported.
-inline constexpr auto kUnsupported = "UNSUPPORTED";
+inline constexpr const char* kUnsupported = "UNSUPPORTED";
 
 //====================== Runtime Error Codes ======================:
 
 // An error raised when the current state of a component is invalid.
-inline constexpr auto kInvalidState = "INVALID_STATE";
+inline constexpr const char* kInvalidState = "INVALID_STATE";
 
 // An error raised when unreachable code point was executed.
-inline constexpr auto kUnreachableCode = "UNREACHABLE_CODE";
+inline constexpr const char* kUnreachableCode = "UNREACHABLE_CODE";
 
 // An error raised when a requested operation is not implemented.
-inline constexpr auto kNotImplemented = "NOT_IMPLEMENTED";
+inline constexpr const char* kNotImplemented = "NOT_IMPLEMENTED";
 
 } // namespace error_code
 

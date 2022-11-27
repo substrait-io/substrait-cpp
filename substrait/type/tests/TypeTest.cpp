@@ -51,13 +51,13 @@ TEST_F(TypeTest, typeCreator) {
   testType(INTERVAL_DAY(), TypeKind::kIntervalDay, "iday");
   testType(INTERVAL_YEAR(), TypeKind::kIntervalYear, "iyear");
   testType(UUID(), TypeKind::kUuid, "uuid");
-  testType(FChar(12), TypeKind::kFixedChar, "fchar<12>");
-  testType(FBinary(12), TypeKind::kFixedBinary, "fbin<12>");
+  testType(FIXED_CHAR(12), TypeKind::kFixedChar, "fchar<12>");
+  testType(FIXED_BINARY(12), TypeKind::kFixedBinary, "fbin<12>");
   testType(VARCHAR(12), TypeKind::kVarchar, "vchar<12>");
   testType(DECIMAL(12,23), TypeKind::kDecimal, "dec<12,23>");
   testType(LIST(FLOAT()), TypeKind::kList, "list<fp32>");
   testType(MAP(STRING(),FLOAT()), TypeKind::kMap, "map<str,fp32>");
-  testType(ROW({STRING(),FLOAT()}), TypeKind::kStruct, "struct<str,fp32>");
+  testType(STRUCT({STRING(), FLOAT()}), TypeKind::kStruct, "struct<str,fp32>");
 }
 
 TEST_F(TypeTest, decodeTest) {
@@ -154,10 +154,5 @@ TEST_F(TypeTest, decodeTest) {
       "T", [](const std::shared_ptr<const StringLiteral>& typePtr) {
         ASSERT_EQ(typePtr->signature(), "T");
         ASSERT_TRUE(typePtr->isWildcard());
-      });
-
-  testDecode<UsedDefinedType>(
-      "unknown", [](const std::shared_ptr<const UsedDefinedType>& typePtr) {
-        ASSERT_EQ(typePtr->signature(), "u!name");
       });
 }

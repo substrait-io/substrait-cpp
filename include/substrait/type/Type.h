@@ -14,27 +14,26 @@ enum class TypeKind : int8_t {
   kBool = 1,
   kI8 = 2,
   kI16 = 3,
-  kI32 = 5,
-  kI64 = 7,
-  kFp32 = 10,
-  kFp64 = 11,
-  kString = 12,
-  kBinary = 13,
-  kTimestamp = 14,
-  kDate = 16,
-  kTime = 17,
-  kIntervalYear = 19,
-  kIntervalDay = 20,
-  kTimestampTz = 29,
-  kUuid = 32,
-  kFixedChar = 21,
-  kVarchar = 22,
-  kFixedBinary = 23,
-  kDecimal = 24,
-  kStruct = 25,
-  kList = 27,
-  kMap = 28,
-  kUserDefined = 30,
+  kI32 = 4,
+  kI64 = 5,
+  kFp32 = 6,
+  kFp64 = 7,
+  kString = 8,
+  kBinary = 9,
+  kTimestamp = 10,
+  kDate = 11,
+  kTime = 12,
+  kIntervalYear = 13,
+  kIntervalDay = 14,
+  kTimestampTz = 15,
+  kUuid = 16,
+  kFixedChar = 17,
+  kVarchar = 18,
+  kFixedBinary = 19,
+  kDecimal = 20,
+  kStruct = 21,
+  kList = 22,
+  kMap = 23,
   KIND_NOT_SET = 0,
 };
 
@@ -177,12 +176,6 @@ template <>
 struct TypeTraits<TypeKind::kMap> {
   static constexpr const char* signature = "map";
   static constexpr const char* typeString = "map";
-};
-
-template <>
-struct TypeTraits<TypeKind::kUserDefined> {
-  static constexpr const char* signature = "u!name";
-  static constexpr const char* typeString = "user defined type";
 };
 
 class ParameterizedType {
@@ -398,31 +391,6 @@ class ParameterizedTypeBase : public ParameterizedType {
  public:
   explicit ParameterizedTypeBase(bool nullable = false)
       : ParameterizedType(nullable) {}
-};
-
-class UsedDefinedType : public ParameterizedTypeBase {
- public:
-  UsedDefinedType(std::string value, bool nullable)
-      : ParameterizedTypeBase(nullable), value_(std::move(value)) {}
-
-  [[nodiscard]] const std::string& value() const {
-    return value_;
-  }
-
-  [[nodiscard]] TypeKind kind() const override {
-    return TypeKind::kUserDefined;
-  }
-
-  [[nodiscard]] std::string signature() const override {
-    return TypeTraits<TypeKind::kUserDefined>::signature;
-  }
-
-  [[nodiscard]] bool isMatch(
-      const std::shared_ptr<const ParameterizedType>& type) const override;
-
- private:
-  /// raw string of wildcard type.
-  const std::string value_;
 };
 
 /// A string literal type can present the 'any1'.
@@ -673,9 +641,9 @@ std::shared_ptr<const Decimal> DECIMAL(int precision, int scale);
 
 std::shared_ptr<const Varchar> VARCHAR(int len);
 
-std::shared_ptr<const FixedChar> FChar(int len);
+std::shared_ptr<const FixedChar> FIXED_CHAR(int len);
 
-std::shared_ptr<const FixedBinary> FBinary(int len);
+std::shared_ptr<const FixedBinary> FIXED_BINARY(int len);
 
 std::shared_ptr<const List> LIST(const TypePtr& elementType);
 
@@ -683,6 +651,6 @@ std::shared_ptr<const Map> MAP(
     const TypePtr& keyType,
     const TypePtr& valueType);
 
-std::shared_ptr<const Struct> ROW(const std::vector<TypePtr>& children);
+std::shared_ptr<const Struct> STRUCT(const std::vector<TypePtr>& children);
 
 } // namespace substrait
