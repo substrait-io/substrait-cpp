@@ -18,7 +18,8 @@ sudo --preserve-env apt install -y \
   ccache \
   ninja-build \
   checkinstall \
-  git
+  git \
+  wget
 
 function run_and_time {
   time "$@"
