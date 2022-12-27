@@ -13,6 +13,7 @@ DEPENDENCY_DIR=${DEPENDENCY_DIR:-$(pwd)}
 
 # Install all dependencies.
 sudo --preserve-env apt install -y \
+  wget \
   g++ \
   cmake \
   ccache \
