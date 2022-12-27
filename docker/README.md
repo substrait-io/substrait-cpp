@@ -19,5 +19,3 @@ Run function tests
 ```bash
 ./build-Debug/substrait/function/tests/substrait_function_test
 ```
-
-
