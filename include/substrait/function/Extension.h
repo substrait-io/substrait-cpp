@@ -20,7 +20,7 @@ struct TypeVariant {
 
 using TypeVariantPtr = std::shared_ptr<TypeVariant>;
 
-using FunctionVariantMap =
+using FunctionImplMap =
     std::unordered_map<std::string, std::vector<FunctionImplementationPtr>>;
 
 using TypeVariantMap = std::unordered_map<std::string, TypeVariantPtr>;
@@ -40,40 +40,40 @@ class Extension {
   static std::shared_ptr<Extension> load(
       const std::vector<std::string>& extensionFiles);
 
-  /// Add a scalar function variant.
-  void addScalarFunctionVariant(const FunctionImplementationPtr& functionVariant);
+  /// Add a scalar function implementation.
+  void addScalarFunctionImpl(const FunctionImplementationPtr& functionImpl);
 
-  /// Add a aggregate function variant.
-  void addAggregateFunctionVariant(const FunctionImplementationPtr& functionVariant);
+  /// Add a aggregate function implementation.
+  void addAggregateFunctionImpl(const FunctionImplementationPtr& functionImpl);
 
-  /// Add a window function variant.
-  void addWindowFunctionVariant(const FunctionImplementationPtr& functionVariant);
+  /// Add a window function implementation.
+  void addWindowFunctionImpl(const FunctionImplementationPtr& functionImpl);
 
   /// Add a type variant.
-  void addTypeVariant(const TypeVariantPtr& functionVariant);
+  void addTypeVariant(const TypeVariantPtr& typeVariant);
 
   /// Lookup type variant by given type name.
   /// @return matched type variant
   TypeVariantPtr lookupType(const std::string& typeName) const;
 
-  const FunctionVariantMap& scalaFunctionVariantMap() const {
-    return scalarFunctionVariantMap_;
+  const FunctionImplMap& scalaFunctionImplMap() const {
+    return scalarFunctionImplMap_;
   }
 
-  const FunctionVariantMap& windowFunctionVariantMap() const {
-    return windowFunctionVariantMap_;
+  const FunctionImplMap& windowFunctionImplMap() const {
+    return windowFunctionImplMap_;
   }
 
-  const FunctionVariantMap& aggregateFunctionVariantMap() const {
-    return aggregateFunctionVariantMap_;
+  const FunctionImplMap& aggregateFunctionImplMap() const {
+    return aggregateFunctionImplMap_;
   }
 
  private:
-  FunctionVariantMap scalarFunctionVariantMap_;
+  FunctionImplMap scalarFunctionImplMap_;
 
-  FunctionVariantMap aggregateFunctionVariantMap_;
+  FunctionImplMap aggregateFunctionImplMap_;
 
-  FunctionVariantMap windowFunctionVariantMap_;
+  FunctionImplMap windowFunctionImplMap_;
 
   TypeVariantMap typeVariantMap_;
 };

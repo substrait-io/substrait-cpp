@@ -18,7 +18,7 @@ class FunctionLookup {
   virtual ~FunctionLookup() = default;
 
  protected:
-  [[nodiscard]] virtual FunctionVariantMap getFunctionVariants() const = 0;
+  [[nodiscard]] virtual FunctionImplMap getFunctionImpls() const = 0;
 
   ExtensionPtr extension_{};
 };
@@ -31,8 +31,8 @@ class ScalarFunctionLookup : public FunctionLookup {
       : FunctionLookup(extension) {}
 
  protected:
-  [[nodiscard]] FunctionVariantMap getFunctionVariants() const override {
-    return extension_->scalaFunctionVariantMap();
+  [[nodiscard]] FunctionImplMap getFunctionImpls() const override {
+    return extension_->scalaFunctionImplMap();
   }
 };
 
@@ -42,8 +42,8 @@ class AggregateFunctionLookup : public FunctionLookup {
       : FunctionLookup(extension) {}
 
  protected:
-  [[nodiscard]] FunctionVariantMap getFunctionVariants() const override {
-    return extension_->aggregateFunctionVariantMap();
+  [[nodiscard]] FunctionImplMap getFunctionImpls() const override {
+    return extension_->aggregateFunctionImplMap();
   }
 };
 
@@ -53,8 +53,8 @@ class WindowFunctionLookup : public FunctionLookup {
       : FunctionLookup(extension) {}
 
  protected:
-  [[nodiscard]] FunctionVariantMap getFunctionVariants() const override {
-    return extension_->windowFunctionVariantMap();
+  [[nodiscard]] FunctionImplMap getFunctionImpls() const override {
+    return extension_->windowFunctionImplMap();
   }
 };
 
