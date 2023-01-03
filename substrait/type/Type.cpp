@@ -6,7 +6,7 @@
 #include "substrait/type/Type.h"
 #include "substrait/common/Exceptions.h"
 
-namespace substrait {
+namespace io::substrait {
 
 namespace {
 
@@ -504,4 +504,4 @@ bool StringLiteral::isMatch(
   }
 }
 
-} // namespace substrait
+} // namespace io::substrait

@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 #include "substrait/function/FunctionLookup.h"
 
-using namespace substrait;
+using namespace io::substrait;
 
 class FunctionLookupTest : public ::testing::Test {
  protected:
