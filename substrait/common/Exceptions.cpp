@@ -3,7 +3,7 @@
 #include <fmt/format.h>
 #include "substrait/common/Exceptions.h"
 
-namespace substrait::common {
+namespace io::substrait::common {
 
 SubstraitException::SubstraitException(
     const std::string& exceptionCode,
@@ -21,4 +21,4 @@ SubstraitException::SubstraitException(
           __FILE__,
           std::to_string(__LINE__))) {}
 
-} // namespace substrait::common
+} // namespace io::substrait::common

@@ -3,7 +3,7 @@
 #include <sstream>
 #include "substrait/function/Function.h"
 
-namespace substrait {
+namespace io::substrait {
 
 bool FunctionImplementation::tryMatch(const FunctionSignature& signature) {
   const auto& actualTypes = signature.arguments;
@@ -83,4 +83,4 @@ bool AggregateFunctionImplementation::tryMatch(const FunctionSignature& signatur
   return matched;
 }
 
-} // namespace substrait
+} // namespace io::substrait

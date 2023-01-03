@@ -2,7 +2,7 @@
 
 #include "substrait/function/FunctionLookup.h"
 
-namespace substrait {
+namespace io::substrait {
 
 FunctionImplementationPtr FunctionLookup::lookupFunction(
     const FunctionSignature& signature) const {
@@ -19,4 +19,4 @@ FunctionImplementationPtr FunctionLookup::lookupFunction(
   return nullptr;
 }
 
-} // namespace substrait
+} // namespace io::substrait
