@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 #include "substrait/type/Type.h"
 
-using namespace substrait;
+using namespace io::substrait;
 
 class TypeTest : public ::testing::Test {
  protected:

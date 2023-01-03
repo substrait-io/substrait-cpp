@@ -5,7 +5,7 @@
 #include "substrait/type/Type.h"
 #include "substrait/function/FunctionSignature.h"
 
-namespace substrait {
+namespace io::substrait {
 
 struct FunctionArgument {
   [[nodiscard]] virtual bool isRequired() const = 0;
@@ -113,4 +113,4 @@ struct AggregateFunctionImplementation : public FunctionImplementation {
   bool tryMatch(const FunctionSignature& signature) override;
 };
 
-} // namespace substrait
+} // namespace io::substrait

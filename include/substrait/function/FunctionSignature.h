@@ -4,7 +4,7 @@
 
 #include "substrait/type/Type.h"
 
-namespace substrait {
+namespace io::substrait {
 
 struct FunctionSignature {
   std::string name;
@@ -12,4 +12,4 @@ struct FunctionSignature {
   TypePtr returnType;
 };
 
-} // namespace substrait
+} // namespace io::substrait
