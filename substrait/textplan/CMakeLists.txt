@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 set(TEXTPLAN_SRCS
-        PlanConverter.cpp)
+        PlanConverter.cpp SymbolTable.cpp PlanConverter.h SymbolTable.h)
 
 add_library(substrait_textplan ${TEXTPLAN_SRCS})
 

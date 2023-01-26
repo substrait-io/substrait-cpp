@@ -21,7 +21,10 @@
 
 #include <google/protobuf/util/json_util.h>
 
+// MEGAHACK -- Should these not be referenced from the root?
 #include "PlanConverter.h"
+#include "SymbolTable.h"
+
 #include "substrait/algebra.pb.h"
 #include "substrait/common/Exceptions.h"
 #include "substrait/plan.pb.h"
@@ -236,66 +239,40 @@ std::string extractSources(const substrait::PlanRel& relation) {
   return "";
 }
 
-class Pipeline {
- public:
-  Pipeline() = default;
-
-  void add(const std::string& node) {
-    nodes_.push_back(node);
-  }
-
-  std::string toString() {
-    std::string text;
-    for (auto it = nodes_.rbegin(); it != nodes_.rend(); ++it) {
-      if (!text.empty()) {
-        text += " -> ";
-      }
-      text += *it;
-    }
-    text += ";\n";
-    return text;
-  }
-
- private:
-  std::vector<std::string> nodes_;
-};
-
-class PipelineCollector {
- public:
-  PipelineCollector() = default;
-
-  Pipeline* add(const std::string& name) {
-    auto pipeline = std::make_shared<Pipeline>();
-    pipelines_.emplace_back(pipeline);
-    pipeline->add(name);
-    return pipeline.get();
-  }
-
-  std::string getUniqueName(const std::string& base_name) {
-    if (names_.find(base_name) == names_.end()) {
-      names_.insert(std::make_pair(base_name, 1));
-      return base_name;
-    }
-    names_[base_name]++;
-    return base_name + std::to_string(names_[base_name]);
-  }
-
-  std::string toString() {
-    std::string text = "pipelines {\n";
-    for (auto it = pipelines_.rbegin(); it != pipelines_.rend(); ++it) {
-      const auto& pipeline = *it;
-      text += "  " + pipeline->toString();
-    }
-    text += "}\n";
-    return text;
-  }
-
- private:
-  std::vector<std::shared_ptr<Pipeline>> pipelines_;
-  std::map<std::string, int32_t > names_;
-};
-
 } // namespace
+
+void Pipeline::add(const std::string& node) {
+  nodes_.push_back(node);
+}
+
+std::string Pipeline::toString() {
+  std::string text;
+  for (auto it = nodes_.rbegin(); it != nodes_.rend(); ++it) {
+    if (!text.empty()) {
+      text += " -> ";
+    }
+    text += *it;
+  }
+  text += ";\n";
+  return text;
+}
+
+Pipeline* PipelineCollector::add(const std::string& name) {
+  auto pipeline = std::make_shared<Pipeline>();
+  pipelines_.emplace_back(pipeline);
+  pipeline->add(name);
+  return pipeline.get();
+}
+
+std::string PipelineCollector::toString() {
+  std::string text = "pipelines {\n";
+  for (auto it = pipelines_.rbegin(); it != pipelines_.rend(); ++it) {
+    const auto& pipeline = *it;
+    text += "  " + pipeline->toString();
+  }
+  text += "}\n";
+  return text;
+}
 
 std::string PlanConverter::sourcesToText(const substrait::Plan& plan) {
   std::string text;
@@ -315,96 +292,69 @@ std::string PlanConverter::relationsToText(const substrait::Plan& plan) {
   return text;
 }
 
-void visitPipelines(
+// MEGAHACK -- The location for the symbol table should probably be the path without the field.
+#define VISIT_LEAF(type, name)                          \
+  case substrait::Rel::RelTypeCase::type: {              \
+    auto unique_name = symbol_table_.getUniqueName(#name);                                     \
+    pipeline->add(unique_name); \
+    auto new_loc = location.visit(#name);               \
+    symbol_table_.defineSymbol(unique_name, new_loc, SymbolType::UNKNOWN); \
+    break;                                              \
+  }
+
+#define VISIT_SINGLE(type, name)                                               \
+  case substrait::Rel::RelTypeCase::type: {                                    \
+    pipeline->add(symbol_table_.getUniqueName(#name));                        \
+    visitPipelines(                                                            \
+        relation.name().input(), collector, location.visit(#name), pipeline); \
+    break;                                                                     \
+  }
+
+#define VISIT_DOUBLE(type, name)                                            \
+  case substrait::Rel::RelTypeCase::type: {                                 \
+    auto name = symbol_table_.getUniqueName(#name );                        \
+    pipeline->add(name);                                                    \
+    auto new_loc = location.visit(#name);                                   \
+    visitPipelines(                                                         \
+        relation.name().left(), collector, new_loc, collector->add(name));  \
+    visitPipelines(                                                         \
+        relation.name().right(), collector, new_loc, collector->add(name)); \
+    break;                                                                  \
+  }
+
+#define VISIT_MULTIPLE(type, name)                                   \
+  case substrait::Rel::RelTypeCase::type: {                          \
+    auto name = symbol_table_.getUniqueName(#name);                  \
+    pipeline->add(name);                                             \
+    auto new_loc = location.visit(#name);                            \
+    for (const auto& rel : relation.name().inputs()) {               \
+      visitPipelines(rel, collector, new_loc, collector->add(name)); \
+    }                                                                \
+    break;                                                           \
+  }
+
+void PlanConverter::visitPipelines(
     const substrait::Rel& relation,
     PipelineCollector* collector,
+    const Location& location,
     Pipeline* pipeline) {
+  symbol_table_.defineUniqueSymbol("MEGAHACK", location, SymbolType::UNKNOWN);
   switch (relation.rel_type_case()) {
-    case substrait::Rel::RelTypeCase::kRead:
-      pipeline->add(collector->getUniqueName("read"));
-      break;
-    case substrait::Rel::RelTypeCase::kFilter: {
-      pipeline->add(collector->getUniqueName("filter"));
-      visitPipelines(relation.filter().input(), collector, pipeline);
-      break;
-    }
-    case substrait::Rel::RelTypeCase::kFetch: {
-      pipeline->add(collector->getUniqueName("fetch"));
-      visitPipelines(relation.fetch().input(), collector, pipeline);
-      break;
-    }
-    case substrait::Rel::RelTypeCase::kAggregate: {
-      pipeline->add(collector->getUniqueName("aggregate"));
-      visitPipelines(relation.aggregate().input(), collector, pipeline);
-      break;
-    }
-    case substrait::Rel::RelTypeCase::kSort: {
-      pipeline->add(collector->getUniqueName("sort"));
-      visitPipelines(relation.sort().input(), collector, pipeline);
-      break;
-    }
-    case substrait::Rel::RelTypeCase::kJoin: {
-      auto name = collector->getUniqueName("join");
-      pipeline->add(name);
-      visitPipelines(relation.join().left(), collector, collector->add(name));
-      visitPipelines(relation.join().right(), collector, collector->add(name));
-      break;
-    }
-    case substrait::Rel::RelTypeCase::kProject: {
-      pipeline->add(collector->getUniqueName("project"));
-      visitPipelines(relation.project().input(), collector, pipeline);
-      break;
-    }
-    case substrait::Rel::RelTypeCase::kSet: {
-      auto name = collector->getUniqueName("set");
-      pipeline->add(name);
-      for (const auto& rel : relation.set().inputs()) {
-        visitPipelines(rel, collector, collector->add(name));
-      }
-      break;
-    }
-    case substrait::Rel::RelTypeCase::kExtensionSingle: {
-      pipeline->add(collector->getUniqueName("extension_single"));
-      visitPipelines(relation.extension_single().input(), collector, pipeline);
-      break;
-    }
-    case substrait::Rel::RelTypeCase::kExtensionMulti: {
-      auto name = collector->getUniqueName("extension_multi");
-      pipeline->add(name);
-      for (const auto& rel : relation.extension_multi().inputs()) {
-        visitPipelines(rel, collector, collector->add(name));
-      }
-      break;
-    }
-    case substrait::Rel::RelTypeCase::kExtensionLeaf:
-      pipeline->add(collector->getUniqueName("extension_leaf"));
-      break;
-    case substrait::Rel::RelTypeCase::kCross: {
-      auto name = collector->getUniqueName("cross");
-      pipeline->add(name);
-      visitPipelines(relation.cross().left(), collector, collector->add(name));
-      visitPipelines(relation.cross().right(), collector, collector->add(name));
-      break;
-    }
+    VISIT_LEAF(kRead, read);
+    VISIT_SINGLE(kFilter, filter);
+    VISIT_SINGLE(kFetch, fetch);
+    VISIT_SINGLE(kAggregate, aggregate);
+    VISIT_SINGLE(kSort, sort);
+    VISIT_DOUBLE(kJoin, join);
+    VISIT_SINGLE(kProject, project);
+    VISIT_MULTIPLE(kSet, set);
+    VISIT_SINGLE(kExtensionSingle, extension_single);
+    VISIT_MULTIPLE(kExtensionMulti, extension_multi);
+    VISIT_LEAF(kExtensionLeaf, extension_leaf);
+    VISIT_DOUBLE(kCross, cross);
 #if 0
-    case substrait::Rel::RelTypeCase::kHashJoin: {
-      auto name = collector->getUniqueName("hash_join");
-      pipeline->add(name);
-      visitPipelines(
-          relation.hash_join().left(), collector, collector->add(name));
-      visitPipelines(
-          relation.hash_join().right(), collector, collector->add(name));
-      break;
-    }
-    case substrait::Rel::RelTypeCase::kMergeJoin: {
-      auto name = collector->getUniqueName("merge_join");
-      pipeline->add(name);
-      visitPipelines(
-          relation.merge_join().left(), collector, collector->add(name));
-      visitPipelines(
-          relation.merge_join().right(), collector, collector->add(name));
-      break;
-    }
+    VISIT_DOUBLE(kHashJoin, hash_join);
+    VISIT_DOUBLE(kMergeJoin, merge_join);
 #endif
     case substrait::Rel::REL_TYPE_NOT_SET:
     default:
@@ -412,23 +362,33 @@ void visitPipelines(
   }
 }
 
-void visitPipelines(
+#undef VISIT_LEAF
+#undef VISIT_SINGLE
+#undef VISIT_DOUBLE
+#undef VISIT_MULTIPLE
+
+void PlanConverter::visitPipelines(
     const substrait::PlanRel& relation,
     PipelineCollector* collector) {
+  Location location;
   switch (relation.rel_type_case()) {
     case substrait::PlanRel::kRoot:
-      // MEGAHACK -- Figure out whether this "node" should be listed as being part of the pipeline.
+      // MEGAHACK -- Figure out whether this "node" should be listed as being
+      // part of the pipeline.
       visitPipelines(
           relation.root().input(),
           collector,
-          collector->add(collector->getUniqueName("root")));
+          location.visit("root"),
+          collector->add(symbol_table_.getUniqueName("root")));
       break;
     case substrait::PlanRel::kRel:
-      // MEGAHACK -- Figure out whether this "node" should be listed as being part of the pipeline.
+      // MEGAHACK -- Figure out whether this "node" should be listed as being
+      // part of the pipeline.
       visitPipelines(
           relation.rel(),
           collector,
-          collector->add(collector->getUniqueName("rel")));
+          location.visit("rel"),
+          collector->add(symbol_table_.getUniqueName("rel")));
       break;
     case substrait::PlanRel::REL_TYPE_NOT_SET:
     default:

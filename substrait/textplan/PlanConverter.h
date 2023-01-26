@@ -16,12 +16,39 @@
 
 #pragma once
 
+#include "SymbolTable.h"
+
 #include "substrait/plan.pb.h"
 
 #include <google/protobuf/util/json_util.h>
 
 // Utility function to read a JSON file from disk.
+// MEGAHACK -- Move elsewhere.
 std::string readFromFile(const std::string& msgPath);
+
+class Pipeline {
+ public:
+  Pipeline() = default;
+
+  void add(const std::string& node);
+
+  std::string toString();
+
+ private:
+  std::vector<std::string> nodes_;
+};
+
+class PipelineCollector {
+ public:
+  PipelineCollector() = default;
+
+  Pipeline* add(const std::string& name);
+
+  std::string toString();
+
+ private:
+  std::vector<std::shared_ptr<Pipeline>> pipelines_;
+};
 
 class PlanConverter {
  public:
@@ -60,14 +87,24 @@ class PlanConverter {
     return initialized_;
   }
 
-
  private:
   bool initialized_;
   substrait::Plan plan_;
+  SymbolTable symbol_table_;
 
   static std::string functionsToText(const substrait::Plan& plan);
   static std::string sourcesToText(const substrait::Plan& plan);
   static std::string schemasToText(const substrait::Plan& plan);
   static std::string relationsToText(const substrait::Plan& plan);
-  static std::string pipelinesToText(const substrait::Plan& plan);
+  std::string pipelinesToText(const substrait::Plan& plan);
+
+  void visitPipelines(
+      const substrait::Rel& relation,
+      PipelineCollector* collector,
+      const Location& location,
+      Pipeline* pipeline);
+
+  void visitPipelines(
+      const substrait::PlanRel& relation,
+      PipelineCollector* collector);
 };
