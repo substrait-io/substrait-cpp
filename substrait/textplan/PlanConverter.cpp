@@ -292,45 +292,55 @@ std::string PlanConverter::relationsToText(const substrait::Plan& plan) {
   return text;
 }
 
-// MEGAHACK -- The location for the symbol table should probably be the path without the field.
-#define VISIT_LEAF(type, name)                          \
-  case substrait::Rel::RelTypeCase::type: {              \
-    auto unique_name = symbol_table_.getUniqueName(#name);                                     \
-    pipeline->add(unique_name); \
-    auto new_loc = location.visit(#name);               \
-    symbol_table_.defineSymbol(unique_name, new_loc, SymbolType::UNKNOWN); \
-    break;                                              \
+// MEGAHACK -- The location for the symbol table should probably be the path
+// without the field.
+#define VISIT_LEAF(type, name)                                                \
+  case substrait::Rel::RelTypeCase::type: {                                   \
+    auto unique_name = symbol_table_.getUniqueName(#name);                    \
+    pipeline->add(unique_name);                                               \
+    symbol_table_.defineSymbol(unique_name, location, SymbolType::kRelation); \
+    break;                                                                    \
   }
 
-#define VISIT_SINGLE(type, name)                                               \
-  case substrait::Rel::RelTypeCase::type: {                                    \
-    pipeline->add(symbol_table_.getUniqueName(#name));                        \
-    visitPipelines(                                                            \
+#define VISIT_SINGLE(type, name)                                              \
+  case substrait::Rel::RelTypeCase::type: {                                   \
+    auto unique_name = symbol_table_.getUniqueName(#name);                    \
+    pipeline->add(unique_name);                                               \
+    symbol_table_.defineSymbol(unique_name, location, SymbolType::kRelation); \
+    visitPipelines(                                                           \
         relation.name().input(), collector, location.visit(#name), pipeline); \
-    break;                                                                     \
+    break;                                                                    \
   }
 
-#define VISIT_DOUBLE(type, name)                                            \
-  case substrait::Rel::RelTypeCase::type: {                                 \
-    auto name = symbol_table_.getUniqueName(#name );                        \
-    pipeline->add(name);                                                    \
-    auto new_loc = location.visit(#name);                                   \
-    visitPipelines(                                                         \
-        relation.name().left(), collector, new_loc, collector->add(name));  \
-    visitPipelines(                                                         \
-        relation.name().right(), collector, new_loc, collector->add(name)); \
-    break;                                                                  \
+#define VISIT_DOUBLE(type, name)                                              \
+  case substrait::Rel::RelTypeCase::type: {                                   \
+    auto unique_name = symbol_table_.getUniqueName(#name);                    \
+    pipeline->add(unique_name);                                               \
+    symbol_table_.defineSymbol(unique_name, location, SymbolType::kRelation); \
+    auto new_loc = location.visit(#name);                                     \
+    visitPipelines(                                                           \
+        relation.name().left(),                                               \
+        collector,                                                            \
+        new_loc,                                                              \
+        collector->add(unique_name));                                         \
+    visitPipelines(                                                           \
+        relation.name().right(),                                              \
+        collector,                                                            \
+        new_loc,                                                              \
+        collector->add(unique_name));                                         \
+    break;                                                                    \
   }
 
-#define VISIT_MULTIPLE(type, name)                                   \
-  case substrait::Rel::RelTypeCase::type: {                          \
-    auto name = symbol_table_.getUniqueName(#name);                  \
-    pipeline->add(name);                                             \
-    auto new_loc = location.visit(#name);                            \
-    for (const auto& rel : relation.name().inputs()) {               \
-      visitPipelines(rel, collector, new_loc, collector->add(name)); \
-    }                                                                \
-    break;                                                           \
+#define VISIT_MULTIPLE(type, name)                                            \
+  case substrait::Rel::RelTypeCase::type: {                                   \
+    auto unique_name = symbol_table_.getUniqueName(#name);                    \
+    pipeline->add(unique_name);                                               \
+    symbol_table_.defineSymbol(unique_name, location, SymbolType::kRelation); \
+    auto new_loc = location.visit(#name);                                     \
+    for (const auto& rel : relation.name().inputs()) {                        \
+      visitPipelines(rel, collector, new_loc, collector->add(unique_name));   \
+    }                                                                         \
+    break;                                                                    \
   }
 
 void PlanConverter::visitPipelines(
@@ -338,7 +348,6 @@ void PlanConverter::visitPipelines(
     PipelineCollector* collector,
     const Location& location,
     Pipeline* pipeline) {
-  symbol_table_.defineUniqueSymbol("MEGAHACK", location, SymbolType::UNKNOWN);
   switch (relation.rel_type_case()) {
     VISIT_LEAF(kRead, read);
     VISIT_SINGLE(kFilter, filter);
@@ -372,24 +381,30 @@ void PlanConverter::visitPipelines(
     PipelineCollector* collector) {
   Location location;
   switch (relation.rel_type_case()) {
-    case substrait::PlanRel::kRoot:
+    case substrait::PlanRel::kRoot: {
       // MEGAHACK -- Figure out whether this "node" should be listed as being
       // part of the pipeline.
+      auto unique_name = symbol_table_.getUniqueName("root");
+      symbol_table_.defineSymbol(unique_name, location, SymbolType::kRelation);
       visitPipelines(
           relation.root().input(),
           collector,
           location.visit("root"),
           collector->add(symbol_table_.getUniqueName("root")));
       break;
-    case substrait::PlanRel::kRel:
+    }
+    case substrait::PlanRel::kRel: {
       // MEGAHACK -- Figure out whether this "node" should be listed as being
       // part of the pipeline.
+      auto unique_name = symbol_table_.getUniqueName("rel");
+      symbol_table_.defineSymbol(unique_name, location, SymbolType::kRelation);
       visitPipelines(
           relation.rel(),
           collector,
           location.visit("rel"),
           collector->add(symbol_table_.getUniqueName("rel")));
       break;
+    }
     case substrait::PlanRel::REL_TYPE_NOT_SET:
     default:
       return;

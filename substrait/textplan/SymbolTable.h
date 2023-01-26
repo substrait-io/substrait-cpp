@@ -30,10 +30,10 @@ class Location {
 
 // MEGAHACK -- Check style guide for enums.
 enum SymbolType {
-  FUNCTION = 0,
-  RELATION = 1,
-  SCHEMA = 2,
-  UNKNOWN = -1,
+  kFunction = 0,
+  kRelation = 1,
+  kSchema = 2,
+  kUnknown = -1,
 };
 
 struct SymbolInfo {
@@ -59,6 +59,7 @@ class SymbolTable {
     return base_name + std::to_string(names_[base_name]);
   }
 
+  // MEGAHACK -- Is a symbol's location the combination of the name and location?
   void defineSymbol(const std::string& name, Location location, SymbolType type) {
     // MEGAHACK -- Note that this does not detect attempts to reuse the same symbol.
     std::shared_ptr<SymbolInfo> info = std::make_shared<SymbolInfo>(name, location, type);
