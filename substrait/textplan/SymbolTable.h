@@ -9,20 +9,9 @@
 
 class Location {
  public:
-  [[nodiscard]] Location visit(const std::string& name) const {
-    Location new_location = *this;
-    new_location.location_.push_back(name);
-    return new_location;
-  }
+  [[nodiscard]] Location visit(const std::string& name) const;
 
-  std::string toString() {
-    std::string text;
-    for (const auto& loc : location_) {
-      if (!text.empty()) text += " -> ";
-      text += loc;
-    }
-    return text;
-  }
+  [[nodiscard]] std::string toString() const;
 
  private:
   std::vector<std::string> location_;
@@ -48,50 +37,53 @@ struct SymbolInfo {
   }
 };
 
-class SymbolTable {
+class SymbolTable;
+
+class SymbolTableIterator {
  public:
-  std::string getUniqueName(const std::string& base_name) {
-    if (names_.find(base_name) == names_.end()) {
-      names_.insert(std::make_pair(base_name, 1));
-      return base_name;
-    }
-    names_[base_name]++;
-    return base_name + std::to_string(names_[base_name]);
-  }
+  bool operator!= (SymbolTableIterator const & other) const;
 
-  // MEGAHACK -- Is a symbol's location the combination of the name and location?
-  void defineSymbol(const std::string& name, Location location, SymbolType type) {
-    // MEGAHACK -- Note that this does not detect attempts to reuse the same symbol.
-    std::shared_ptr<SymbolInfo> info = std::make_shared<SymbolInfo>(name, location, type);
-    symbols_by_name_.insert(std::make_pair(name, info));
-    symbols_by_location_.insert(std::make_pair(location.toString(), info));
-  }
+  SymbolInfo const & operator* () const;
 
-  void defineUniqueSymbol(const std::string& name, Location location, SymbolType type) {
-    const std::string& unique_name = getUniqueName(name);
-    defineSymbol(unique_name, location, type);
-  }
-
-  std::shared_ptr<const SymbolInfo> lookupSymbolByName(const std::string& name) {
-    if (symbols_by_name_.find(name) != symbols_by_name_.end()) {
-      return nullptr;
-    }
-    return symbols_by_name_[name];
-  }
-
-  std::shared_ptr<const SymbolInfo> lookupSymbolByLocation(Location location) {
-    const std::string& loc = location.toString();
-    if (symbols_by_location_.find(loc) != symbols_by_location_.end()) {
-      return nullptr;
-    }
-    return symbols_by_location_[loc];
-  }
+  SymbolTableIterator const & operator++ ();
 
  private:
+  friend SymbolTable;
+
+  SymbolTableIterator(SymbolTable* table, size_t start) {
+    table_ = table;
+    index_ = start;
+  }
+
+  size_t index_;
+  SymbolTable* table_;
+};
+
+class SymbolTable {
+ public:
+  std::string getUniqueName(const std::string& base_name);
+
+  // MEGAHACK -- Is a symbol's location the combination of the name and location?
+  void defineSymbol(const std::string& name, const Location& location, SymbolType type);
+
+  void defineUniqueSymbol(const std::string& name, const Location& location, SymbolType type);
+
+  std::shared_ptr<const SymbolInfo> lookupSymbolByName(const std::string& name);
+
+  std::shared_ptr<const SymbolInfo> lookupSymbolByLocation(const Location& location);
+
+  SymbolTableIterator begin();
+
+  SymbolTableIterator end();
+
+ private:
+  friend SymbolTableIterator;
+
   std::map<std::string, int32_t> names_;
 
-  std::map<std::string, std::shared_ptr<SymbolInfo>> symbols_by_name_;
-  std::map<std::string, std::shared_ptr<SymbolInfo>> symbols_by_location_;
+  std::vector<std::shared_ptr<SymbolInfo>> symbols_;
+  std::map<std::string, size_t> symbols_by_name_;
+  std::map<std::string, size_t> symbols_by_location_;
 };
 
 #endif // SUBSTRAIT_CPP_SYMBOLTABLE_H

@@ -289,6 +289,10 @@ std::string PlanConverter::schemasToText(const substrait::Plan& plan) {
 
 std::string PlanConverter::relationsToText(const substrait::Plan& plan) {
   std::string text;
+  for (const SymbolInfo& info : symbol_table_) {
+    if (info.type != SymbolType::kRelation) continue;
+    text += "  relation " + info.name + " {}\n";
+  }
   return text;
 }
 
