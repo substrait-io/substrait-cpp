@@ -50,11 +50,13 @@ std::string SymbolTable::getUniqueName(const std::string& base_name) {
 void SymbolTable::defineSymbol(
     const std::string& name,
     const Location& location,
-    SymbolType type) {
+    SymbolType type,
+    const substrait::Rel::RelTypeCase& subtype,
+    const void *blob) {
   // MEGAHACK -- Note that this does not detect attempts to reuse the same
   // symbol.
   std::shared_ptr<SymbolInfo> info =
-      std::make_shared<SymbolInfo>(name, location, type);
+      std::make_shared<SymbolInfo>(name, location, type, subtype, blob);
   symbols_.push_back(info);
   symbols_by_name_.insert(std::make_pair(name, symbols_.size()-1));
   symbols_by_location_.insert(std::make_pair(location.toString(), symbols_.size()-1));
@@ -63,9 +65,11 @@ void SymbolTable::defineSymbol(
 void SymbolTable::defineUniqueSymbol(
     const std::string& name,
     const Location& location,
-    SymbolType type) {
+    SymbolType type,
+    const substrait::Rel::RelTypeCase& subtype,
+    const void* blob) {
   const std::string& unique_name = getUniqueName(name);
-  defineSymbol(unique_name, location, type);
+  defineSymbol(unique_name, location, type, subtype, blob);
 }
 
 std::shared_ptr<const SymbolInfo> SymbolTable::lookupSymbolByName(

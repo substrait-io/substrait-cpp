@@ -1,11 +1,14 @@
-// MEGAHACK -- Fix header preamble on all new files (perhaps fix CLion default as well?).
+// MEGAHACK -- Fix header preamble on all new files (perhaps fix CLion default
+// as well?).
 
 #ifndef SUBSTRAIT_CPP_SYMBOLTABLE_H
 #define SUBSTRAIT_CPP_SYMBOLTABLE_H
 
-#include <string>
 #include <map>
+#include <string>
 #include <vector>
+
+#include "substrait/algebra.pb.h"
 
 class Location {
  public:
@@ -20,8 +23,9 @@ class Location {
 // MEGAHACK -- Check style guide for enums.
 enum SymbolType {
   kFunction = 0,
-  kRelation = 1,
-  kSchema = 2,
+  kPlanRelation = 1, // MEGAHACK -- May not be interesting.
+  kRelation = 2,
+  kSchema = 3,
   kUnknown = -1,
 };
 
@@ -29,11 +33,20 @@ struct SymbolInfo {
   std::string name;
   Location location;
   SymbolType type;
+  substrait::Rel::RelTypeCase relation_type;
+  const void* blob;
 
-  SymbolInfo(const std::string& new_name, const Location& new_location, SymbolType new_type) {
+  SymbolInfo(
+      const std::string& new_name,
+      const Location& new_location,
+      SymbolType new_type,
+      const substrait::Rel::RelTypeCase& new_relation_type,
+      const void* new_blob) {
     name = new_name;
     location = new_location;
     type = new_type;
+    relation_type = new_relation_type;
+    blob = new_blob;
   }
 };
 
@@ -41,11 +54,11 @@ class SymbolTable;
 
 class SymbolTableIterator {
  public:
-  bool operator!= (SymbolTableIterator const & other) const;
+  bool operator!=(SymbolTableIterator const& other) const;
 
-  SymbolInfo const & operator* () const;
+  SymbolInfo const& operator*() const;
 
-  SymbolTableIterator const & operator++ ();
+  SymbolTableIterator const& operator++();
 
  private:
   friend SymbolTable;
@@ -63,14 +76,26 @@ class SymbolTable {
  public:
   std::string getUniqueName(const std::string& base_name);
 
-  // MEGAHACK -- Is a symbol's location the combination of the name and location?
-  void defineSymbol(const std::string& name, const Location& location, SymbolType type);
+  // MEGAHACK -- Is a symbol's location the combination of the name and
+  // location? MEGAHACK -- Add support for NULLPTR instead of nullptr.
+  void defineSymbol(
+      const std::string& name,
+      const Location& location,
+      SymbolType type,
+      const substrait::Rel::RelTypeCase& subtype,
+      const void* blob);
 
-  void defineUniqueSymbol(const std::string& name, const Location& location, SymbolType type);
+  void defineUniqueSymbol(
+      const std::string& name,
+      const Location& location,
+      SymbolType type,
+      const substrait::Rel::RelTypeCase& subtype,
+      const void* blob);
 
   std::shared_ptr<const SymbolInfo> lookupSymbolByName(const std::string& name);
 
-  std::shared_ptr<const SymbolInfo> lookupSymbolByLocation(const Location& location);
+  std::shared_ptr<const SymbolInfo> lookupSymbolByLocation(
+      const Location& location);
 
   SymbolTableIterator begin();
 

@@ -15,6 +15,7 @@
  */
 
 #include <fstream>
+#include <iterator>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -282,69 +283,153 @@ std::string PlanConverter::sourcesToText(const substrait::Plan& plan) {
   return text;
 }
 
-std::string PlanConverter::schemasToText(const substrait::Plan& plan) {
+std::string PlanConverter::schemaToText(const SymbolInfo& info) {
   std::string text;
+  if (info.blob != nullptr) {
+    auto schema = static_cast<const substrait::NamedStruct*>(info.blob);
+    text += "schema " + info.name + " {\n";
+    int name_idx = 0;
+    int types_idx = 0;
+    while (name_idx < schema->names_size() && types_idx < schema->struct_().types_size()) {
+      text += "  " + schema->names(name_idx);
+      // Interpret the type.
+      if (schema->struct_().types(types_idx).kind_case() == substrait::Type::kFp64) {
+        if (schema->struct_().types(types_idx).fp64().nullability()) {
+          text += " nullable";
+        }
+        text += " fp64";
+      } else {
+        text += " UNKNOWN";
+      }
+      text += ";\n";
+      ++name_idx;
+      ++types_idx;
+    }
+    text += "}\n";
+  }
   return text;
 }
 
-std::string PlanConverter::relationsToText(const substrait::Plan& plan) {
+std::string PlanConverter::schemasToText() {
   std::string text;
+  // MEGAHACK -- Need to figure out what the proper order for these symbols are
+  // (it is easy to argue that at a minimum they appear in reverse order).
   for (const SymbolInfo& info : symbol_table_) {
-    if (info.type != SymbolType::kRelation) continue;
-    text += "  relation " + info.name + " {}\n";
+    if (info.type != SymbolType::kSchema)
+      continue;
+    text += schemaToText(info);
+  }
+  return text;
+}
+
+std::string PlanConverter::relationToText(const SymbolInfo& info) {
+  std::string text;
+
+  if (info.blob != nullptr) {
+    auto rel = static_cast<const substrait::Rel*>(info.blob);
+    if (rel->read().has_base_schema()) {
+      const std::string& name = symbol_table_.getUniqueName("schema");
+      symbol_table_.defineSymbol(
+          name,
+          info.location,
+          SymbolType::kSchema,
+          substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
+          &rel->read().base_schema());
+      text += "relation " + info.name + "{\n";
+      text += "  base_schema " + name + ";\n";
+      text += "}\n";
+    }
+    // text += rel->common.ShortDebugString() + "\n";
+    // text += rel->filter.ShortDebugString() + "\n";
+    // text += rel->base_effort_filter.ShortDebugString() + "\n";
+    // text += rel->projection.ShortDebugString() + "\n";
+    // text += rel->advanced_extension.ShortDebugString() + "\n";
+  }
+  // text += "  relation " + info.name + " {}\n";
+  return text;
+}
+
+std::string PlanConverter::relationsToText() {
+  std::string text;
+  // MEGAHACK -- Need to figure out what the proper order for these symbols are
+  // (it is easy to argue that at a minimum they appear in reverse order).
+  for (const SymbolInfo& info : symbol_table_) {
+    if (info.type != SymbolType::kRelation)
+      continue;
+    text += relationToText(info);
   }
   return text;
 }
 
 // MEGAHACK -- The location for the symbol table should probably be the path
 // without the field.
-#define VISIT_LEAF(type, name)                                                \
-  case substrait::Rel::RelTypeCase::type: {                                   \
-    auto unique_name = symbol_table_.getUniqueName(#name);                    \
-    pipeline->add(unique_name);                                               \
-    symbol_table_.defineSymbol(unique_name, location, SymbolType::kRelation); \
-    break;                                                                    \
+#define VISIT_LEAF(type, name)                             \
+  case substrait::Rel::RelTypeCase::type: {                \
+    auto unique_name = symbol_table_.getUniqueName(#name); \
+    pipeline->add(unique_name);                            \
+    symbol_table_.defineSymbol(                            \
+        unique_name,                                       \
+        location,                                          \
+        SymbolType::kRelation,                             \
+        substrait::Rel::RelTypeCase::type,                 \
+        &relation);                                        \
+    break;                                                 \
   }
 
 #define VISIT_SINGLE(type, name)                                              \
   case substrait::Rel::RelTypeCase::type: {                                   \
     auto unique_name = symbol_table_.getUniqueName(#name);                    \
     pipeline->add(unique_name);                                               \
-    symbol_table_.defineSymbol(unique_name, location, SymbolType::kRelation); \
+    symbol_table_.defineSymbol(                                               \
+        unique_name,                                                          \
+        location,                                                             \
+        SymbolType::kRelation,                                                \
+        substrait::Rel::RelTypeCase::type,                                    \
+        &relation);                                                           \
     visitPipelines(                                                           \
         relation.name().input(), collector, location.visit(#name), pipeline); \
     break;                                                                    \
   }
 
-#define VISIT_DOUBLE(type, name)                                              \
-  case substrait::Rel::RelTypeCase::type: {                                   \
-    auto unique_name = symbol_table_.getUniqueName(#name);                    \
-    pipeline->add(unique_name);                                               \
-    symbol_table_.defineSymbol(unique_name, location, SymbolType::kRelation); \
-    auto new_loc = location.visit(#name);                                     \
-    visitPipelines(                                                           \
-        relation.name().left(),                                               \
-        collector,                                                            \
-        new_loc,                                                              \
-        collector->add(unique_name));                                         \
-    visitPipelines(                                                           \
-        relation.name().right(),                                              \
-        collector,                                                            \
-        new_loc,                                                              \
-        collector->add(unique_name));                                         \
-    break;                                                                    \
+#define VISIT_DOUBLE(type, name)                           \
+  case substrait::Rel::RelTypeCase::type: {                \
+    auto unique_name = symbol_table_.getUniqueName(#name); \
+    pipeline->add(unique_name);                            \
+    symbol_table_.defineSymbol(                            \
+        unique_name,                                       \
+        location,                                          \
+        SymbolType::kRelation,                             \
+        substrait::Rel::RelTypeCase::type,                 \
+        &relation);                                        \
+    auto new_loc = location.visit(#name);                  \
+    visitPipelines(                                        \
+        relation.name().left(),                            \
+        collector,                                         \
+        new_loc,                                           \
+        collector->add(unique_name));                      \
+    visitPipelines(                                        \
+        relation.name().right(),                           \
+        collector,                                         \
+        new_loc,                                           \
+        collector->add(unique_name));                      \
+    break;                                                 \
   }
 
-#define VISIT_MULTIPLE(type, name)                                            \
-  case substrait::Rel::RelTypeCase::type: {                                   \
-    auto unique_name = symbol_table_.getUniqueName(#name);                    \
-    pipeline->add(unique_name);                                               \
-    symbol_table_.defineSymbol(unique_name, location, SymbolType::kRelation); \
-    auto new_loc = location.visit(#name);                                     \
-    for (const auto& rel : relation.name().inputs()) {                        \
-      visitPipelines(rel, collector, new_loc, collector->add(unique_name));   \
-    }                                                                         \
-    break;                                                                    \
+#define VISIT_MULTIPLE(type, name)                                          \
+  case substrait::Rel::RelTypeCase::type: {                                 \
+    auto unique_name = symbol_table_.getUniqueName(#name);                  \
+    pipeline->add(unique_name);                                             \
+    symbol_table_.defineSymbol(                                             \
+        unique_name,                                                        \
+        location,                                                           \
+        SymbolType::kRelation,                                              \
+        substrait::Rel::RelTypeCase::type,                                  \
+        &relation);                                                         \
+    auto new_loc = location.visit(#name);                                   \
+    for (const auto& rel : relation.name().inputs()) {                      \
+      visitPipelines(rel, collector, new_loc, collector->add(unique_name)); \
+    }                                                                       \
+    break;                                                                  \
   }
 
 void PlanConverter::visitPipelines(
@@ -389,24 +474,34 @@ void PlanConverter::visitPipelines(
       // MEGAHACK -- Figure out whether this "node" should be listed as being
       // part of the pipeline.
       auto unique_name = symbol_table_.getUniqueName("root");
-      symbol_table_.defineSymbol(unique_name, location, SymbolType::kRelation);
+      symbol_table_.defineSymbol(
+          unique_name,
+          location,
+          SymbolType::kPlanRelation,
+          substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
+          &relation);
       visitPipelines(
           relation.root().input(),
           collector,
           location.visit("root"),
-          collector->add(symbol_table_.getUniqueName("root")));
+          collector->add(unique_name));
       break;
     }
     case substrait::PlanRel::kRel: {
       // MEGAHACK -- Figure out whether this "node" should be listed as being
       // part of the pipeline.
       auto unique_name = symbol_table_.getUniqueName("rel");
-      symbol_table_.defineSymbol(unique_name, location, SymbolType::kRelation);
+      symbol_table_.defineSymbol(
+          unique_name,
+          location,
+          SymbolType::kPlanRelation,
+          substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
+          &relation);
       visitPipelines(
           relation.rel(),
           collector,
           location.visit("rel"),
-          collector->add(symbol_table_.getUniqueName("rel")));
+          collector->add(unique_name));
       break;
     }
     case substrait::PlanRel::REL_TYPE_NOT_SET:
@@ -429,11 +524,11 @@ std::string PlanConverter::toString() {
   if (!text.empty()) {
     text += "\n";
   }
-  text += relationsToText(plan_);
+  text += relationsToText();
   if (!text.empty()) {
     text += "\n";
   }
-  text += schemasToText(plan_);
+  text += schemasToText();
   if (!text.empty()) {
     text += "\n";
   }
@@ -444,3 +539,9 @@ std::string PlanConverter::toString() {
   text += functionsToText(plan_);
   return text;
 }
+
+// MEGAHACK -- Filter
+// MEGAHACK -- Condition
+// MEGAHACK -- Expression
+// MEGAHACK -- Eventually Groupings
+// MEGAHACK -- Measures

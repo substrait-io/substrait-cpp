@@ -94,9 +94,12 @@ class PlanConverter {
 
   static std::string functionsToText(const substrait::Plan& plan);
   static std::string sourcesToText(const substrait::Plan& plan);
-  static std::string schemasToText(const substrait::Plan& plan);
-  std::string relationsToText(const substrait::Plan& plan);
+  std::string schemasToText();
+  std::string relationsToText();
   std::string pipelinesToText(const substrait::Plan& plan);
+
+  std::string schemaToText(const SymbolInfo& info);
+  std::string relationToText(const SymbolInfo& info);
 
   void visitPipelines(
       const substrait::Rel& relation,
