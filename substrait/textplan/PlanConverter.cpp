@@ -290,10 +290,12 @@ std::string PlanConverter::schemaToText(const SymbolInfo& info) {
     text += "schema " + info.name + " {\n";
     int name_idx = 0;
     int types_idx = 0;
-    while (name_idx < schema->names_size() && types_idx < schema->struct_().types_size()) {
+    while (name_idx < schema->names_size() &&
+           types_idx < schema->struct_().types_size()) {
       text += "  " + schema->names(name_idx);
       // Interpret the type.
-      if (schema->struct_().types(types_idx).kind_case() == substrait::Type::kFp64) {
+      if (schema->struct_().types(types_idx).kind_case() ==
+          substrait::Type::kFp64) {
         if (schema->struct_().types(types_idx).fp64().nullability()) {
           text += " nullable";
         }
@@ -322,6 +324,111 @@ std::string PlanConverter::schemasToText() {
   return text;
 }
 
+std::string PlanConverter::literalToText(
+    const substrait::Expression::Literal& literal) {
+  switch (literal.literal_type_case()) {
+    case substrait::Expression::Literal::kBoolean:
+      return std::to_string(literal.boolean());
+    case substrait::Expression::Literal::kI8:
+      return std::to_string(literal.i8());
+    case substrait::Expression::Literal::kI16:
+      return std::to_string(literal.i16());
+    case substrait::Expression::Literal::kI32:
+      return std::to_string(literal.i32());
+    case substrait::Expression::Literal::kI64:
+      return std::to_string(literal.i64());
+    case substrait::Expression::Literal::kFp32:
+      return std::to_string(literal.fp32());
+    case substrait::Expression::Literal::kFp64:
+      return std::to_string(literal.fp64());
+    case substrait::Expression::Literal::kString:
+      return "\"" + literal.string() + "\""; // MEGAHACK -- Deal with escapes.
+    default:
+      return "UNSUPPORTED_LITERAL_TYPE";
+  }
+};
+
+std::string PlanConverter::typeToText(const substrait::Type& type) {
+  switch (type.kind_case()) {
+    case substrait::Type::kBool:
+      return "bool";
+    case substrait::Type::kI8:
+      return "i8";
+    case substrait::Type::kI16:
+      return "i16";
+    case substrait::Type::kI32:
+      return "i32";
+    case substrait::Type::kI64:
+      return "i64";
+    case substrait::Type::kFp32:
+      return "fp32";
+    case substrait::Type::kFp64:
+      return "fp64";
+    case substrait::Type::kString:
+      return "string";
+    default:
+      return "UNSUPPORTED_TYPE";
+  }
+};
+
+std::string PlanConverter::scalarFunctionToText(
+    const substrait::Expression::ScalarFunction& function) {
+  std::string text;
+  text += "function#" + std::to_string(function.function_reference()) + "(";
+  // MEGAHACK -- Eventually handle options
+  // MEGAHACK -- Also handle output_type
+  bool first = true;
+  for (const auto& arg : function.arguments()) {
+    if (!first) text += ", ";
+    switch (arg.arg_type_case()) {
+      case substrait::FunctionArgument::kEnum:
+        text += "ENUM_NOT_SUPPORTED";
+        break;
+      case substrait::FunctionArgument::kType:
+        text += typeToText(arg.type());
+        break;
+      case substrait::FunctionArgument::kValue:
+        text += expressionToText(arg.value());
+        break;
+      case substrait::FunctionArgument::ARG_TYPE_NOT_SET:
+      default:
+        text += "UNKNOWN_ARGUMENT_TYPE";
+        break;
+    }
+    first = false;
+  }
+  for (const auto& arg : function.args()) {
+    if (!first) text += ", ";
+    text += expressionToText(arg);
+    first = false;
+  }
+  //if (first) {
+  //  // Had nothing, debug.
+  //  text += "MEGAHACK: " + function.ShortDebugString();
+  //}
+  text += ")";
+  return text;
+};
+
+std::string PlanConverter::expressionToText(const substrait::Expression& exp) {
+  std::string text;
+  switch (exp.rex_type_case()) {
+    case substrait::Expression::kLiteral:
+      text += literalToText(exp.literal());
+      break;
+    case substrait::Expression::kScalarFunction:
+      text += scalarFunctionToText(exp.scalar_function());
+      break;
+    case substrait::Expression::REX_TYPE_NOT_SET:
+      break;
+    default:
+      text += "UNSUPPORTED_TYPE()";
+      break;
+  }
+  //text += exp.ShortDebugString();
+  return text;
+}
+
 std::string PlanConverter::relationToText(const SymbolInfo& info) {
   std::string text;
 
@@ -339,11 +446,13 @@ std::string PlanConverter::relationToText(const SymbolInfo& info) {
       text += "  base_schema " + name + ";\n";
       text += "}\n";
     }
-    // text += rel->common.ShortDebugString() + "\n";
-    // text += rel->filter.ShortDebugString() + "\n";
-    // text += rel->base_effort_filter.ShortDebugString() + "\n";
-    // text += rel->projection.ShortDebugString() + "\n";
-    // text += rel->advanced_extension.ShortDebugString() + "\n";
+    // text += rel->read().common().ShortDebugString() + "\n";
+    if (rel->read().has_filter()) {
+      text += "  filter " + expressionToText(rel->read().filter()) + ";\n";
+    }
+    // text += rel->read().base_effort_filter().ShortDebugString() + "\n";
+    // text += rel->read().projection().ShortDebugString() + "\n";
+    // text += rel->read().advanced_extension().ShortDebugString() + "\n";
   }
   // text += "  relation " + info.name + " {}\n";
   return text;

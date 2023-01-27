@@ -101,6 +101,12 @@ class PlanConverter {
   std::string schemaToText(const SymbolInfo& info);
   std::string relationToText(const SymbolInfo& info);
 
+  static std::string expressionToText(const substrait::Expression& exp);
+  static std::string literalToText(const substrait::Expression::Literal& literal);
+  static std::string typeToText(const substrait::Type& type);
+  static std::string scalarFunctionToText(const substrait::Expression::ScalarFunction& function);
+
+
   void visitPipelines(
       const substrait::Rel& relation,
       PipelineCollector* collector,
