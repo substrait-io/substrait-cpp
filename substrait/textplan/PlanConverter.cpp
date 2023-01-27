@@ -348,6 +348,20 @@ std::string PlanConverter::literalToText(
   }
 };
 
+std::string PlanConverter::fieldReferenceToText(
+    const substrait::Expression::FieldReference& ref) {
+  switch (ref.reference_type_case()) {
+    case substrait::Expression::FieldReference::kDirectReference:
+      // MEGAHACK -- Look up the field number from the appropriate struct.
+      return "field#" + std::to_string(ref.direct_reference().struct_field().field());
+    case substrait::Expression::FieldReference::kMaskedReference:
+      return "MASKED_REF_NOT_SUPPORTED";
+    case substrait::Expression::FieldReference::REFERENCE_TYPE_NOT_SET:
+    default:
+      return "";
+  }
+}
+
 std::string PlanConverter::typeToText(const substrait::Type& type) {
   switch (type.kind_case()) {
     case substrait::Type::kBool:
@@ -379,7 +393,8 @@ std::string PlanConverter::scalarFunctionToText(
   // MEGAHACK -- Also handle output_type
   bool first = true;
   for (const auto& arg : function.arguments()) {
-    if (!first) text += ", ";
+    if (!first)
+      text += ", ";
     switch (arg.arg_type_case()) {
       case substrait::FunctionArgument::kEnum:
         text += "ENUM_NOT_SUPPORTED";
@@ -398,14 +413,15 @@ std::string PlanConverter::scalarFunctionToText(
     first = false;
   }
   for (const auto& arg : function.args()) {
-    if (!first) text += ", ";
+    if (!first)
+      text += ", ";
     text += expressionToText(arg);
     first = false;
   }
-  //if (first) {
-  //  // Had nothing, debug.
-  //  text += "MEGAHACK: " + function.ShortDebugString();
-  //}
+  // if (first) {
+  //   // Had nothing, debug.
+  //   text += "MEGAHACK: " + function.ShortDebugString();
+  // }
   text += ")";
   return text;
 };
@@ -416,16 +432,20 @@ std::string PlanConverter::expressionToText(const substrait::Expression& exp) {
     case substrait::Expression::kLiteral:
       text += literalToText(exp.literal());
       break;
+    case substrait::Expression::kSelection:
+      text += fieldReferenceToText(exp.selection());
+      break;
     case substrait::Expression::kScalarFunction:
       text += scalarFunctionToText(exp.scalar_function());
       break;
     case substrait::Expression::REX_TYPE_NOT_SET:
       break;
     default:
-      text += "UNSUPPORTED_TYPE()";
+      text += "UNSUPPORTED_EXPRESSION_TYPE(" +
+          std::to_string(exp.rex_type_case()) + ")";
       break;
   }
-  //text += exp.ShortDebugString();
+  // text += exp.ShortDebugString();
   return text;
 }
 
