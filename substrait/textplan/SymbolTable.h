@@ -4,6 +4,7 @@
 #ifndef SUBSTRAIT_CPP_SYMBOLTABLE_H
 #define SUBSTRAIT_CPP_SYMBOLTABLE_H
 
+#include <any>
 #include <map>
 #include <string>
 #include <vector>
@@ -35,14 +36,14 @@ struct SymbolInfo {
   Location location;
   SymbolType type;
   substrait::Rel::RelTypeCase relation_type;
-  const void* blob;
+  std::any blob;
 
   SymbolInfo(
       const std::string& new_name,
       const Location& new_location,
       SymbolType new_type,
       const substrait::Rel::RelTypeCase& new_relation_type,
-      const void* new_blob) {
+      std::any new_blob) {
     name = new_name;
     location = new_location;
     type = new_type;
@@ -84,14 +85,14 @@ class SymbolTable {
       const Location& location,
       SymbolType type,
       const substrait::Rel::RelTypeCase& subtype,
-      const void* blob);
+      std::any blob);
 
   void defineUniqueSymbol(
       const std::string& name,
       const Location& location,
       SymbolType type,
       const substrait::Rel::RelTypeCase& subtype,
-      const void* blob);
+      std::any blob);
 
   std::shared_ptr<const SymbolInfo> lookupSymbolByName(const std::string& name);
 

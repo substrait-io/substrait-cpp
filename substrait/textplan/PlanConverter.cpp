@@ -103,7 +103,7 @@ std::string PlanConverter::functionsToText(const substrait::Plan& plan) {
         Location(),
         SymbolType::kFunction,
         substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
-        &ext);
+        ext);
   }
   text += "}\n";
   return text;
@@ -294,18 +294,18 @@ std::string PlanConverter::sourcesToText(const substrait::Plan& plan) {
 
 std::string PlanConverter::schemaToText(const SymbolInfo& info) {
   std::string text;
-  if (info.blob != nullptr) {
-    auto schema = static_cast<const substrait::NamedStruct*>(info.blob);
+  if (info.blob.has_value()) {
+    const auto& schema = std::any_cast<substrait::NamedStruct>(info.blob);
     text += "schema " + info.name + " {\n";
     int name_idx = 0;
     int types_idx = 0;
-    while (name_idx < schema->names_size() &&
-           types_idx < schema->struct_().types_size()) {
-      text += "  " + schema->names(name_idx);
+    while (name_idx < schema.names_size() &&
+           types_idx < schema.struct_().types_size()) {
+      text += "  " + schema.names(name_idx);
       // Interpret the type.
-      if (schema->struct_().types(types_idx).kind_case() ==
+      if (schema.struct_().types(types_idx).kind_case() ==
           substrait::Type::kFp64) {
-        if (schema->struct_().types(types_idx).fp64().nullability()) {
+        if (schema.struct_().types(types_idx).fp64().nullability()) {
           text += " nullable";
         }
         text += " fp64";
@@ -320,7 +320,7 @@ std::string PlanConverter::schemaToText(const SymbolInfo& info) {
           Location(),
           SymbolType::kField,
           substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
-          &schema);
+          schema);
     }
     text += "}\n";
   }
@@ -559,7 +559,7 @@ std::string PlanConverter::readRelationToText(
         parent.location,
         SymbolType::kSchema,
         substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
-        &rel.base_schema());
+        rel.base_schema());
     text += "  base_schema " + name + ";\n";
   }
   // text += rel->read().common().ShortDebugString() + "\n";
@@ -612,25 +612,25 @@ std::string PlanConverter::projectRelationToText(
 }
 
 std::string PlanConverter::relationToText(const SymbolInfo& info) {
-  if (info.blob == nullptr)
+  if (!info.blob.has_value())
     return "";
 
   std::string text;
   text += "relation " + info.name + " {\n";
 
-  auto rel = static_cast<const substrait::Rel*>(info.blob);
-  switch (rel->rel_type_case()) {
+  const auto& rel = std::any_cast<substrait::Rel>(info.blob);
+  switch (rel.rel_type_case()) {
     case substrait::Rel::RelTypeCase::kRead:
-      text += readRelationToText(info, rel->read());
+      text += readRelationToText(info, rel.read());
       break;
     case substrait::Rel::RelTypeCase::kFilter:
-      text += filterRelationToText(rel->filter());
+      text += filterRelationToText(rel.filter());
       break;
     case substrait::Rel::RelTypeCase::kAggregate:
-      text += aggregateRelationToText(rel->aggregate());
+      text += aggregateRelationToText(rel.aggregate());
       break;
     case substrait::Rel::RelTypeCase::kProject:
-      text += projectRelationToText(rel->project());
+      text += projectRelationToText(rel.project());
       break;
     case substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET:
     default:
@@ -668,7 +668,7 @@ std::string PlanConverter::relationsToText() {
         location,                                          \
         SymbolType::kRelation,                             \
         substrait::Rel::RelTypeCase::type,                 \
-        &relation);                                        \
+        relation);                                         \
     break;                                                 \
   }
 
@@ -681,7 +681,7 @@ std::string PlanConverter::relationsToText() {
         location,                                                             \
         SymbolType::kRelation,                                                \
         substrait::Rel::RelTypeCase::type,                                    \
-        &relation);                                                           \
+        relation);                                                            \
     visitPipelines(                                                           \
         relation.name().input(), collector, location.visit(#name), pipeline); \
     break;                                                                    \
@@ -696,7 +696,7 @@ std::string PlanConverter::relationsToText() {
         location,                                          \
         SymbolType::kRelation,                             \
         substrait::Rel::RelTypeCase::type,                 \
-        &relation);                                        \
+        relation);                                         \
     auto new_loc = location.visit(#name);                  \
     visitPipelines(                                        \
         relation.name().left(),                            \
@@ -720,7 +720,7 @@ std::string PlanConverter::relationsToText() {
         location,                                                           \
         SymbolType::kRelation,                                              \
         substrait::Rel::RelTypeCase::type,                                  \
-        &relation);                                                         \
+        relation);                                                          \
     auto new_loc = location.visit(#name);                                   \
     for (const auto& rel : relation.name().inputs()) {                      \
       visitPipelines(rel, collector, new_loc, collector->add(unique_name)); \
@@ -775,7 +775,7 @@ void PlanConverter::visitPipelines(
           location,
           SymbolType::kPlanRelation,
           substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
-          &relation);
+          relation);
       visitPipelines(
           relation.root().input(),
           collector,
@@ -792,7 +792,7 @@ void PlanConverter::visitPipelines(
           location,
           SymbolType::kPlanRelation,
           substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
-          &relation);
+          relation);
       visitPipelines(
           relation.rel(),
           collector,

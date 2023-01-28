@@ -2,9 +2,9 @@
 // Created by David Sisson on 1/25/23.
 //
 
+#include <any>
 #include <map>
 #include <string>
-#include <vector>
 
 #include "SymbolTable.h"
 
@@ -52,7 +52,7 @@ void SymbolTable::defineSymbol(
     const Location& location,
     SymbolType type,
     const substrait::Rel::RelTypeCase& subtype,
-    const void *blob) {
+    std::any blob) {
   // MEGAHACK -- Note that this does not detect attempts to reuse the same
   // symbol.
   std::shared_ptr<SymbolInfo> info =
@@ -67,7 +67,7 @@ void SymbolTable::defineUniqueSymbol(
     const Location& location,
     SymbolType type,
     const substrait::Rel::RelTypeCase& subtype,
-    const void* blob) {
+    std::any blob) {
   const std::string& unique_name = getUniqueName(name);
   defineSymbol(unique_name, location, type, subtype, blob);
 }
