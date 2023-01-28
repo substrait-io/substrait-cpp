@@ -23,9 +23,10 @@ class Location {
 // MEGAHACK -- Check style guide for enums.
 enum SymbolType {
   kFunction = 0,
-  kPlanRelation = 1, // MEGAHACK -- May not be interesting.
-  kRelation = 2,
-  kSchema = 3,
+  kField = 1,
+  kPlanRelation = 2, // MEGAHACK -- May not be interesting.
+  kRelation = 3,
+  kSchema = 4,
   kUnknown = -1,
 };
 
@@ -96,6 +97,8 @@ class SymbolTable {
 
   std::shared_ptr<const SymbolInfo> lookupSymbolByLocation(
       const Location& location);
+
+  std::shared_ptr<const SymbolInfo> nthSymbolByType(uint32_t n, SymbolType type);
 
   SymbolTableIterator begin();
 

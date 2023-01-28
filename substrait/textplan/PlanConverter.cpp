@@ -30,6 +30,7 @@
 #include "substrait/common/Exceptions.h"
 #include "substrait/plan.pb.h"
 
+namespace substrait {
 namespace {
 
 std::string shortName(std::string str) {
@@ -93,10 +94,17 @@ std::string PlanConverter::functionsToText(const substrait::Plan& plan) {
             b.extension_function().function_anchor();
       });
   for (const auto& ext : plan.extensions()) {
+    const auto& unique_name = symbol_table_.getUniqueName(shortName(ext.extension_function().name()));
     text += "  function " + ext.extension_function().name() + " as " +
-        shortName(ext.extension_function().name()) + ";\n";
+        shortName(unique_name) + ";\n";
+    symbol_table_.defineSymbol(
+        unique_name,
+        Location(),
+        SymbolType::kFunction,
+        substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
+        &ext);
   }
-  text + " }\n";
+  text += "}\n";
   return text;
 }
 
@@ -306,6 +314,12 @@ std::string PlanConverter::schemaToText(const SymbolInfo& info) {
       text += ";\n";
       ++name_idx;
       ++types_idx;
+      symbol_table_.defineSymbol(
+          info.name,
+          Location(),
+          SymbolType::kField,
+          substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
+          &schema);
     }
     text += "}\n";
   }
@@ -351,9 +365,16 @@ std::string PlanConverter::literalToText(
 std::string PlanConverter::fieldReferenceToText(
     const substrait::Expression::FieldReference& ref) {
   switch (ref.reference_type_case()) {
-    case substrait::Expression::FieldReference::kDirectReference:
-      // MEGAHACK -- Look up the field number from the appropriate struct.
-      return "field#" + std::to_string(ref.direct_reference().struct_field().field());
+    case substrait::Expression::FieldReference::kDirectReference: {
+      auto field = symbol_table_.nthSymbolByType(
+          ref.direct_reference().struct_field().field(), SymbolType::kField);
+      if (field != nullptr) {
+        return field->name;
+      } else {
+        return "field#" +
+            std::to_string(ref.direct_reference().struct_field().field());
+      }
+    }
     case substrait::Expression::FieldReference::kMaskedReference:
       return "MASKED_REF_NOT_SUPPORTED";
     case substrait::Expression::FieldReference::REFERENCE_TYPE_NOT_SET:
@@ -365,20 +386,36 @@ std::string PlanConverter::fieldReferenceToText(
 std::string PlanConverter::typeToText(const substrait::Type& type) {
   switch (type.kind_case()) {
     case substrait::Type::kBool:
+      if (type.bool_().nullability() == Type::NULLABILITY_NULLABLE)
+        return "opt_bool";
       return "bool";
     case substrait::Type::kI8:
+      if (type.i8().nullability() == Type::NULLABILITY_NULLABLE)
+        return "opt_i8";
       return "i8";
     case substrait::Type::kI16:
+      if (type.i16().nullability() == Type::NULLABILITY_NULLABLE)
+        return "opt_i16";
       return "i16";
     case substrait::Type::kI32:
+      if (type.i32().nullability() == Type::NULLABILITY_NULLABLE)
+        return "opt_i32";
       return "i32";
     case substrait::Type::kI64:
+      if (type.i64().nullability() == Type::NULLABILITY_NULLABLE)
+        return "opt_i64";
       return "i64";
     case substrait::Type::kFp32:
+      if (type.fp32().nullability() == Type::NULLABILITY_NULLABLE)
+        return "opt_fp32";
       return "fp32";
     case substrait::Type::kFp64:
+      if (type.fp64().nullability() == Type::NULLABILITY_NULLABLE)
+        return "opt_fp64";
       return "fp64";
     case substrait::Type::kString:
+      if (type.string().nullability() == Type::NULLABILITY_NULLABLE)
+        return "opt_string";
       return "string";
     default:
       return "UNSUPPORTED_TYPE";
@@ -388,7 +425,14 @@ std::string PlanConverter::typeToText(const substrait::Type& type) {
 std::string PlanConverter::scalarFunctionToText(
     const substrait::Expression::ScalarFunction& function) {
   std::string text;
-  text += "function#" + std::to_string(function.function_reference()) + "(";
+  auto func = symbol_table_.nthSymbolByType(
+      function.function_reference(), SymbolType::kFunction);
+  if (func != nullptr) {
+    text += func->name + "(";
+  } else {
+    text +=
+        "functionref#" + std::to_string(function.function_reference()) + "(";
+  }
   // MEGAHACK -- Eventually handle options
   // MEGAHACK -- Also handle output_type
   bool first = true;
@@ -445,36 +489,154 @@ std::string PlanConverter::expressionToText(const substrait::Expression& exp) {
           std::to_string(exp.rex_type_case()) + ")";
       break;
   }
+
   // text += exp.ShortDebugString();
   return text;
 }
 
-std::string PlanConverter::relationToText(const SymbolInfo& info) {
+std::string PlanConverter::aggregateFunctionToText(
+    const substrait::AggregateFunction& function) {
   std::string text;
-
-  if (info.blob != nullptr) {
-    auto rel = static_cast<const substrait::Rel*>(info.blob);
-    if (rel->read().has_base_schema()) {
-      const std::string& name = symbol_table_.getUniqueName("schema");
-      symbol_table_.defineSymbol(
-          name,
-          info.location,
-          SymbolType::kSchema,
-          substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
-          &rel->read().base_schema());
-      text += "relation " + info.name + "{\n";
-      text += "  base_schema " + name + ";\n";
-      text += "}\n";
-    }
-    // text += rel->read().common().ShortDebugString() + "\n";
-    if (rel->read().has_filter()) {
-      text += "  filter " + expressionToText(rel->read().filter()) + ";\n";
-    }
-    // text += rel->read().base_effort_filter().ShortDebugString() + "\n";
-    // text += rel->read().projection().ShortDebugString() + "\n";
-    // text += rel->read().advanced_extension().ShortDebugString() + "\n";
+  auto func = symbol_table_.nthSymbolByType(
+      function.function_reference(), SymbolType::kFunction);
+  if (func != nullptr) {
+    text += func->name + "(";
+  } else {
+    text +=
+        "functionref#" + std::to_string(function.function_reference()) + "(";
   }
-  // text += "  relation " + info.name + " {}\n";
+  bool first = true;
+  for (const auto& arg : function.arguments()) {
+    if (!first)
+      text += ", ";
+    switch (arg.arg_type_case()) {
+      case substrait::FunctionArgument::kEnum:
+        text += "ENUM_NOT_SUPPORTED";
+        break;
+      case substrait::FunctionArgument::kType:
+        text += typeToText(arg.type());
+        break;
+      case substrait::FunctionArgument::kValue:
+        text += expressionToText(arg.value());
+        break;
+      case substrait::FunctionArgument::ARG_TYPE_NOT_SET:
+      default:
+        text += "UNKNOWN_ARGUMENT_TYPE";
+        break;
+    }
+    first = false;
+  }
+  for (const auto& arg : function.args()) {
+    if (!first)
+      text += ", ";
+    text += expressionToText(arg);
+    first = false;
+  }
+  text += ")";
+#if 0
+  for (const auto& option : function.options()) {
+    text += "#" + option.name();
+    for (const auto& pref : option.preference()) {
+      text += ";" + pref;
+    }
+  }
+#endif
+  text += "->" + typeToText(function.output_type());
+  // MEGAHACK -- Handle sorts here.
+  text += "@" + substrait::AggregationPhase_Name(function.phase());
+  return text;
+}
+
+std::string PlanConverter::readRelationToText(
+    const SymbolInfo& parent,
+    const substrait::ReadRel& rel) {
+  std::string text;
+  if (rel.has_base_schema()) {
+    const std::string& name = symbol_table_.getUniqueName("schema");
+    symbol_table_.defineSymbol(
+        name,
+        parent.location,
+        SymbolType::kSchema,
+        substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
+        &rel.base_schema());
+    text += "  base_schema " + name + ";\n";
+  }
+  // text += rel->read().common().ShortDebugString() + "\n";
+  if (rel.has_filter()) {
+    text += "  filter " + expressionToText(rel.filter()) + ";\n";
+  }
+  // text += rel->read().base_effort_filter().ShortDebugString() + "\n";
+  // text += rel->read().projection().ShortDebugString() + "\n";
+  // text += rel->read().advanced_extension().ShortDebugString() + "\n";
+  return text;
+}
+
+std::string PlanConverter::filterRelationToText(
+    const substrait::FilterRel& rel) {
+  std::string text;
+  if (rel.has_condition()) {
+    text += "  condition " + expressionToText(rel.condition()) + ";\n";
+  }
+  return text;
+}
+
+std::string PlanConverter::aggregateRelationToText(
+    const substrait::AggregateRel& rel) {
+  std::string text;
+  for (const auto& group : rel.groupings()) {
+    for (const auto& expr : group.grouping_expressions()) {
+      text += "  grouping " + expressionToText(expr) + ";\n";
+    }
+  }
+  for (const auto& measure : rel.measures()) {
+    if (!measure.has_measure())
+      continue;
+    text += "  measure {\n";
+    text += "    measure " + aggregateFunctionToText(measure.measure()) + ";\n";
+    if (measure.has_filter()) {
+      text += "    filter " + expressionToText(measure.filter()) + ";\n";
+    }
+    text += "  }\n";
+  }
+  return text;
+}
+
+std::string PlanConverter::projectRelationToText(
+    const substrait::ProjectRel& rel) {
+  std::string text;
+  for (const auto& expr : rel.expressions()) {
+    text += "  expression " + expressionToText(expr) + ";\n";
+  }
+  return text;
+}
+
+std::string PlanConverter::relationToText(const SymbolInfo& info) {
+  if (info.blob == nullptr)
+    return "";
+
+  std::string text;
+  text += "relation " + info.name + " {\n";
+
+  auto rel = static_cast<const substrait::Rel*>(info.blob);
+  switch (rel->rel_type_case()) {
+    case substrait::Rel::RelTypeCase::kRead:
+      text += readRelationToText(info, rel->read());
+      break;
+    case substrait::Rel::RelTypeCase::kFilter:
+      text += filterRelationToText(rel->filter());
+      break;
+    case substrait::Rel::RelTypeCase::kAggregate:
+      text += aggregateRelationToText(rel->aggregate());
+      break;
+    case substrait::Rel::RelTypeCase::kProject:
+      text += projectRelationToText(rel->project());
+      break;
+    case substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET:
+    default:
+      break;
+  }
+
+  text += "}\n";
   return text;
 }
 
@@ -482,10 +644,14 @@ std::string PlanConverter::relationsToText() {
   std::string text;
   // MEGAHACK -- Need to figure out what the proper order for these symbols are
   // (it is easy to argue that at a minimum they appear in reverse order).
+  bool first = true;
   for (const SymbolInfo& info : symbol_table_) {
     if (info.type != SymbolType::kRelation)
       continue;
+    if (!first)
+      text += "\n";
     text += relationToText(info);
+    first = false;
   }
   return text;
 }
@@ -649,6 +815,10 @@ std::string PlanConverter::pipelinesToText(const substrait::Plan& plan) {
 
 std::string PlanConverter::toString() {
   std::string text;
+
+  // Since we don't have a separate visitor pass, create the side effects now and emit later.
+  std::string functionsText = functionsToText(plan_);
+
   text += pipelinesToText(plan_);
   if (!text.empty()) {
     text += "\n";
@@ -665,12 +835,8 @@ std::string PlanConverter::toString() {
   if (!text.empty()) {
     text += "\n";
   }
-  text += functionsToText(plan_);
+  text += functionsText;
   return text;
 }
 
-// MEGAHACK -- Filter
-// MEGAHACK -- Condition
-// MEGAHACK -- Expression
-// MEGAHACK -- Eventually Groupings
-// MEGAHACK -- Measures
+} // namespace substrait

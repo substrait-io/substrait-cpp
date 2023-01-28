@@ -89,6 +89,16 @@ std::shared_ptr<const SymbolInfo> SymbolTable::lookupSymbolByLocation(
   return symbols_[symbols_by_location_[loc]];
 }
 
+std::shared_ptr<const SymbolInfo> SymbolTable::nthSymbolByType(uint32_t n, SymbolType type) {
+  int count = 0;
+  for (auto symbol : symbols_) {
+    if (symbol->type == type) {
+      if (n == count++) return symbol;
+    }
+  }
+  return nullptr;
+}
+
 SymbolTableIterator SymbolTable::begin() {
   return {this, 0};
 }

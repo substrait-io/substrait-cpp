@@ -22,6 +22,8 @@
 
 #include <google/protobuf/util/json_util.h>
 
+namespace substrait {
+
 // Utility function to read a JSON file from disk.
 // MEGAHACK -- Move elsewhere.
 std::string readFromFile(const std::string& msgPath);
@@ -92,22 +94,30 @@ class PlanConverter {
   substrait::Plan plan_;
   SymbolTable symbol_table_;
 
-  static std::string functionsToText(const substrait::Plan& plan);
-  static std::string sourcesToText(const substrait::Plan& plan);
+  std::string functionsToText(const substrait::Plan& plan);
+  std::string sourcesToText(const substrait::Plan& plan);
   std::string schemasToText();
   std::string relationsToText();
   std::string pipelinesToText(const substrait::Plan& plan);
 
   std::string schemaToText(const SymbolInfo& info);
+  std::string readRelationToText(
+      const SymbolInfo& parent,
+      const substrait::ReadRel& rel);
+  std::string filterRelationToText(const substrait::FilterRel& rel);
+  std::string aggregateRelationToText(const substrait::AggregateRel& rel);
+  std::string projectRelationToText(const substrait::ProjectRel& rel);
   std::string relationToText(const SymbolInfo& info);
 
-  static std::string expressionToText(const substrait::Expression& exp);
+  std::string expressionToText(const substrait::Expression& exp);
+  std::string aggregateFunctionToText(
+      const substrait::AggregateFunction& function);
   static std::string literalToText(
       const substrait::Expression::Literal& literal);
-  static std::string fieldReferenceToText(
+  std::string fieldReferenceToText(
       const substrait::Expression::FieldReference& ref);
   static std::string typeToText(const substrait::Type& type);
-  static std::string scalarFunctionToText(
+  std::string scalarFunctionToText(
       const substrait::Expression::ScalarFunction& function);
 
   void visitPipelines(
@@ -120,3 +130,5 @@ class PlanConverter {
       const substrait::PlanRel& relation,
       PipelineCollector* collector);
 };
+
+} // namespace substrait
