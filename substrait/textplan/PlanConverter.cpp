@@ -78,8 +78,9 @@ void PlanConverter::loadFromBinary(const std::string& blob) {
 std::string PlanConverter::functionsToText(const substrait::Plan& plan) {
   std::string text;
   // MEGAHACK -- Deal with grouping extensions by extension space
-  // (extension_uri_reference). MEGAHACK -- Also deal with the fact that there
-  // may be no extension space provided.
+  // (extension_uri_reference).
+
+  // MEGAHACK -- Deal with the fact that there may be no extension space provided.
   if (plan.extensions_size() == 0) {
     return text;
   }
@@ -93,7 +94,7 @@ std::string PlanConverter::functionsToText(const substrait::Plan& plan) {
         return a.extension_function().function_anchor() <
             b.extension_function().function_anchor();
       });
-  for (const auto& ext : plan.extensions()) {
+  for (const auto& ext : extensions) {
     const auto& unique_name = symbol_table_.getUniqueName(shortName(ext.extension_function().name()));
     text += "  function " + ext.extension_function().name() + " as " +
         shortName(unique_name) + ";\n";
