@@ -5,7 +5,7 @@
 #include "substrait/function/Extension.h"
 #include "substrait/function/FunctionSignature.h"
 
-namespace substrait {
+namespace io::substrait {
 
 class FunctionLookup {
  public:
@@ -58,4 +58,4 @@ class WindowFunctionLookup : public FunctionLookup {
   }
 };
 
-} // namespace substrait
+} // namespace io::substrait

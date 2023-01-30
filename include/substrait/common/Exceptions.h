@@ -6,7 +6,7 @@
 #include <utility>
 #include <fmt/format.h>
 
-namespace substrait::common {
+namespace io::substrait::common {
 namespace error_code {
 
 //====================== User Error Codes ======================:
@@ -133,4 +133,4 @@ std::string errorMessage(fmt::string_view fmt, const Args&... args) {
       substrait::common::error_code::kInvalidArgument, \
       ##__VA_ARGS__)
 
-} // namespace substrait::common
+} // namespace io::substrait::common
