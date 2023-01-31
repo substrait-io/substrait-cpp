@@ -26,9 +26,6 @@ foreach(PROTO_FILE IN LISTS PROTOBUF_FILELIST)
 
     cmake_path(REMOVE_EXTENSION RELATIVE_PROTO_PATH)
 
-    # MEGAHACK -- Make sure extensions is in extensions subdirectory by using relative paths above instead of this hack.
-    #string(REPLACE "extensions" "extensions/extensions" PROTO_NAME ${PROTO_NAME})
-
     set(PROTO_HDR ${PROTO_OUTPUT_PARENT_DIR}/${RELATIVE_PROTO_PATH}.pb.h)
     set(PROTO_SRC ${PROTO_OUTPUT_PARENT_DIR}/${RELATIVE_PROTO_PATH}.pb.cc)
     add_custom_command(
