@@ -80,7 +80,8 @@ std::string PlanConverter::functionsToText(const substrait::Plan& plan) {
   // MEGAHACK -- Deal with grouping extensions by extension space
   // (extension_uri_reference).
 
-  // MEGAHACK -- Deal with the fact that there may be no extension space provided.
+  // MEGAHACK -- Deal with the fact that there may be no extension space
+  // provided.
   if (plan.extensions_size() == 0) {
     return text;
   }
@@ -95,7 +96,8 @@ std::string PlanConverter::functionsToText(const substrait::Plan& plan) {
             b.extension_function().function_anchor();
       });
   for (const auto& ext : extensions) {
-    const auto& unique_name = symbol_table_.getUniqueName(shortName(ext.extension_function().name()));
+    const auto& unique_name =
+        symbol_table_.getUniqueName(shortName(ext.extension_function().name()));
     text += "  function " + ext.extension_function().name() + " as " +
         shortName(unique_name) + ";\n";
     symbol_table_.defineSymbol(
@@ -109,8 +111,7 @@ std::string PlanConverter::functionsToText(const substrait::Plan& plan) {
   return text;
 }
 
-namespace {
-std::string extractLocalFile(
+std::string PlanConverter::extractLocalFile(
     const substrait::ReadRel::LocalFiles::FileOrFiles& item) {
   std::string text;
   switch (item.path_type_case()) {
@@ -164,10 +165,17 @@ std::string extractLocalFile(
   return text;
 }
 
-std::string extractReadType(const substrait::ReadRel& relation) {
+std::string PlanConverter::extractReadType(const substrait::ReadRel& relation) {
   switch (relation.read_type_case()) {
     case substrait::ReadRel::kLocalFiles: {
-      std::string text = "source local_files {\n";
+      const auto& unique_name = symbol_table_.getUniqueName("local");
+      symbol_table_.defineSymbol(
+          unique_name,
+          Location(),
+          SymbolType::kSource,
+          substrait::Rel::RelTypeCase::REL_TYPE_NOT_SET,
+          relation);
+      std::string text = "source local_files " + unique_name + " {\n";
       text += "  items = [\n";
       for (const auto& item : relation.local_files().items()) {
         text += "    {" + extractLocalFile(item) + "}\n";
@@ -176,20 +184,20 @@ std::string extractReadType(const substrait::ReadRel& relation) {
       text += "}\n";
       // MEGAHACK -- Add support for advanced extensions.
       return text;
-    }
-    case substrait::ReadRel::kVirtualTable:
-      SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented.");
-    case substrait::ReadRel::kNamedTable:
-      SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented.");
-    case substrait::ReadRel::kExtensionTable:
-      SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented.");
-    case substrait::ReadRel::READ_TYPE_NOT_SET:
-    default:
-      return "";
   }
+  case substrait::ReadRel::kVirtualTable:
+    SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented.");
+  case substrait::ReadRel::kNamedTable:
+    SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented.");
+  case substrait::ReadRel::kExtensionTable:
+    SUBSTRAIT_UNSUPPORTED("MEGAHACK -- Not yet implemented.");
+  case substrait::ReadRel::READ_TYPE_NOT_SET:
+  default:
+    return "";
+}
 }
 
-std::string extractSources(const substrait::Rel& relation) {
+std::string PlanConverter::extractSources(const substrait::Rel& relation) {
   switch (relation.rel_type_case()) {
     case substrait::Rel::RelTypeCase::kRead:
       return extractReadType(relation.read());
@@ -239,7 +247,7 @@ std::string extractSources(const substrait::Rel& relation) {
   }
 }
 
-std::string extractSources(const substrait::PlanRel& relation) {
+std::string PlanConverter::extractSources(const substrait::PlanRel& relation) {
   // MEGAHACK -- Use rel_type_case here.
   if (relation.has_root()) {
     return extractSources(relation.root().input());
@@ -248,8 +256,6 @@ std::string extractSources(const substrait::PlanRel& relation) {
   }
   return "";
 }
-
-} // namespace
 
 void Pipeline::add(const std::string& node) {
   nodes_.push_back(node);
@@ -435,7 +441,6 @@ std::string PlanConverter::scalarFunctionToText(
         "functionref#" + std::to_string(function.function_reference()) + "(";
   }
   // MEGAHACK -- Eventually handle options
-  // MEGAHACK -- Also handle output_type
   bool first = true;
   for (const auto& arg : function.arguments()) {
     if (!first)
@@ -463,6 +468,7 @@ std::string PlanConverter::scalarFunctionToText(
     text += expressionToText(arg);
     first = false;
   }
+  text += "->" + typeToText(function.output_type());
   // if (first) {
   //   // Had nothing, debug.
   //   text += "MEGAHACK: " + function.ShortDebugString();
@@ -817,7 +823,8 @@ std::string PlanConverter::pipelinesToText(const substrait::Plan& plan) {
 std::string PlanConverter::toString() {
   std::string text;
 
-  // Since we don't have a separate visitor pass, create the side effects now and emit later.
+  // Since we don't have a separate visitor pass, create the side effects now
+  // and emit later.
   std::string functionsText = functionsToText(plan_);
 
   text += pipelinesToText(plan_);

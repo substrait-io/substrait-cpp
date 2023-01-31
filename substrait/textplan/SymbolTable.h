@@ -28,6 +28,8 @@ enum SymbolType {
   kPlanRelation = 2, // MEGAHACK -- May not be interesting.
   kRelation = 3,
   kSchema = 4,
+  kSource = 5,
+  kExtensionSpace = 6,
   kUnknown = -1,
 };
 
@@ -43,7 +45,7 @@ struct SymbolInfo {
       const Location& new_location,
       SymbolType new_type,
       const substrait::Rel::RelTypeCase& new_relation_type,
-      std::any new_blob) {
+      const std::any& new_blob) {
     name = new_name;
     location = new_location;
     type = new_type;
@@ -79,27 +81,29 @@ class SymbolTable {
   std::string getUniqueName(const std::string& base_name);
 
   // MEGAHACK -- Is a symbol's location the combination of the name and
-  // location? MEGAHACK -- Add support for NULLPTR instead of nullptr.
+  // location?
   void defineSymbol(
       const std::string& name,
       const Location& location,
       SymbolType type,
       const substrait::Rel::RelTypeCase& subtype,
-      std::any blob);
+      const std::any& blob);
 
   void defineUniqueSymbol(
       const std::string& name,
       const Location& location,
       SymbolType type,
       const substrait::Rel::RelTypeCase& subtype,
-      std::any blob);
+      const std::any& blob);
 
   std::shared_ptr<const SymbolInfo> lookupSymbolByName(const std::string& name);
 
   std::shared_ptr<const SymbolInfo> lookupSymbolByLocation(
       const Location& location);
 
-  std::shared_ptr<const SymbolInfo> nthSymbolByType(uint32_t n, SymbolType type);
+  std::shared_ptr<const SymbolInfo> nthSymbolByType(
+      uint32_t n,
+      SymbolType type);
 
   SymbolTableIterator begin();
 

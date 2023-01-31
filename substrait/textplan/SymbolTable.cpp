@@ -52,14 +52,15 @@ void SymbolTable::defineSymbol(
     const Location& location,
     SymbolType type,
     const substrait::Rel::RelTypeCase& subtype,
-    std::any blob) {
+    const std::any& blob) {
   // MEGAHACK -- Note that this does not detect attempts to reuse the same
   // symbol.
   std::shared_ptr<SymbolInfo> info =
       std::make_shared<SymbolInfo>(name, location, type, subtype, blob);
   symbols_.push_back(info);
-  symbols_by_name_.insert(std::make_pair(name, symbols_.size()-1));
-  symbols_by_location_.insert(std::make_pair(location.toString(), symbols_.size()-1));
+  symbols_by_name_.insert(std::make_pair(name, symbols_.size() - 1));
+  symbols_by_location_.insert(
+      std::make_pair(location.toString(), symbols_.size() - 1));
 }
 
 void SymbolTable::defineUniqueSymbol(
@@ -67,7 +68,7 @@ void SymbolTable::defineUniqueSymbol(
     const Location& location,
     SymbolType type,
     const substrait::Rel::RelTypeCase& subtype,
-    std::any blob) {
+    const std::any& blob) {
   const std::string& unique_name = getUniqueName(name);
   defineSymbol(unique_name, location, type, subtype, blob);
 }
@@ -89,11 +90,14 @@ std::shared_ptr<const SymbolInfo> SymbolTable::lookupSymbolByLocation(
   return symbols_[symbols_by_location_[loc]];
 }
 
-std::shared_ptr<const SymbolInfo> SymbolTable::nthSymbolByType(uint32_t n, SymbolType type) {
+std::shared_ptr<const SymbolInfo> SymbolTable::nthSymbolByType(
+    uint32_t n,
+    SymbolType type) {
   int count = 0;
   for (auto symbol : symbols_) {
     if (symbol->type == type) {
-      if (n == count++) return symbol;
+      if (n == count++)
+        return symbol;
     }
   }
   return nullptr;

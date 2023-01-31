@@ -120,6 +120,12 @@ class PlanConverter {
   std::string scalarFunctionToText(
       const substrait::Expression::ScalarFunction& function);
 
+  std::string extractLocalFile(
+      const substrait::ReadRel::LocalFiles::FileOrFiles& item);
+  std::string extractReadType(const substrait::ReadRel& relation);
+  std::string extractSources(const substrait::Rel& relation);
+  std::string extractSources(const substrait::PlanRel& relation);
+
   void visitPipelines(
       const substrait::Rel& relation,
       PipelineCollector* collector,
