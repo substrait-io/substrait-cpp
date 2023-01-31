@@ -11,6 +11,7 @@ file(GLOB PROTOBUF_FILELIST ${PROTO_INCLUDE_DIR}/*.proto ${PROTO_INCLUDE_DIR}/ex
 message(STATUS "PROTOBUF_FILELIST=${PROTOBUF_FILELIST}")
 
 
+# Generate cpp sources for the protobufs in third_party/substrait/proto/substrait.
 set(PROTO_HDRS)
 set(PROTO_SRCS)
 
