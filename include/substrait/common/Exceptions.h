@@ -2,9 +2,9 @@
 
 #pragma once
 
+#include <fmt/format.h>
 #include <memory>
 #include <utility>
-#include <fmt/format.h>
 
 namespace io::substrait::common {
 namespace error_code {
@@ -32,7 +32,6 @@ inline constexpr const char* kNotImplemented = "NOT_IMPLEMENTED";
 
 class SubstraitException : public std::exception {
  public:
-
   enum class Type {
     // Errors where the root cause of the problem is either because of bad input
     // or an unsupported pattern of use are classified with USER. Examples
@@ -40,7 +39,8 @@ class SubstraitException : public std::exception {
     // objects.
     kUser = 0,
 
-    // Errors where the root cause of the problem is some unreliable aspect of the
+    // Errors where the root cause of the problem is some unreliable aspect of
+    // the
     // system are classified with SYSTEM.
     kSystem = 1
   };
@@ -91,46 +91,46 @@ std::string errorMessage(fmt::string_view fmt, const Args&... args) {
   return fmt::vformat(fmt, fmt::make_format_args(args...));
 }
 
-#define SUBSTRAIT_THROW(exception, errorCode, ...)                   \
-  {                                                                  \
-    auto message = substrait::common::errorMessage(__VA_ARGS__); \
-    throw exception(errorCode, message);                             \
+#define SUBSTRAIT_THROW(exception, errorCode, ...)                     \
+  {                                                                    \
+    auto message = ::io::substrait::common::errorMessage(__VA_ARGS__); \
+    throw exception(errorCode, message);                               \
   }
 
 #define SUBSTRAIT_UNSUPPORTED(...)                       \
   SUBSTRAIT_THROW(                                       \
-      substrait::common::SubstraitUserError,       \
-      substrait::common::error_code::kUnsupported, \
+      ::io::substrait::common::SubstraitUserError,       \
+      ::io::substrait::common::error_code::kUnsupported, \
       ##__VA_ARGS__)
 
 #define SUBSTRAIT_UNREACHABLE(...)                           \
   SUBSTRAIT_THROW(                                           \
-      substrait::common::SubstraitRuntimeError,        \
-      substrait::common::error_code::kUnreachableCode, \
+      ::io::substrait::common::SubstraitRuntimeError,        \
+      ::io::substrait::common::error_code::kUnreachableCode, \
       ##__VA_ARGS__)
 
 #define SUBSTRAIT_FAIL(...)                               \
   SUBSTRAIT_THROW(                                        \
-      ::substrait::common::SubstraitRuntimeError,     \
-      ::substrait::common::error_code::kInvalidState, \
+      ::io::substrait::common::SubstraitRuntimeError,     \
+      ::io::substrait::common::error_code::kInvalidState, \
       ##__VA_ARGS__)
 
 #define SUBSTRAIT_USER_FAIL(...)                          \
   SUBSTRAIT_THROW(                                        \
-      substrait::common::SubstraitUserError,        \
-      substrait::common::error_code::kInvalidState, \
+      ::io::substrait::common::SubstraitUserError,        \
+      ::io::substrait::common::error_code::kInvalidState, \
       ##__VA_ARGS__)
 
 #define SUBSTRAIT_NYI(...)                                  \
   SUBSTRAIT_THROW(                                          \
-      substrait::common::SubstraitRuntimeError,       \
-      substrait::common::error_code::kNotImplemented, \
+      ::io::substrait::common::SubstraitRuntimeError,       \
+      ::io::substrait::common::error_code::kNotImplemented, \
       ##__VA_ARGS__)
 
-#define SUBSTRAIT_IVALID_ARGUMENT(...)                      \
+#define SUBSTRAIT_IVALID_ARGUMENT(...)                       \
   SUBSTRAIT_THROW(                                           \
-      substrait::common::SubstraitUserError,           \
-      substrait::common::error_code::kInvalidArgument, \
+      ::io::substrait::common::SubstraitUserError,           \
+      ::io::substrait::common::error_code::kInvalidArgument, \
       ##__VA_ARGS__)
 
 } // namespace io::substrait::common
