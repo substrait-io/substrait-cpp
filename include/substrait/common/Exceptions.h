@@ -39,8 +39,7 @@ class SubstraitException : public std::exception {
     // objects.
     kUser = 0,
 
-    // Errors where the root cause of the problem is some unreliable aspect of
-    // the
+    // Errors where the root cause of the problem is some unreliable aspect of the
     // system are classified with SYSTEM.
     kSystem = 1
   };
