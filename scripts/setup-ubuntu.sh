@@ -22,4 +22,5 @@ sudo --preserve-env apt install -y \
   git \
   wget \
   libprotobuf-dev \
-  libprotobuf23
+  libprotobuf23 \
+  protobuf-compiler
