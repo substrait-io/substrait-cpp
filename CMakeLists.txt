@@ -29,4 +29,5 @@ if(${SUBSTRAIT_CPP_BUILD_TESTING})
   enable_testing()
 endif()
 
+
 add_subdirectory(substrait)
