@@ -189,7 +189,12 @@ class ParameterizedType {
   /// Deserialize substrait raw type string into Substrait extension  type.
   /// @param rawType - substrait extension raw string type
   static std::shared_ptr<const ParameterizedType> decode(
-      const std::string& rawType);
+      const std::string& rawType){
+    return decode(rawType, true);
+  }
+
+  static std::shared_ptr<const ParameterizedType> decode(
+      const std::string& rawType,bool isParameterized);
 
   [[nodiscard]] const bool& nullable() const {
     return nullable_;
@@ -652,5 +657,10 @@ std::shared_ptr<const Map> MAP(
     const TypePtr& valueType);
 
 std::shared_ptr<const Struct> STRUCT(const std::vector<TypePtr>& children);
+
+template <class T = ParameterizedType>
+std::shared_ptr<const T> decode(
+    const std::string& rawType,
+    bool forParameterizedType = true);
 
 } // namespace io::substrait
