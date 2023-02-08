@@ -17,7 +17,7 @@ bool decodeFunctionImpl(
     std::string lastReturnType;
     while (std::getline(ss, lastReturnType, '\n')) {
     }
-    function.returnType = io::substrait::Type::decode(lastReturnType);
+    function.returnType = io::substrait::ParameterizedType::decode(lastReturnType);
   }
   const auto& args = node["args"];
   if (args && args.IsSequence()) {
@@ -77,7 +77,7 @@ struct YAML::convert<io::substrait::ValueArgument> {
     const auto& value = node["value"];
     if (value && value.IsScalar()) {
       auto valueType = value.as<std::string>();
-      argument.type = io::substrait::Type::decode(valueType);
+      argument.type = io::substrait::ParameterizedType::decode(valueType);
       return true;
     }
     return false;

@@ -189,7 +189,12 @@ class ParameterizedType {
   /// Deserialize substrait raw type string into Substrait extension  type.
   /// @param rawType - substrait extension raw string type
   static std::shared_ptr<const ParameterizedType> decode(
-      const std::string& rawType);
+      const std::string& rawType){
+    return decode(rawType, true);
+  }
+
+  static std::shared_ptr<const ParameterizedType> decode(
+      const std::string& rawType,bool isParameterized);
 
   [[nodiscard]] const bool& nullable() const {
     return nullable_;

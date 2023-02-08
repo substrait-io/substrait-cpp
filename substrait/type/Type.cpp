@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#include "substrait/type/Type.h"
 #include <algorithm>
 #include <sstream>
 #include <stdexcept>
-#include "substrait/type/Type.h"
 #include "substrait/common/Exceptions.h"
 
 namespace io::substrait {
@@ -27,7 +27,7 @@ size_t findNextComma(const std::string& str, size_t start) {
 
 } // namespace
 
-ParameterizedTypePtr ParameterizedType::decode(const std::string& rawType) {
+ParameterizedTypePtr ParameterizedType::decode(const std::string& rawType, bool isParameterized) {
   std::string matchingType = rawType;
   std::transform(
       matchingType.begin(),
@@ -97,38 +97,83 @@ ParameterizedTypePtr ParameterizedType::decode(const std::string& rawType) {
     auto commaPos = findNextComma(rawType, prevPos);
     while (commaPos != std::string::npos) {
       auto token = rawType.substr(prevPos, commaPos - prevPos);
-      nestedTypes.emplace_back(decode(token));
+      nestedTypes.emplace_back(decode(token,isParameterized));
       prevPos = commaPos + 1;
       commaPos = findNextComma(rawType, prevPos);
     }
     auto token = rawType.substr(prevPos, rightAngleBracketPos - prevPos);
-    nestedTypes.emplace_back(decode(token));
+    nestedTypes.emplace_back(decode(token,isParameterized));
 
     if (TypeTraits<TypeKind::kList>::typeString == baseType) {
-      return std::make_shared<ParameterizedList>(nestedTypes[0], nullable);
+      if (isParameterized) {
+        return std::make_shared<ParameterizedList>(nestedTypes[0], nullable);
+      } else {
+        return std::make_shared<List>(
+            std::dynamic_pointer_cast<const Type>(nestedTypes[0]), nullable);
+      }
     } else if (TypeTraits<TypeKind::kMap>::typeString == baseType) {
-      return std::make_shared<ParameterizedMap>(
-          nestedTypes[0], nestedTypes[1], nullable);
+      if (isParameterized) {
+        return std::make_shared<ParameterizedMap>(
+            nestedTypes[0], nestedTypes[1], nullable);
+      } else {
+        return std::make_shared<Map>(
+            std::dynamic_pointer_cast<const Type>(nestedTypes[0]),
+            std::dynamic_pointer_cast<const Type>(nestedTypes[1]),
+            nullable);
+      }
+
     } else if (TypeTraits<TypeKind::kStruct>::typeString == baseType) {
-      return std::make_shared<ParameterizedStruct>(nestedTypes, nullable);
+      if (isParameterized) {
+        return std::make_shared<const ParameterizedStruct>(
+            nestedTypes, nullable);
+      } else {
+        std::vector<TypePtr> types;
+        types.reserve(nestedTypes.size());
+        for (int i = 0; i < nestedTypes.size(); i++) {
+          types.emplace_back(
+              std::dynamic_pointer_cast<const Type>(nestedTypes.at(i)));
+        }
+        return std::make_shared<Struct>(types, nullable);
+      }
     } else if (TypeTraits<TypeKind::kDecimal>::typeString == baseType) {
       StringLiteralPtr precision =
           std::dynamic_pointer_cast<const StringLiteral>(nestedTypes[0]);
       StringLiteralPtr scale =
           std::dynamic_pointer_cast<const StringLiteral>(nestedTypes[1]);
-      return std::make_shared<ParameterizedDecimal>(precision, scale, nullable);
+      if (isParameterized) {
+        return std::make_shared<ParameterizedDecimal>(
+            precision, scale, nullable);
+      } else {
+        return std::make_shared<Decimal>(
+            std::stoi(precision->value()), std::stoi(scale->value()), nullable);
+      }
     } else if (TypeTraits<TypeKind::kVarchar>::typeString == baseType) {
       auto length =
           std::dynamic_pointer_cast<const StringLiteral>(nestedTypes[0]);
-      return std::make_shared<ParameterizedVarchar>(length, nullable);
+      if (isParameterized) {
+        return std::make_shared<ParameterizedVarchar>(length, nullable);
+      } else {
+        return std::make_shared<Varchar>(std::stoi(length->value()), nullable);
+      }
+
     } else if (TypeTraits<TypeKind::kFixedChar>::typeString == baseType) {
       auto length =
           std::dynamic_pointer_cast<const StringLiteral>(nestedTypes[0]);
-      return std::make_shared<ParameterizedFixedChar>(length, nullable);
+      if (isParameterized) {
+        return std::make_shared<ParameterizedFixedChar>(length, nullable);
+      } else {
+        return std::make_shared<FixedChar>(
+            std::stoi(length->value()), nullable);
+      }
     } else if (TypeTraits<TypeKind::kFixedBinary>::typeString == baseType) {
       auto length =
           std::dynamic_pointer_cast<const StringLiteral>(nestedTypes[0]);
-      return std::make_shared<ParameterizedFixedBinary>(length, nullable);
+      if (isParameterized) {
+        return std::make_shared<ParameterizedFixedBinary>(length, nullable);
+      } else {
+        return std::make_shared<FixedBinary>(
+            std::stoi(length->value()), nullable);
+      }
     } else {
       SUBSTRAIT_UNSUPPORTED("Unsupported type: " + rawType);
     }
