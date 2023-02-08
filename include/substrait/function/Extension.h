@@ -43,7 +43,7 @@ class Extension {
   /// Add a scalar function implementation.
   void addScalarFunctionImpl(const FunctionImplementationPtr& functionImpl);
 
-  /// Add a aggregate function implementation.
+  /// Add an aggregate function implementation.
   void addAggregateFunctionImpl(const FunctionImplementationPtr& functionImpl);
 
   /// Add a window function implementation.
