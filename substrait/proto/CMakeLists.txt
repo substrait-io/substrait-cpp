@@ -4,6 +4,7 @@ find_package(Protobuf REQUIRED)
 include_directories(${Protobuf_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
+find_package(Perl REQUIRED)
 
 SET(PROTO_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/third_party/substrait/proto/substrait")
 cmake_path(GET PROTO_INCLUDE_DIR PARENT_PATH PROTO_INCLUDE_TOPLEVEL_DIR)
@@ -27,15 +28,22 @@ foreach(PROTO_FILE IN LISTS PROTOBUF_FILELIST)
 
     cmake_path(REMOVE_EXTENSION RELATIVE_PROTO_PATH)
 
-    set(PROTO_HDR ${PROTO_OUTPUT_PARENT_DIR}/${RELATIVE_PROTO_PATH}.pb.h)
-    set(PROTO_SRC ${PROTO_OUTPUT_PARENT_DIR}/${RELATIVE_PROTO_PATH}.pb.cc)
+    set(PROTO_GENERATED_HDR ${PROTO_OUTPUT_PARENT_DIR}/${RELATIVE_PROTO_PATH}.pb.h)
+    set(PROTO_GENERATED_SRC ${PROTO_OUTPUT_PARENT_DIR}/${RELATIVE_PROTO_PATH}.pb.cc)
+    set(PROTO_HDR ${PROTO_OUTPUT_PARENT_DIR}/proto/${RELATIVE_PROTO_PATH}.pb.h)
+    set(PROTO_SRC ${PROTO_OUTPUT_PARENT_DIR}/proto/${RELATIVE_PROTO_PATH}.pb.cc)
     add_custom_command(
             OUTPUT ${PROTO_SRC} ${PROTO_HDR}
             COMMAND protobuf::protoc
             "--proto_path=${PROTO_INCLUDE_TOPLEVEL_DIR}"
             "--cpp_out=${PROTO_OUTPUT_TOPLEVEL_DIR}"
             ${PROTO_FILE}
-            DEPENDS ${PROTO_FILE} protobuf::protoc
+            COMMAND mkdir -p "${PROTO_OUTPUT_PARENT_DIR}/proto"
+            COMMAND mv ${PROTO_GENERATED_HDR} ${PROTO_HDR}
+            COMMAND ${PERL_EXECUTABLE} -i "${CMAKE_CURRENT_SOURCE_DIR}/update_proto_includes.py" ${PROTO_HDR}
+            COMMAND mv ${PROTO_GENERATED_SRC} ${PROTO_SRC}
+            COMMAND ${PERL_EXECUTABLE} -i "${CMAKE_CURRENT_SOURCE_DIR}/update_proto_includes.py" ${PROTO_SRC}
+            DEPENDS ${PROTO_FILE} protobuf::protoc "${CMAKE_CURRENT_SOURCE_DIR}/update_proto_includes.py"
             COMMENT "Generate C++ protocol buffer for ${PROTO_FILE}"
             VERBATIM)
     list(APPEND PROTO_HDRS ${PROTO_HDR})
