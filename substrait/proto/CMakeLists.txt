@@ -43,7 +43,7 @@ foreach(PROTO_FILE IN LISTS PROTOBUF_FILELIST)
 endforeach()
 
 # Add the generated protobuf C++ files to our exported library.
-add_library(proto ${PROTO_SRCS})
+add_library(substrait_proto ${PROTO_SRCS})
 
 # Make sure we can see our own generated include files.
-target_include_directories(proto PUBLIC "${PROTO_OUTPUT_TOPLEVEL_DIR}")
+target_include_directories(substrait_proto PUBLIC "${PROTO_OUTPUT_TOPLEVEL_DIR}")
