@@ -7,12 +7,12 @@ namespace io::substrait {
 FunctionImplementationPtr FunctionLookup::lookupFunction(
     const FunctionSignature& signature) const {
 
-  const auto& functionImpls = getFunctionVariants();
+  const auto& functionImpls = getFunctionImpls();
   auto functionImplsIter = functionImpls.find(signature.name);
   if (functionImplsIter != functionImpls.end()) {
-    for (const auto& candidateFunctionVariant : functionImplsIter->second) {
-      if (candidateFunctionVariant->tryMatch(signature)) {
-        return candidateFunctionVariant;
+    for (const auto& candidateFunctionImpl : functionImplsIter->second) {
+      if (candidateFunctionImpl->tryMatch(signature)) {
+        return candidateFunctionImpl;
       }
     }
   }

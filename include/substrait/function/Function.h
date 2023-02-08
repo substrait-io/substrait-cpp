@@ -97,7 +97,7 @@ struct FunctionImplementation {
   ParameterizedTypePtr returnType;
   std::optional<FunctionVariadic> variadic;
 
-  /// Test if the actual types matched with this function variant.
+  /// Test if the actual types matched with this function's implementation.
   virtual bool tryMatch(const FunctionSignature& signature);
 
   /// Create function signature by function name and arguments.
