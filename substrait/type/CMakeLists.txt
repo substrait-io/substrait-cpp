@@ -9,6 +9,6 @@ target_link_libraries(
         substrait_type
         substrait_common)
 
-if (${BUILD_TESTING})
+if (${SUBSTRAIT_CPP_BUILD_TESTING})
     add_subdirectory(tests)
 endif ()
