@@ -31,4 +31,12 @@
 *.out
 *.app
 
+# IDE files
+*~
+.vscode/
+
+# Common CMake Build directory
+build/
+
+# Generated code
 src/proto/substrait

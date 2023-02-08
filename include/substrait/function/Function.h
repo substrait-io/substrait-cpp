@@ -2,8 +2,10 @@
 
 #pragma once
 
-#include "substrait/type/Type.h"
+#include <optional>
+
 #include "substrait/function/FunctionSignature.h"
+#include "substrait/type/Type.h"
 
 namespace io::substrait {
 
