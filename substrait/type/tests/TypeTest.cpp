@@ -130,6 +130,7 @@ TEST_F(TypeTest, decodeTest) {
       "LIST?<any>",
       [](const std::shared_ptr<const ParameterizedList>& typePtr) {
         ASSERT_EQ(typePtr->signature(), "list<any>");
+        ASSERT_EQ(typePtr->nullable(),true);
       });
 
   testDecode<ParameterizedMap>(
