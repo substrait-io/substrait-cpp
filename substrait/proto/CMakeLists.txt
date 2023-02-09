@@ -5,6 +5,7 @@ include_directories(${Protobuf_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 find_package(Perl REQUIRED)
+SET(UPDATE_PROTO_INCLUDES_TOOL "${CMAKE_CURRENT_SOURCE_DIR}/update_proto_includes.pl")
 
 SET(PROTO_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/third_party/substrait/proto/substrait")
 cmake_path(GET PROTO_INCLUDE_DIR PARENT_PATH PROTO_INCLUDE_TOPLEVEL_DIR)
@@ -40,10 +41,10 @@ foreach(PROTO_FILE IN LISTS PROTOBUF_FILELIST)
             ${PROTO_FILE}
             COMMAND mkdir -p "${PROTO_OUTPUT_PARENT_DIR}/proto"
             COMMAND mv ${PROTO_GENERATED_HDR} ${PROTO_HDR}
-            COMMAND ${PERL_EXECUTABLE} -i "${CMAKE_CURRENT_SOURCE_DIR}/update_proto_includes.py" ${PROTO_HDR}
+            COMMAND ${PERL_EXECUTABLE} -i ${UPDATE_PROTO_INCLUDES_TOOL} ${PROTO_HDR}
             COMMAND mv ${PROTO_GENERATED_SRC} ${PROTO_SRC}
-            COMMAND ${PERL_EXECUTABLE} -i "${CMAKE_CURRENT_SOURCE_DIR}/update_proto_includes.py" ${PROTO_SRC}
-            DEPENDS ${PROTO_FILE} protobuf::protoc "${CMAKE_CURRENT_SOURCE_DIR}/update_proto_includes.py"
+            COMMAND ${PERL_EXECUTABLE} -i ${UPDATE_PROTO_INCLUDES_TOOL} ${PROTO_SRC}
+            DEPENDS ${PROTO_FILE} protobuf::protoc ${UPDATE_PROTO_INCLUDES_TOOL}
             COMMENT "Generate C++ protocol buffer for ${PROTO_FILE}"
             VERBATIM)
     list(APPEND PROTO_HDRS ${PROTO_HDR})
