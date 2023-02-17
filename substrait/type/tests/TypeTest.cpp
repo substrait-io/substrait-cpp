@@ -22,12 +22,12 @@ class TypeTest : public ::testing::Test {
     ASSERT_EQ(type->signature(), signature);
   }
 
-  template <class T>
+  template <class T, bool param = true>
   void testDecode(
       const std::string& rawType,
       const std::function<void(const std::shared_ptr<const T>&)>&
           typeCallBack) {
-    const auto& type = ParameterizedType::decode(rawType);
+    const auto& type = ParameterizedType::decode(rawType, param);
     if (typeCallBack) {
       typeCallBack(std::dynamic_pointer_cast<const T>(type));
     }
@@ -54,9 +54,9 @@ TEST_F(TypeTest, typeCreator) {
   testType(FIXED_CHAR(12), TypeKind::kFixedChar, "fchar<12>");
   testType(FIXED_BINARY(12), TypeKind::kFixedBinary, "fbin<12>");
   testType(VARCHAR(12), TypeKind::kVarchar, "vchar<12>");
-  testType(DECIMAL(12,23), TypeKind::kDecimal, "dec<12,23>");
+  testType(DECIMAL(12, 23), TypeKind::kDecimal, "dec<12,23>");
   testType(LIST(FLOAT()), TypeKind::kList, "list<fp32>");
-  testType(MAP(STRING(),FLOAT()), TypeKind::kMap, "map<str,fp32>");
+  testType(MAP(STRING(), FLOAT()), TypeKind::kMap, "map<str,fp32>");
   testType(STRUCT({STRING(), FLOAT()}), TypeKind::kStruct, "struct<str,fp32>");
 }
 
@@ -87,11 +87,23 @@ TEST_F(TypeTest, decodeTest) {
         ASSERT_EQ(typePtr->signature(), "fchar<L1>");
       });
 
+  testDecode<FixedChar, false>(
+      "fixedchar<12>", [](const std::shared_ptr<const FixedChar>& typePtr) {
+        ASSERT_EQ(typePtr->length(), 12);
+        ASSERT_EQ(typePtr->signature(), "fchar<12>");
+      });
+
   testDecode<ParameterizedFixedBinary>(
       "fixedbinary<L1>",
       [](const std::shared_ptr<const ParameterizedFixedBinary>& typePtr) {
         ASSERT_EQ(typePtr->length()->value(), "L1");
         ASSERT_EQ(typePtr->signature(), "fbin<L1>");
+      });
+
+  testDecode<FixedBinary, false>(
+      "fixedbinary<10>", [](const std::shared_ptr<const FixedBinary>& typePtr) {
+        ASSERT_EQ(typePtr->length(), 10);
+        ASSERT_EQ(typePtr->signature(), "fbin<10>");
       });
 
   testDecode<ParameterizedVarchar>(
@@ -101,17 +113,46 @@ TEST_F(TypeTest, decodeTest) {
         ASSERT_EQ(typePtr->length()->value(), "L1");
       });
 
+  testDecode<Varchar, false>(
+      "varchar<5>", [](const std::shared_ptr<const Varchar>& typePtr) {
+        ASSERT_EQ(typePtr->signature(), "vchar<5>");
+        ASSERT_EQ(typePtr->length(), 5);
+      });
+
   testDecode<ParameterizedDecimal>(
       "decimal<P,S>",
       [](const std::shared_ptr<const ParameterizedDecimal>& typePtr) {
         ASSERT_EQ(typePtr->signature(), "dec<P,S>");
         ASSERT_EQ(typePtr->precision()->value(), "P");
         ASSERT_EQ(typePtr->scale()->value(), "S");
+        ASSERT_TRUE(typePtr->precision()->isPlaceholder());
+        ASSERT_TRUE(typePtr->scale()->isPlaceholder());
+      });
+
+  testDecode<ParameterizedDecimal>(
+      "decimal<18 ,S1>",
+      [](const std::shared_ptr<const ParameterizedDecimal>& typePtr) {
+        ASSERT_EQ(typePtr->signature(), "dec<18,S1>");
+        ASSERT_TRUE(typePtr->precision()->isInteger());
+        ASSERT_TRUE(typePtr->scale()->isPlaceholder());
+      });
+
+  testDecode<Decimal, false>(
+      "decimal<18,2>", [](const std::shared_ptr<const Decimal>& typePtr) {
+        ASSERT_EQ(typePtr->signature(), "dec<18,2>");
+        ASSERT_EQ(typePtr->precision(), 18);
+        ASSERT_EQ(typePtr->scale(), 2);
       });
 
   testDecode<ParameterizedStruct>(
       "struct<i32,i64,string>",
       [](const std::shared_ptr<const ParameterizedStruct>& typePtr) {
+        ASSERT_EQ(typePtr->signature(), "struct<i32,i64,str>");
+      });
+
+  testDecode<Struct, false>(
+      "struct<i32,i64,string>",
+      [](const std::shared_ptr<const Struct>& typePtr) {
         ASSERT_EQ(typePtr->signature(), "struct<i32,i64,str>");
       });
 
@@ -121,20 +162,72 @@ TEST_F(TypeTest, decodeTest) {
         ASSERT_EQ(typePtr->signature(), "struct<i32,i64,struct<str,str>>");
       });
 
+  testDecode<ParameterizedStruct>(
+      "STRUCT<DECIMAL<38,S>,i64>",
+      [](const std::shared_ptr<const ParameterizedStruct>& typePtr) {
+        ASSERT_EQ(typePtr->signature(), "struct<dec<38,S>,i64>");
+        ASSERT_EQ(typePtr->children().size(), 2);
+        ASSERT_EQ(typePtr->children().at(0)->kind(), TypeKind::kDecimal);
+        auto decimalType =
+            std::dynamic_pointer_cast<const ParameterizedDecimal>(
+                typePtr->children().at(0));
+
+        ASSERT_TRUE(decimalType != nullptr);
+        ASSERT_TRUE(decimalType->precision()->value() == "38");
+        ASSERT_TRUE(decimalType->scale()->value() == "S");
+        ASSERT_EQ(typePtr->children().at(1)->kind(), TypeKind::kI64);
+      });
+
   testDecode<ParameterizedList>(
       "list<string>",
       [](const std::shared_ptr<const ParameterizedList>& typePtr) {
         ASSERT_EQ(typePtr->signature(), "list<str>");
       });
+
+  testDecode<List, false>(
+      "list<string>", [](const std::shared_ptr<const List>& typePtr) {
+        ASSERT_EQ(typePtr->signature(), "list<str>");
+      });
+
   testDecode<ParameterizedList>(
       "LIST?<any>",
       [](const std::shared_ptr<const ParameterizedList>& typePtr) {
         ASSERT_EQ(typePtr->signature(), "list<any>");
+        ASSERT_EQ(typePtr->nullable(), true);
+        ASSERT_EQ(typePtr->elementType()->isWildcard(), true);
+      });
+
+  testDecode<ParameterizedList>(
+      "LIST<T>", [](const std::shared_ptr<const ParameterizedList>& typePtr) {
+        ASSERT_EQ(typePtr->signature(), "list<T>");
+        ASSERT_TRUE(typePtr->elementType()->isPlaceholder());
       });
 
   testDecode<ParameterizedMap>(
       "map<string,i32>",
       [](const std::shared_ptr<const ParameterizedMap>& typePtr) {
+        ASSERT_EQ(typePtr->signature(), "map<str,i32>");
+      });
+
+  testDecode<ParameterizedMap>(
+      "map<string,any>",
+      [](const std::shared_ptr<const ParameterizedMap>& typePtr) {
+        ASSERT_EQ(typePtr->signature(), "map<str,any>");
+        ASSERT_EQ(typePtr->valueType()->isWildcard(), true);
+      });
+
+  testDecode<ParameterizedMap>(
+      "map<string,map<string,any>",
+      [](const std::shared_ptr<const ParameterizedMap>& typePtr) {
+        ASSERT_EQ(typePtr->signature(), "map<str,map<str,any>>");
+        auto mapValue = std::dynamic_pointer_cast<const ParameterizedMap>(
+            typePtr->valueType());
+        ASSERT_NE(mapValue, nullptr);
+        ASSERT_EQ(mapValue->valueType()->isWildcard(), true);
+      });
+
+  testDecode<Map, false>(
+      "map<string,i32>", [](const std::shared_ptr<const Map>& typePtr) {
         ASSERT_EQ(typePtr->signature(), "map<str,i32>");
       });
 
@@ -153,6 +246,19 @@ TEST_F(TypeTest, decodeTest) {
   testDecode<StringLiteral>(
       "T", [](const std::shared_ptr<const StringLiteral>& typePtr) {
         ASSERT_EQ(typePtr->signature(), "T");
-        ASSERT_TRUE(typePtr->isWildcard());
+        ASSERT_TRUE(typePtr->isPlaceholder());
       });
+
+  ASSERT_TRUE(ParameterizedType::decode("T")->isPlaceholder());
+
+  ASSERT_TRUE(ParameterizedType::decode("any")->isWildcard());
+  ASSERT_TRUE(ParameterizedType::decode("ANY")->isWildcard());
+  ASSERT_TRUE(ParameterizedType::decode("aNy")->isWildcard());
+  ASSERT_TRUE(ParameterizedType::decode("any1")->isWildcard());
+  ASSERT_TRUE(ParameterizedType::decode("any2")->isWildcard());
+
+  ASSERT_ANY_THROW(ParameterizedType::decode("decimal<P1,S1>", false));
+  ASSERT_ANY_THROW(ParameterizedType::decode("fixedbinary<P>", false));
+  ASSERT_ANY_THROW(ParameterizedType::decode("varchar<P>", false));
+  ASSERT_ANY_THROW(ParameterizedType::decode("fixedchar<P>", false));
 }

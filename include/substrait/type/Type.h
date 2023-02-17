@@ -189,7 +189,13 @@ class ParameterizedType {
   /// Deserialize substrait raw type string into Substrait extension  type.
   /// @param rawType - substrait extension raw string type
   static std::shared_ptr<const ParameterizedType> decode(
-      const std::string& rawType);
+      const std::string& rawType) {
+    return decode(rawType, true);
+  }
+
+  static std::shared_ptr<const ParameterizedType> decode(
+      const std::string& rawType,
+      bool isParameterized);
 
   [[nodiscard]] const bool& nullable() const {
     return nullable_;
@@ -199,8 +205,15 @@ class ParameterizedType {
       const std::shared_ptr<const ParameterizedType>& type) const {
     return nullable() || nullable() == type->nullable();
   }
-  /// Test type is a Wildcard type or not.
+  /// Test whether a type is a Wildcard type or not, always false for non
+  /// StringLiteral type.
   [[nodiscard]] virtual bool isWildcard() const {
+    return false;
+  }
+
+  /// Test whether a Type is a placeholder type or not, always false for non
+  /// StringLiteral type.
+  [[nodiscard]] virtual bool isPlaceholder() const {
     return false;
   }
 
@@ -393,11 +406,14 @@ class ParameterizedTypeBase : public ParameterizedType {
       : ParameterizedType(nullable) {}
 };
 
-/// A string literal type can present the 'any1'.
+/// A string literal type can present the 'any1' or 'T','P1'.
 class StringLiteral : public ParameterizedTypeBase {
  public:
-  explicit StringLiteral(std::string value)
-      : ParameterizedTypeBase(false), value_(std::move(value)) {}
+  StringLiteral(const std::string& value, bool wildcard, bool placeholder)
+      : ParameterizedTypeBase(false),
+        value_(std::move(value)),
+        wildcard_(wildcard),
+        placeholder_(placeholder) {}
 
   [[nodiscard]] std::string signature() const override {
     return value_;
@@ -412,14 +428,23 @@ class StringLiteral : public ParameterizedTypeBase {
   }
 
   [[nodiscard]] bool isWildcard() const override {
-    return value_.find("any") == 0 || value_ == "T";
+    return wildcard_;
   }
+
+  [[nodiscard]] bool isPlaceholder() const override {
+    return placeholder_;
+  }
+
+  /// Return true if value is a integer, false otherwise.
+  [[nodiscard]] bool isInteger() const;
 
   [[nodiscard]] bool isMatch(
       const std::shared_ptr<const ParameterizedType>& type) const override;
 
  private:
   const std::string value_;
+  const bool wildcard_;
+  const bool placeholder_;
 };
 
 using StringLiteralPtr = std::shared_ptr<const StringLiteral>;
