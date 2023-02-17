@@ -171,7 +171,8 @@ ParameterizedTypePtr decodeType<TypeKind::kFixedBinary>(
 ParameterizedTypePtr ParameterizedType::decode(
     const std::string& value,
     bool isParameterized) {
-  std::string rawType = common::StringUtils::trim(value);
+  std::string rawType =
+      static_cast<std::string>(common::StringUtils::trim(value));
   std::string matchingType = rawType;
   std::transform(
       matchingType.begin(),
