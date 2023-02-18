@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "substrait/function/FunctionLookup.h"
 #include <gtest/gtest.h>
 #include <iostream>
+#include "substrait/function/FunctionLookup.h"
 
 using namespace io::substrait;
 
