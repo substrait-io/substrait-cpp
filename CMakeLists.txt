@@ -20,8 +20,8 @@ find_package(Protobuf REQUIRED)
 include_directories(${PROTOBUF_INCLUDE_DIRS})
 
 add_subdirectory(third_party)
-include_directories(.)
 include_directories(include)
+include_directories(src)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules")
 include(BuildUtils)
@@ -30,4 +30,4 @@ if(${SUBSTRAIT_CPP_BUILD_TESTING})
   enable_testing()
 endif()
 
-add_subdirectory(substrait)
+add_subdirectory(src/substrait)

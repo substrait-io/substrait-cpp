@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "substrait/function/FunctionLookup.h"
 #include <gtest/gtest.h>
 #include <iostream>
+#include "substrait/function/FunctionLookup.h"
 
 using namespace io::substrait;
 
@@ -12,7 +12,7 @@ class FunctionLookupTest : public ::testing::Test {
     const std::string absolute_path = __FILE__;
     auto const pos = absolute_path.find_last_of('/');
     return absolute_path.substr(0, pos) +
-        "/../../../third_party/substrait/extensions/";
+        "/../../../../third_party/substrait/extensions/";
   }
 
   void SetUp() override {
