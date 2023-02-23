@@ -2,10 +2,10 @@
 
 #include <getopt.h>
 
+#include "substrait/textplan/SymbolTablePrinter.h"
 #include "substrait/textplan/converter/InitialPlanProtoVisitor.h"
 #include "substrait/textplan/converter/LoadBinary.h"
 #include "substrait/textplan/converter/ParseBinary.h"
-#include "substrait/textplan/SymbolTablePrinter.h"
 
 namespace io::substrait::textplan {
 namespace {
