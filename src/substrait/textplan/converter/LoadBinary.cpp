@@ -5,6 +5,7 @@
 #include <google/protobuf/io/tokenizer.h>
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/util/json_util.h>
+#include <filesystem>
 #include <fstream>
 #include <iterator>
 #include <sstream>
