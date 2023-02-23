@@ -3,6 +3,7 @@
 #include "substrait/textplan/converter/PlanPrinterVisitor.h"
 
 #include <iterator>
+#include <optional>
 #include <string>
 
 #include "substrait/proto/algebra.pb.h"

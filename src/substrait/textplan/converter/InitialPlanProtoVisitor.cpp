@@ -2,9 +2,8 @@
 
 #include "substrait/textplan/converter/InitialPlanProtoVisitor.h"
 
-#include <fstream>
 #include <iterator>
-#include <sstream>
+#include <optional>
 #include <string>
 
 #include "substrait/common/Exceptions.h"
