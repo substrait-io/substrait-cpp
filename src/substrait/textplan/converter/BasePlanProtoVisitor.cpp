@@ -172,6 +172,8 @@ std::any BasePlanProtoVisitor::visitType(const ::substrait::proto::Type& type) {
     case ::substrait::proto::Type::kUserDefinedTypeReference:
       SUBSTRAIT_UNSUPPORTED(
           "user_defined_type_reference was replaced by user_defined_type.  Please update your plan version.");
+    case ::substrait::proto::Type::KIND_NOT_SET:
+      break;
   }
   SUBSTRAIT_UNSUPPORTED(
       "Unsupported type kind encountered: " + std::to_string(type.kind_case()));

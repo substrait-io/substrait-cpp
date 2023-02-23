@@ -18,6 +18,10 @@ add_library(parse_result
 add_dependencies(symbol_table
         substrait_proto)
 
+target_include_directories(
+        symbol_table
+        PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/../..")
+
 if (${SUBSTRAIT_CPP_BUILD_TESTING})
     add_subdirectory(tests)
 endif ()

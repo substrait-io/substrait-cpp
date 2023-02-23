@@ -4,7 +4,7 @@
 
 #include <set>
 
-#include "../../../cmake-build-debug/src/substrait/proto/extensions/extensions.pb.h"
+#include "substrait/proto/extensions/extensions.pb.h"
 #include "substrait/textplan/SymbolTable.h"
 
 namespace io::substrait::textplan {
