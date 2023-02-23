@@ -2,12 +2,10 @@
 
 #include "substrait/textplan/converter/BasePlanProtoVisitor.h"
 
-#include <fstream>
 #include <iterator>
-#include <sstream>
+#include <optional>
 #include <string>
 
-#include <google/protobuf/util/json_util.h>
 #include "substrait/common/Exceptions.h"
 #include "substrait/proto/algebra.pb.h"
 #include "substrait/proto/plan.pb.h"
