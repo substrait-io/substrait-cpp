@@ -45,8 +45,11 @@ std::size_t std::less<::io::substrait::textplan::Location>::operator()(
     const ::io::substrait::textplan::Location& rhs) const noexcept {
   if (std::holds_alternative<::io::substrait::textplan::ProtoLocation>(
           lhs.loc_)) {
-    return 1;
+    return std::get<::io::substrait::textplan::ProtoLocation>(lhs.loc_)
+               .to_string() <
+        std::get<::io::substrait::textplan::ProtoLocation>(rhs.loc_)
+            .to_string();
   }
-  // MEGAHACK -- Is this implemented?
-  return 0;
+  return std::get<antlr4::ParserRuleContext*>(lhs.loc_) <
+      std::get<antlr4::ParserRuleContext*>(rhs.loc_);
 }
