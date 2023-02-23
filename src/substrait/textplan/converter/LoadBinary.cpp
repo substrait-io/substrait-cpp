@@ -66,7 +66,8 @@ std::string ReadFromFile(const std::string& msgPath) {
     usable_json.remove_prefix(idx);
   }
   ::substrait::proto::Plan plan;
-  auto status = google::protobuf::util::JsonStringToMessage(usable_json, &plan);
+  auto status = google::protobuf::util::JsonStringToMessage(
+      std::string{usable_json}, &plan);
   if (!status.ok()) {
     SUBSTRAIT_FAIL(
         "Failed to parse Substrait JSON: {}", status.message().ToString());
