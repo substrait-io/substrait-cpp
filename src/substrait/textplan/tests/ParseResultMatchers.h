@@ -17,6 +17,9 @@ namespace io::substrait::textplan {
 [[maybe_unused]] ::testing::Matcher<const ParseResult&> SerializesTo(
     std::string expected_result);
 
+[[maybe_unused]] ::testing::Matcher<const ParseResult&> SerializeContains(
+    std::string expected_result);
+
 [[maybe_unused]] ::testing::Matcher<const ParseResult&> HasErrors(
     std::vector<std::string> expected_errors);
 

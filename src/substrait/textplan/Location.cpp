@@ -3,40 +3,27 @@
 #include "substrait/textplan/Location.h"
 
 #include <functional>
-#include <sstream>
-#include <string>
 
 namespace io::substrait::textplan {
 
-ProtoLocation ProtoLocation::visit(const std::string& name) const {
-  ProtoLocation new_location = *this;
-  new_location.location_.push_back(name);
-  return new_location;
-}
-
-std::string ProtoLocation::toString() const {
-  std::stringstream text;
-  bool written = false;
-  for (const auto& loc : location_) {
-    if (!written) {
-      text << " -> ";
-      written = true;
-    }
-    text << loc;
-  }
-  return text.str();
-}
+constexpr const Location Location::kUnknownLocation(
+    static_cast<google::protobuf::Message*>(nullptr));
 
 bool operator==(const Location& c1, const Location& c2) {
   // Test only one side since we only store one kind of content per table.
-  if (std::holds_alternative<ProtoLocation>(
-          c1.loc_)) {
-    auto s1 = std::get<ProtoLocation>(c1.loc_).toString();
-    auto s2 = std::get<ProtoLocation>(c2.loc_).toString();
-    return s1 == s2;
-  } else if (std::holds_alternative<antlr4::ParserRuleContext*>(c1.loc_)) {
+  if (std::holds_alternative<antlr4::ParserRuleContext*>(c1.loc_)) {
+    if (!std::holds_alternative<antlr4::ParserRuleContext*>(c2.loc_)) {
+      return false;
+    }
     auto a1 = std::get<antlr4::ParserRuleContext*>(c1.loc_);
     auto a2 = std::get<antlr4::ParserRuleContext*>(c2.loc_);
+    return a1 == a2;
+  } else if (std::holds_alternative<google::protobuf::Message*>(c1.loc_)) {
+    if (!std::holds_alternative<google::protobuf::Message*>(c2.loc_)) {
+      return false;
+    }
+    auto a1 = std::get<google::protobuf::Message*>(c1.loc_);
+    auto a2 = std::get<google::protobuf::Message*>(c2.loc_);
     return a1 == a2;
   }
   // Should not be reached.
@@ -47,14 +34,12 @@ bool operator==(const Location& c1, const Location& c2) {
 
 std::size_t std::hash<::io::substrait::textplan::Location>::operator()(
     const ::io::substrait::textplan::Location& loc) const noexcept {
-  if (std::holds_alternative<::io::substrait::textplan::ProtoLocation>(
-          loc.loc_)) {
-    return std::hash<std::string>()(
-        std::get<::io::substrait::textplan::ProtoLocation>(loc.loc_)
-            .toString());
-  } else if (std::holds_alternative<antlr4::ParserRuleContext*>(loc.loc_)) {
+  if (std::holds_alternative<antlr4::ParserRuleContext*>(loc.loc_)) {
     return std::hash<antlr4::ParserRuleContext*>()(
         std::get<antlr4::ParserRuleContext*>(loc.loc_));
+  } else if (std::holds_alternative<google::protobuf::Message*>(loc.loc_)) {
+    return std::hash<google::protobuf::Message*>()(
+        std::get<google::protobuf::Message*>(loc.loc_));
   }
   // Should not be reached.
   return 0;
@@ -63,12 +48,21 @@ std::size_t std::hash<::io::substrait::textplan::Location>::operator()(
 std::size_t std::less<::io::substrait::textplan::Location>::operator()(
     const ::io::substrait::textplan::Location& lhs,
     const ::io::substrait::textplan::Location& rhs) const noexcept {
-  if (std::holds_alternative<::io::substrait::textplan::ProtoLocation>(
-          lhs.loc_)) {
-    return std::get<::io::substrait::textplan::ProtoLocation>(lhs.loc_)
-               .toString() <
-        std::get<::io::substrait::textplan::ProtoLocation>(rhs.loc_).toString();
+  if (std::holds_alternative<antlr4::ParserRuleContext*>(lhs.loc_)) {
+    if (!std::holds_alternative<antlr4::ParserRuleContext*>(rhs.loc_)) {
+      // This alternative is always less than the remaining choices.
+      return 1;
+    }
+    return std::get<antlr4::ParserRuleContext*>(lhs.loc_) <
+        std::get<antlr4::ParserRuleContext*>(rhs.loc_);
+  } else if (std::holds_alternative<google::protobuf::Message*>(lhs.loc_)) {
+    if (!std::holds_alternative<google::protobuf::Message*>(rhs.loc_)) {
+      // This alternative is always less than the remaining (zero) choices.
+      return 1;
+    }
+    return std::get<google::protobuf::Message*>(lhs.loc_) <
+        std::get<google::protobuf::Message*>(rhs.loc_);
   }
-  return std::get<antlr4::ParserRuleContext*>(lhs.loc_) <
-      std::get<antlr4::ParserRuleContext*>(rhs.loc_);
+  // Should not be reached.
+  return 0;
 }

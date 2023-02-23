@@ -3,7 +3,6 @@
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 
-#include "substrait/textplan/converter/InitialPlanProtoVisitor.h"
 #include "substrait/textplan/converter/LoadBinary.h"
 #include "substrait/textplan/converter/ParseBinary.h"
 #include "substrait/textplan/tests/ParseResultMatchers.h"
@@ -120,6 +119,73 @@ std::vector<TestCase> GetTestCases() {
                        "  function multiply:opt_fp64_fp64 as multiply;\n"
                        "}\n"),
       },
+      {
+          "read local files",
+          R"(relations: {
+            root: {
+              input: {
+                read: {
+                  local_files {
+                    items {
+                      partition_index: 0
+                      start: 0
+                      length: 3719
+                      uri_file: "/mock_lineitem.orc"
+                      orc {}
+                    }
+                  }
+                }
+              }
+            }
+          })",
+          AllOf(
+              HasSymbols({"local", "read", "root"}),
+              SerializesTo(
+                  "read relation read {\n"
+                  "}\n"
+                  "\n"
+                  "source local_files local {\n"
+                  "  items = [\n"
+                  "    {uri_file: \"/mock_lineitem.orc\" length: 3719 orc: {}}\n"
+                  "  ]\n"
+                  "}\n")),
+      },
+      {
+          "read named table",
+          "relations: { root: { input: { read: { base_schema {} named_table { names: \"#2\" } } } } }",
+          AllOf(
+              HasSymbols({"schema", "named", "read", "root"}),
+              SerializesTo("read relation read {\n"
+                           "}\n"
+                           "\n"
+                           "schema schema {\n"
+                           "}\n"
+                           "\n"
+                           "source named_table named {\n"
+                           "  names = [\n"
+                           "    \"#2\",\n"
+                           "  ]\n"
+                           "}\n")),
+      },
+      {
+          "single three node pipeline",
+          "relations: { root: { input: { project: { input { read: { local_files {} } } } } } }",
+          HasSymbols({"local", "read", "project", "root"}),
+      },
+      {
+          "two identical three node pipelines",
+          "relations: { root: { input: { project: { input { read: { local_files {} } } } } } }"
+          "relations: { root: { input: { project: { input { read: { local_files {} } } } } } }",
+          HasSymbols(
+              {"local",
+               "read",
+               "project",
+               "root",
+               "local2",
+               "read2",
+               "project2",
+               "root2"}),
+      },
   };
   return cases;
 }
@@ -175,6 +241,15 @@ TEST_F(BinaryToTextPlanConversionTest, loadFromJSON) {
           "and",
           "gte",
           "multiply",
+
+          "schema",
+          "local",
+
+          "read",
+          "filter",
+          "project",
+          "aggregate",
+          "root",
       }));
 }
 

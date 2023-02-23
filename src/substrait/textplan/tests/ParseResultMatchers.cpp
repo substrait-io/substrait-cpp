@@ -135,11 +135,11 @@ class SerializesToMatcher {
   }
 
   void DescribeTo(std::ostream* os) const {
-    *os << "reparses to: " << ::testing::PrintToString(expected_result_);
+    *os << "serializes to: " << ::testing::PrintToString(expected_result_);
   }
 
   void DescribeNegationTo(std::ostream* os) const {
-    *os << "does not reparse to: "
+    *os << "does not serialize to: "
         << ::testing::PrintToString(expected_result_);
   }
 
@@ -150,6 +150,41 @@ class SerializesToMatcher {
 ::testing::Matcher<const ParseResult&> SerializesTo(
     std::string expected_symbols) {
   return SerializesToMatcher(std::move(expected_symbols));
+}
+
+class SerializeContainsMatcher {
+ public:
+  using is_gtest_matcher = void;
+
+  explicit SerializeContainsMatcher(std::string expected_substr)
+      : expected_substr_(std::move(expected_substr)) {}
+
+  bool MatchAndExplain(const ParseResult& result, std::ostream* listener)
+      const {
+    std::string outputText =
+        SymbolTablePrinter::outputToText(result.getSymbolTable());
+    if (listener) {
+      *listener << "has output text \"" << outputText << "\"";
+    }
+    return outputText.find(expected_substr_) != std::string::npos;
+  }
+
+  void DescribeTo(std::ostream* os) const {
+    *os << "serialized form contains: " << ::testing::PrintToString(expected_substr_);
+  }
+
+  void DescribeNegationTo(std::ostream* os) const {
+    *os << "does not contain in the serialized form: "
+        << ::testing::PrintToString(expected_substr_);
+  }
+
+ private:
+  const std::string expected_substr_;
+};
+
+::testing::Matcher<const ParseResult&> SerializeContains(
+    std::string expected_symbols) {
+  return SerializeContainsMatcher(std::move(expected_symbols));
 }
 
 class HasErrorsMatcher {
