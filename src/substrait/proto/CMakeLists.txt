@@ -68,5 +68,8 @@ endforeach()
 # Add the generated protobuf C++ files to our exported library.
 add_library(substrait_proto ${PROTO_SRCS})
 
+# Include the protobuf library as a dependency to use this class.
+target_link_libraries(substrait_proto ${PROTOBUF_LIBRARIES})
+
 # Make sure we can see our own generated include files.
 target_include_directories(substrait_proto PUBLIC "${PROTO_OUTPUT_TOPLEVEL_DIR}")
