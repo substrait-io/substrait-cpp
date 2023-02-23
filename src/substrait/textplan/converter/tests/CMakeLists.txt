@@ -22,5 +22,6 @@ target_link_libraries(
         substrait_textplan_converter
         substrait_common
         parse_result_matchers
+        gmock
         gtest
         gtest_main)
