@@ -21,17 +21,17 @@ class SubstraitErrorListener {
  public:
   SubstraitErrorListener() = default;
 
-  void AddError(size_t linenum, size_t charnum, const std::string& msg);
+  void addError(size_t linenum, size_t charnum, const std::string& msg);
 
-  const std::vector<ErrorInstance>& GetErrors() {
+  const std::vector<ErrorInstance>& getErrors() {
     return errors_;
   };
 
-  bool HasErrors() {
+  bool hasErrors() {
     return !errors_.empty();
   }
 
-  std::vector<std::string> GetErrorMessages();
+  std::vector<std::string> getErrorMessages();
 
  private:
   std::vector<ErrorInstance> errors_;

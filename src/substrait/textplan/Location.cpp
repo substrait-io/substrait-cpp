@@ -7,7 +7,7 @@
 
 namespace io::substrait::textplan {
 
-ProtoLocation ProtoLocation::Visit(const std::string& name) const {
+ProtoLocation ProtoLocation::visit(const std::string& name) const {
   ProtoLocation new_location = *this;
   new_location.location_.push_back(name);
   return new_location;

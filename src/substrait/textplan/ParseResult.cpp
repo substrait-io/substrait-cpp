@@ -8,10 +8,10 @@
 namespace io::substrait::textplan {
 
 std::ostream& operator<<(std::ostream& os, const ParseResult& result) {
-  if (result.Successful()) {
+  if (result.successful()) {
     os << *result.symbol_table_;
   }
-  auto msgs = result.GetSyntaxErrors();
+  auto msgs = result.getSyntaxErrors();
   if (!msgs.empty()) {
     os << "{" << std::endl;
     for (const std::string& msg : msgs) {
@@ -19,7 +19,7 @@ std::ostream& operator<<(std::ostream& os, const ParseResult& result) {
     }
     os << "}";
   }
-  msgs = result.GetSemanticErrors();
+  msgs = result.getSemanticErrors();
   if (!msgs.empty()) {
     os << "{" << std::endl;
     for (const std::string& msg : msgs) {

@@ -20,23 +20,23 @@ class ParseResult {
     semantic_errors_ = std::move(semanticErrors);
   }
 
-  [[nodiscard]] bool Successful() const {
+  [[nodiscard]] bool successful() const {
     return syntax_errors_.empty() && semantic_errors_.empty();
   }
 
-  [[nodiscard]] std::shared_ptr<const SymbolTable> GetSymbolTable() const {
+  [[nodiscard]] std::shared_ptr<const SymbolTable> getSymbolTable() const {
     return symbol_table_;
   }
 
-  [[nodiscard]] std::vector<std::string> GetSyntaxErrors() const {
+  [[nodiscard]] std::vector<std::string> getSyntaxErrors() const {
     return syntax_errors_;
   }
 
-  [[nodiscard]] std::vector<std::string> GetSemanticErrors() const {
+  [[nodiscard]] std::vector<std::string> getSemanticErrors() const {
     return semantic_errors_;
   }
 
-  [[nodiscard]] std::vector<std::string> GetAllErrors() const {
+  [[nodiscard]] std::vector<std::string> getAllErrors() const {
     std::vector<std::string> errors;
     errors.insert(errors.end(), syntax_errors_.begin(), syntax_errors_.end());
     errors.insert(

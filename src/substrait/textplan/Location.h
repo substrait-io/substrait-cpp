@@ -14,7 +14,7 @@ namespace io::substrait::textplan {
 
 class ProtoLocation {
  public:
-  [[nodiscard]] ProtoLocation Visit(const std::string& name) const;
+  [[nodiscard]] ProtoLocation visit(const std::string& name) const;
 
   [[nodiscard]] std::string to_string() const;
 

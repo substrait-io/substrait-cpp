@@ -10,6 +10,6 @@ class Plan;
 
 namespace io::substrait::textplan {
 
-ParseResult ParseBinaryPlan(const ::substrait::proto::Plan& plan);
+ParseResult parseBinaryPlan(const ::substrait::proto::Plan& plan);
 
 } // namespace io::substrait::textplan

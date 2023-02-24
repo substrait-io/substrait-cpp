@@ -16,7 +16,7 @@ namespace io::substrait::textplan {
 
 namespace {
 
-std::string ShortName(std::string str) {
+std::string shortName(std::string str) {
   auto loc = str.find(':');
   if (loc != std::string::npos) {
     return str.substr(0, loc);
@@ -36,9 +36,9 @@ std::any InitialPlanProtoVisitor::visitExtension(
         "Unknown mapping type case " +
         std::to_string(extension.mapping_type_case()) + " encountered.");
   }
-  const auto& unique_name = symbol_table_->GetUniqueName(
-      ShortName(extension.extension_function().name()));
-  symbol_table_->DefineSymbol(
+  const auto& unique_name = symbol_table_->getUniqueName(
+      shortName(extension.extension_function().name()));
+  symbol_table_->defineSymbol(
       unique_name,
       Location(ProtoLocation()),
       SymbolType::kFunction,
@@ -49,7 +49,7 @@ std::any InitialPlanProtoVisitor::visitExtension(
 
 std::any InitialPlanProtoVisitor::visitExtensionUri(
     const ::substrait::proto::extensions::SimpleExtensionURI& uri) {
-  symbol_table_->DefineSymbol(
+  symbol_table_->defineSymbol(
       uri.uri(),
       Location(ProtoLocation()),
       SymbolType::kExtensionSpace,

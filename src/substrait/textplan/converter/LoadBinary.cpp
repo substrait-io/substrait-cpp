@@ -38,7 +38,7 @@ class StringErrorCollector : public google::protobuf::io::ErrorCollector {
 
 } // namespace
 
-std::string ReadFromFile(const std::string& msgPath) {
+std::string readFromFile(const std::string& msgPath) {
   std::ifstream textFile(msgPath);
   if (textFile.fail()) {
     auto currdir = std::filesystem::current_path().string();
@@ -53,7 +53,7 @@ std::string ReadFromFile(const std::string& msgPath) {
   return buffer.str();
 }
 
-::substrait::proto::Plan LoadFromJSON(const std::string& json) {
+::substrait::proto::Plan loadFromJSON(const std::string& json) {
   if (json.empty()) {
     SUBSTRAIT_FAIL("Provided JSON string was empty.");
   }
@@ -75,7 +75,7 @@ std::string ReadFromFile(const std::string& msgPath) {
   return plan;
 }
 
-std::variant<::substrait::proto::Plan, std::vector<std::string>> LoadFromText(
+std::variant<::substrait::proto::Plan, std::vector<std::string>> loadFromText(
     const std::string& text) {
   ::substrait::proto::Plan plan;
   ::google::protobuf::TextFormat::Parser parser;

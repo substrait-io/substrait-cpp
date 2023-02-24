@@ -98,28 +98,28 @@ class SymbolTableIterator {
 
 class SymbolTable {
  public:
-  std::string GetUniqueName(const std::string& base_name);
+  std::string getUniqueName(const std::string& base_name);
 
-  SymbolInfo* DefineSymbol(
+  SymbolInfo* defineSymbol(
       const std::string& name,
       const Location& location,
       SymbolType type,
       const std::any& subtype,
       const std::any& blob);
 
-  SymbolInfo* DefineUniqueSymbol(
+  SymbolInfo* defineUniqueSymbol(
       const std::string& name,
       const Location& location,
       SymbolType type,
       const std::any& subtype,
       const std::any& blob);
 
-  std::shared_ptr<const SymbolInfo> LookupSymbolByName(const std::string& name);
+  std::shared_ptr<const SymbolInfo> lookupSymbolByName(const std::string& name);
 
-  std::shared_ptr<const SymbolInfo> LookupSymbolByLocation(
+  std::shared_ptr<const SymbolInfo> lookupSymbolByLocation(
       const Location& location);
 
-  std::shared_ptr<const SymbolInfo> NthSymbolByType(
+  std::shared_ptr<const SymbolInfo> nthSymbolByType(
       uint32_t n,
       SymbolType type);
 
@@ -127,17 +127,17 @@ class SymbolTable {
 
   [[nodiscard]] SymbolTableIterator end() const;
 
-  [[nodiscard]] const std::vector<std::shared_ptr<SymbolInfo>>& GetSymbols()
+  [[nodiscard]] const std::vector<std::shared_ptr<SymbolInfo>>& getSymbols()
       const {
     return symbols_;
   };
 
   // Temporary functions to allow externally computed text to be saved.
-  void AddCachedOutput(const std::string& text) {
+  void addCachedOutput(const std::string& text) {
     cached_output_ = text;
   }
   // TODO: Remove after we have the information required to reconstruct the plan.
-  [[nodiscard]] std::string GetCachedOutput() const {
+  [[nodiscard]] std::string getCachedOutput() const {
     return cached_output_;
   }
 
@@ -145,7 +145,7 @@ class SymbolTable {
   friend std::ostream& operator<<(std::ostream& os, const SymbolTable& result) {
     os << std::string("{");
     bool outputFirst = false;
-    for (const auto& symbol : result.GetSymbols()) {
+    for (const auto& symbol : result.getSymbols()) {
       if (outputFirst) {
         os << std::string(", ");
       }

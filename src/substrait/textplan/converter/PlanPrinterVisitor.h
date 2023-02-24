@@ -22,11 +22,11 @@ class PlanPrinterVisitor : public BasePlanProtoVisitor {
     error_listener_ = std::make_shared<SubstraitErrorListener>();
   };
 
-  [[nodiscard]] std::shared_ptr<const SymbolTable> GetSymbolTable() const {
+  [[nodiscard]] std::shared_ptr<const SymbolTable> getSymbolTable() const {
     return symbol_table_;
   };
 
-  [[nodiscard]] std::shared_ptr<SubstraitErrorListener> GetErrorListener()
+  [[nodiscard]] std::shared_ptr<SubstraitErrorListener> getErrorListener()
       const {
     return error_listener_;
   };

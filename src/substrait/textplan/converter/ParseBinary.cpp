@@ -8,20 +8,20 @@
 
 namespace io::substrait::textplan {
 
-ParseResult ParseBinaryPlan(const ::substrait::proto::Plan& plan) {
+ParseResult parseBinaryPlan(const ::substrait::proto::Plan& plan) {
   InitialPlanProtoVisitor visitor(plan);
   visitor.visit();
-  auto symbols = visitor.GetSymbolTable();
-  auto syntaxErrors = visitor.GetErrorListener()->GetErrorMessages();
+  auto symbols = visitor.getSymbolTable();
+  auto syntaxErrors = visitor.getErrorListener()->getErrorMessages();
   std::vector<std::string> semanticErrors;
 
   PlanPrinterVisitor printer(plan, *symbols);
   printer.visit();
-  auto moreErrors = printer.GetErrorListener()->GetErrorMessages();
+  auto moreErrors = printer.getErrorListener()->getErrorMessages();
   semanticErrors.insert(
       semanticErrors.end(), moreErrors.begin(), moreErrors.end());
 
-  return {*printer.GetSymbolTable(), syntaxErrors, semanticErrors};
+  return {*printer.getSymbolTable(), syntaxErrors, semanticErrors};
 }
 
 } // namespace io::substrait::textplan

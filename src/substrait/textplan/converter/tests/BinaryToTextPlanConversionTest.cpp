@@ -127,7 +127,7 @@ std::vector<TestCase> GetTestCases() {
 TEST_P(BinaryToTextPlanConverterTestFixture, Parse) {
   auto [name, input, matcher] = GetParam();
 
-  const auto& planOrError = LoadFromText(input);
+  const auto& planOrError = loadFromText(input);
   if (std::holds_alternative<std::vector<std::string>>(planOrError)) {
     auto errors = std::get<std::vector<std::string>>(planOrError);
     ParseResult result(SymbolTable(), errors, {});
@@ -136,7 +136,7 @@ TEST_P(BinaryToTextPlanConverterTestFixture, Parse) {
   }
 
   auto plan = std::get<::substrait::proto::Plan>(planOrError);
-  auto result = ParseBinaryPlan(plan);
+  auto result = parseBinaryPlan(plan);
 
   ASSERT_THAT(result, matcher);
 }
@@ -159,13 +159,13 @@ INSTANTIATE_TEST_SUITE_P(
 
 class BinaryToTextPlanConversionTest : public ::testing::Test {};
 
-TEST_F(BinaryToTextPlanConversionTest, LoadFromJSON) {
-  std::string json = ReadFromFile("data/q6_first_stage.json");
-  auto plan = LoadFromJSON(json);
+TEST_F(BinaryToTextPlanConversionTest, loadFromJSON) {
+  std::string json = readFromFile("data/q6_first_stage.json");
+  auto plan = loadFromJSON(json);
   EXPECT_THAT(plan.extensions_size(), ::testing::Eq(7));
 
-  auto result = ParseBinaryPlan(plan);
-  auto symbols = result.GetSymbolTable()->GetSymbols();
+  auto result = parseBinaryPlan(plan);
+  auto symbols = result.getSymbolTable()->getSymbols();
   ASSERT_THAT(
       result,
       HasSymbols({

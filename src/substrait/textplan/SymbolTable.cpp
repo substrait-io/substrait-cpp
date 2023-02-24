@@ -21,7 +21,7 @@ SymbolTableIterator const& SymbolTableIterator::operator++() {
   return *this;
 }
 
-std::string SymbolTable::GetUniqueName(const std::string& base_name) {
+std::string SymbolTable::getUniqueName(const std::string& base_name) {
   if (names_.find(base_name) == names_.end()) {
     names_.insert(std::make_pair(base_name, 1));
     return base_name;
@@ -30,7 +30,7 @@ std::string SymbolTable::GetUniqueName(const std::string& base_name) {
   return base_name + std::to_string(names_[base_name]);
 }
 
-SymbolInfo* SymbolTable::DefineSymbol(
+SymbolInfo* SymbolTable::defineSymbol(
     const std::string& name,
     const Location& location,
     SymbolType type,
@@ -46,17 +46,17 @@ SymbolInfo* SymbolTable::DefineSymbol(
   return info.get();
 }
 
-SymbolInfo* SymbolTable::DefineUniqueSymbol(
+SymbolInfo* SymbolTable::defineUniqueSymbol(
     const std::string& name,
     const Location& location,
     SymbolType type,
     const std::any& subtype,
     const std::any& blob) {
-  const std::string& unique_name = GetUniqueName(name);
-  return DefineSymbol(unique_name, location, type, subtype, blob);
+  const std::string& unique_name = getUniqueName(name);
+  return defineSymbol(unique_name, location, type, subtype, blob);
 }
 
-std::shared_ptr<const SymbolInfo> SymbolTable::LookupSymbolByName(
+std::shared_ptr<const SymbolInfo> SymbolTable::lookupSymbolByName(
     const std::string& name) {
   if (symbols_by_name_.find(name) != symbols_by_name_.end()) {
     return nullptr;
@@ -64,7 +64,7 @@ std::shared_ptr<const SymbolInfo> SymbolTable::LookupSymbolByName(
   return symbols_[symbols_by_name_[name]];
 }
 
-std::shared_ptr<const SymbolInfo> SymbolTable::LookupSymbolByLocation(
+std::shared_ptr<const SymbolInfo> SymbolTable::lookupSymbolByLocation(
     const Location& location) {
   if (symbols_by_location_.find(location) != symbols_by_location_.end()) {
     return nullptr;
@@ -72,7 +72,7 @@ std::shared_ptr<const SymbolInfo> SymbolTable::LookupSymbolByLocation(
   return symbols_[symbols_by_location_[location]];
 }
 
-std::shared_ptr<const SymbolInfo> SymbolTable::NthSymbolByType(
+std::shared_ptr<const SymbolInfo> SymbolTable::nthSymbolByType(
     uint32_t n,
     SymbolType type) {
   int count = 0;

@@ -10,7 +10,7 @@ namespace io::substrait::textplan {
 
 class SymbolTablePrinter {
  public:
-  static std::string OutputToText(const SymbolTable& symbolTable);
+  static std::string outputToText(const SymbolTable& symbolTable);
 };
 
 } // namespace io::substrait::textplan

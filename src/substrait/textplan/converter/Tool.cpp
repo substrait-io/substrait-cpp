@@ -11,11 +11,11 @@ namespace io::substrait::textplan {
 namespace {
 
 void convertJSONToText(const char* filename) {
-  std::string json = ReadFromFile(filename);
-  auto plan = LoadFromJSON(json);
+  std::string json = readFromFile(filename);
+  auto plan = loadFromJSON(json);
 
-  auto result = ParseBinaryPlan(plan);
-  std::cout << SymbolTablePrinter::OutputToText(*result.GetSymbolTable());
+  auto result = parseBinaryPlan(plan);
+  std::cout << SymbolTablePrinter::outputToText(*result.getSymbolTable());
 }
 
 } // namespace

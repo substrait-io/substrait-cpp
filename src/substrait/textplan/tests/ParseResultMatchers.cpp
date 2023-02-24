@@ -16,7 +16,7 @@
 namespace io::substrait::textplan {
 namespace {
 
-std::vector<std::string> SymbolNames(
+std::vector<std::string> symbolNames(
     const std::vector<std::shared_ptr<SymbolInfo>>& symbols) {
   std::vector<std::string> names;
   for (const auto& symbol : symbols) {
@@ -36,7 +36,7 @@ class ParsesSuccessfullyMatcher {
   static bool MatchAndExplain(
       const ParseResult& result,
       std::ostream* /* listener */) {
-    return result.Successful();
+    return result.successful();
   }
 
   static void DescribeTo(std::ostream* os) {
@@ -61,7 +61,7 @@ class HasSymbolsMatcher {
 
   bool MatchAndExplain(const ParseResult& result, std::ostream* /* listener */)
       const {
-    return SymbolNames(result.GetSymbolTable()->GetSymbols()) ==
+    return symbolNames(result.getSymbolTable()->getSymbols()) ==
         expected_symbols_;
   }
 
@@ -94,7 +94,7 @@ class ReparsesAsMatcher {
   bool MatchAndExplain(const ParseResult& result, std::ostream* listener)
       const {
     std::string outputText =
-        SymbolTablePrinter::OutputToText(*result.GetSymbolTable());
+        SymbolTablePrinter::outputToText(*result.getSymbolTable());
     if (listener) {
       *listener << "has output text \"" << outputText << "\"";
     }
@@ -128,7 +128,7 @@ class HasErrorsMatcher {
 
   bool MatchAndExplain(const ParseResult& result, std::ostream* /* listener */)
       const {
-    return result.GetAllErrors() == expected_errors_;
+    return result.getAllErrors() == expected_errors_;
   }
 
   void DescribeTo(std::ostream* os) const {

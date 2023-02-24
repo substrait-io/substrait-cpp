@@ -9,10 +9,10 @@
 
 namespace io::substrait::textplan {
 
-std::string SymbolTablePrinter::OutputToText(const SymbolTable& symbolTable) {
+std::string SymbolTablePrinter::outputToText(const SymbolTable& symbolTable) {
   std::string text;
 
-  text = symbolTable.GetCachedOutput();
+  text = symbolTable.getCachedOutput();
   if (!text.empty()) {
     return text;
   }

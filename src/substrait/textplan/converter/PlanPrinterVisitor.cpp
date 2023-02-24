@@ -12,7 +12,7 @@
 namespace io::substrait::textplan {
 
 void PlanPrinterVisitor::visit() {
-  symbol_table_->AddCachedOutput(std::any_cast<std::string>(visitPlan()));
+  symbol_table_->addCachedOutput(std::any_cast<std::string>(visitPlan()));
 }
 
 std::any PlanPrinterVisitor::visitPlan() {
