@@ -41,7 +41,7 @@ SymbolInfo* SymbolTable::defineSymbol(
   // TODO -- Detect attempts to reuse the same symbol.
   std::shared_ptr<SymbolInfo> info =
       std::make_shared<SymbolInfo>(name, location, type, subtype, blob);
-  symbols_.push_back(info);
+  symbols_.push_back(std::move(info));
   symbols_by_name_.insert(std::make_pair(name, symbols_.size() - 1));
   symbols_by_location_.insert(std::make_pair(location, symbols_.size() - 1));
 
