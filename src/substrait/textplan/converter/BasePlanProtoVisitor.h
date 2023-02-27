@@ -12,9 +12,8 @@ class BasePlanProtoVisitor {
  public:
   BasePlanProtoVisitor() = delete;
 
-  explicit BasePlanProtoVisitor(const ::substrait::proto::Plan& plan) {
-    plan_ = plan;
-  }
+  explicit BasePlanProtoVisitor(::substrait::proto::Plan plan)
+      : plan_(std::move(plan)) {}
 
   virtual void visit() {
     visitPlan();
