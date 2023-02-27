@@ -82,9 +82,9 @@ class SymbolTableIterator {
  public:
   bool operator!=(SymbolTableIterator const& other) const;
 
-  SymbolInfo const& operator*() const;
+  const SymbolInfo& operator*() const;
 
-  SymbolTableIterator const& operator++();
+  SymbolTableIterator operator++();
 
  private:
   friend SymbolTable;
@@ -98,8 +98,12 @@ class SymbolTableIterator {
 
 class SymbolTable {
  public:
+  // If the given symbol is not yet defined, returns that symbol.  Otherwise
+  // it returns a modified version of the symbol (by adding a number) so that
+  // it is unique.
   std::string getUniqueName(const std::string& base_name);
 
+  // Adds a new symbol to the symbol table.
   SymbolInfo* defineSymbol(
       const std::string& name,
       const Location& location,
@@ -107,6 +111,7 @@ class SymbolTable {
       const std::any& subtype,
       const std::any& blob);
 
+  // Convenience function that defines a symbol by first calling getUniqueName.
   SymbolInfo* defineUniqueSymbol(
       const std::string& name,
       const Location& location,
@@ -136,7 +141,8 @@ class SymbolTable {
   void addCachedOutput(const std::string& text) {
     cached_output_ = text;
   }
-  // TODO: Remove after we have the information required to reconstruct the plan.
+  // TODO: Remove after we have the information required to reconstruct the
+  // plan.
   [[nodiscard]] std::string getCachedOutput() const {
     return cached_output_;
   }

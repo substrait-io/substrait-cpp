@@ -18,6 +18,7 @@ add_library(parse_result
 add_dependencies(symbol_table
         substrait_proto)
 
+# Provide access to the generated protobuffer headers hierarchy.
 target_include_directories(
         symbol_table
         PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/../..")

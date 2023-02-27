@@ -11,6 +11,8 @@
 
 namespace io::substrait::textplan {
 
+// InitialPlanProtoVisitor is the first part of the binary to text conversion
+// process which identifies the prominent symbols and gives them names.
 class InitialPlanProtoVisitor : public BasePlanProtoVisitor {
  public:
   explicit InitialPlanProtoVisitor(const ::substrait::proto::Plan& plan)

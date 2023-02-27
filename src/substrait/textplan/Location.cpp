@@ -3,6 +3,7 @@
 #include "substrait/textplan/Location.h"
 
 #include <functional>
+#include <sstream>
 #include <string>
 
 namespace io::substrait::textplan {
@@ -13,14 +14,17 @@ ProtoLocation ProtoLocation::visit(const std::string& name) const {
   return new_location;
 }
 
-std::string ProtoLocation::to_string() const {
-  std::string text;
+std::string ProtoLocation::toString() const {
+  std::stringstream text;
+  bool written = false;
   for (const auto& loc : location_) {
-    if (!text.empty())
-      text += " -> ";
-    text += loc;
+    if (!written) {
+      text << " -> ";
+      written = true;
+    }
+    text << loc;
   }
-  return text;
+  return text.str();
 }
 
 } // namespace io::substrait::textplan
@@ -31,7 +35,7 @@ std::size_t std::hash<::io::substrait::textplan::Location>::operator()(
           loc.loc_)) {
     return std::hash<std::string>()(
         std::get<::io::substrait::textplan::ProtoLocation>(loc.loc_)
-            .to_string());
+            .toString());
   } else if (std::holds_alternative<antlr4::ParserRuleContext*>(loc.loc_)) {
     return std::hash<antlr4::ParserRuleContext*>()(
         std::get<antlr4::ParserRuleContext*>(loc.loc_));
@@ -46,9 +50,8 @@ std::size_t std::less<::io::substrait::textplan::Location>::operator()(
   if (std::holds_alternative<::io::substrait::textplan::ProtoLocation>(
           lhs.loc_)) {
     return std::get<::io::substrait::textplan::ProtoLocation>(lhs.loc_)
-               .to_string() <
-        std::get<::io::substrait::textplan::ProtoLocation>(rhs.loc_)
-            .to_string();
+               .toString() <
+        std::get<::io::substrait::textplan::ProtoLocation>(rhs.loc_).toString();
   }
   return std::get<antlr4::ParserRuleContext*>(lhs.loc_) <
       std::get<antlr4::ParserRuleContext*>(rhs.loc_);

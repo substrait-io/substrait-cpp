@@ -16,7 +16,7 @@ class ProtoLocation {
  public:
   [[nodiscard]] ProtoLocation visit(const std::string& name) const;
 
-  [[nodiscard]] std::string to_string() const;
+  [[nodiscard]] std::string toString() const;
 
  private:
   std::vector<std::string> location_;

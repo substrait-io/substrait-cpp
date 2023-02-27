@@ -12,10 +12,10 @@ namespace io::substrait::textplan {
 class ParseResult {
  public:
   ParseResult(
-      const SymbolTable& symbolTable,
+      SymbolTable symbolTable,
       std::vector<std::string> syntaxErrors,
       std::vector<std::string> semanticErrors) {
-    symbol_table_ = std::make_shared<SymbolTable>(symbolTable);
+    symbol_table_ = std::make_shared<SymbolTable>(std::move(symbolTable));
     syntax_errors_ = std::move(syntaxErrors);
     semantic_errors_ = std::move(semanticErrors);
   }
@@ -28,11 +28,11 @@ class ParseResult {
     return symbol_table_;
   }
 
-  [[nodiscard]] std::vector<std::string> getSyntaxErrors() const {
+  [[nodiscard]] const std::vector<std::string>& getSyntaxErrors() const {
     return syntax_errors_;
   }
 
-  [[nodiscard]] std::vector<std::string> getSemanticErrors() const {
+  [[nodiscard]] const std::vector<std::string>& getSemanticErrors() const {
     return semantic_errors_;
   }
 

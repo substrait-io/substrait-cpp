@@ -16,19 +16,19 @@ SymbolInfo const& SymbolTableIterator::operator*() const {
   return *table_->symbols_[index_];
 }
 
-SymbolTableIterator const& SymbolTableIterator::operator++() {
+SymbolTableIterator SymbolTableIterator::operator++() {
   ++index_;
   return *this;
 }
 
 std::string SymbolTable::getUniqueName(const std::string& base_name) {
-  auto itr = names_.find(base_name);
-  if (itr == names_.end()) {
+  auto symbolSeenCount = names_.find(base_name);
+  if (symbolSeenCount == names_.end()) {
     names_.insert(std::make_pair(base_name, 1));
     return base_name;
   }
-  int32_t count = itr->second + 1;
-  itr->second = count;
+  int32_t count = symbolSeenCount->second + 1
+  symbolSeenCount->second = count;
   return base_name + std::to_string(count);
 }
 
@@ -68,7 +68,7 @@ std::shared_ptr<const SymbolInfo> SymbolTable::lookupSymbolByName(
 
 std::shared_ptr<const SymbolInfo> SymbolTable::lookupSymbolByLocation(
     const Location& location) {
-  if (symbols_by_location_.find(location) != symbols_by_location_.end()) {
+  if (symbols_by_location_.find(location) == symbols_by_location_.end()) {
     return nullptr;
   }
   return symbols_[symbols_by_location_[location]];
@@ -78,7 +78,7 @@ std::shared_ptr<const SymbolInfo> SymbolTable::nthSymbolByType(
     uint32_t n,
     SymbolType type) {
   int count = 0;
-  for (auto symbol : symbols_) {
+  for (const auto& symbol : symbols_) {
     if (symbol->type == type) {
       if (n == count++)
         return symbol;
