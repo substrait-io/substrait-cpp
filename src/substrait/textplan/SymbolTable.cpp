@@ -22,12 +22,14 @@ SymbolTableIterator const& SymbolTableIterator::operator++() {
 }
 
 std::string SymbolTable::getUniqueName(const std::string& base_name) {
-  if (names_.find(base_name) == names_.end()) {
+  auto itr = names_.find(base_name);
+  if (itr == names_.end()) {
     names_.insert(std::make_pair(base_name, 1));
     return base_name;
   }
-  names_[base_name]++;
-  return base_name + std::to_string(names_[base_name]);
+  int32_t count = itr->second + 1;
+  itr->second = count;
+  return base_name + std::to_string(count);
 }
 
 SymbolInfo* SymbolTable::defineSymbol(
