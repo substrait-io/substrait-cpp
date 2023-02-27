@@ -2,14 +2,14 @@
 
 #pragma once
 
-#include "substrait/textplan/Location.h"
-
 #include <any>
 #include <map>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "substrait/textplan/Location.h"
 
 namespace io::substrait::textplan {
 
