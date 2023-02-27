@@ -54,7 +54,7 @@ SymbolInfo* SymbolTable::defineUniqueSymbol(
     SymbolType type,
     const std::any& subtype,
     const std::any& blob) {
-  const std::string& unique_name = getUniqueName(name);
+  std::string unique_name = getUniqueName(name);
   return defineSymbol(unique_name, location, type, subtype, blob);
 }
 
