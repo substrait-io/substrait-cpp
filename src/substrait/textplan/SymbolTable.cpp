@@ -60,7 +60,7 @@ SymbolInfo* SymbolTable::defineUniqueSymbol(
 
 std::shared_ptr<const SymbolInfo> SymbolTable::lookupSymbolByName(
     const std::string& name) {
-  if (symbols_by_name_.find(name) != symbols_by_name_.end()) {
+  if (symbols_by_name_.find(name) == symbols_by_name_.end()) {
     return nullptr;
   }
   return symbols_[symbols_by_name_[name]];
