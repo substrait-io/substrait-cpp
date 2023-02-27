@@ -127,17 +127,14 @@ std::vector<TestCase> GetTestCases() {
 TEST_P(BinaryToTextPlanConverterTestFixture, Parse) {
   auto [name, input, matcher] = GetParam();
 
-  const auto& planOrError = loadFromText(input);
-  if (std::holds_alternative<std::vector<std::string>>(planOrError)) {
-    auto errors = std::get<std::vector<std::string>>(planOrError);
-    ParseResult result(SymbolTable(), errors, {});
+  auto planOrError = loadFromText(input);
+  if (!planOrError.ok()) {
+    ParseResult result(SymbolTable(), planOrError.errors(), {});
     ASSERT_THAT(result, matcher);
     return;
   }
 
-  auto plan = std::get<::substrait::proto::Plan>(planOrError);
-  auto result = parseBinaryPlan(plan);
-
+  auto result = parseBinaryPlan(*planOrError);
   ASSERT_THAT(result, matcher);
 }
 
@@ -161,7 +158,9 @@ class BinaryToTextPlanConversionTest : public ::testing::Test {};
 
 TEST_F(BinaryToTextPlanConversionTest, loadFromJSON) {
   std::string json = readFromFile("data/q6_first_stage.json");
-  auto plan = loadFromJSON(json);
+  auto planOrError = loadFromJSON(json);
+  ASSERT_TRUE(planOrError.ok());
+  auto plan = *planOrError;
   EXPECT_THAT(plan.extensions_size(), ::testing::Eq(7));
 
   auto result = parseBinaryPlan(plan);

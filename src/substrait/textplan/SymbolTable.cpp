@@ -58,33 +58,35 @@ SymbolInfo* SymbolTable::defineUniqueSymbol(
   return defineSymbol(unique_name, location, type, subtype, blob);
 }
 
-std::shared_ptr<const SymbolInfo> SymbolTable::lookupSymbolByName(
+const SymbolInfo& SymbolTable::lookupSymbolByName(
     const std::string& name) {
-  if (symbols_by_name_.find(name) == symbols_by_name_.end()) {
-    return nullptr;
+  auto itr = symbols_by_name_.find(name);
+  if (itr == symbols_by_name_.end()) {
+    return kUnknownSymbol;
   }
-  return symbols_[symbols_by_name_[name]];
+  return *symbols_[itr->second];
 }
 
-std::shared_ptr<const SymbolInfo> SymbolTable::lookupSymbolByLocation(
+const SymbolInfo& SymbolTable::lookupSymbolByLocation(
     const Location& location) {
-  if (symbols_by_location_.find(location) == symbols_by_location_.end()) {
-    return nullptr;
+  auto itr = symbols_by_location_.find(location);
+  if (itr == symbols_by_location_.end()) {
+    return kUnknownSymbol;
   }
-  return symbols_[symbols_by_location_[location]];
+  return *symbols_[itr->second];
 }
 
-std::shared_ptr<const SymbolInfo> SymbolTable::nthSymbolByType(
+const SymbolInfo& SymbolTable::nthSymbolByType(
     uint32_t n,
     SymbolType type) {
   int count = 0;
   for (const auto& symbol : symbols_) {
     if (symbol->type == type) {
       if (n == count++)
-        return symbol;
+        return *symbol;
     }
   }
-  return nullptr;
+  return kUnknownSymbol;
 }
 
 SymbolTableIterator SymbolTable::begin() const {

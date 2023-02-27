@@ -27,6 +27,22 @@ std::string ProtoLocation::toString() const {
   return text.str();
 }
 
+bool operator==(const Location& c1, const Location& c2) {
+  // Test only one side since we only store one kind of content per table.
+  if (std::holds_alternative<ProtoLocation>(
+          c1.loc_)) {
+    auto s1 = std::get<ProtoLocation>(c1.loc_).toString();
+    auto s2 = std::get<ProtoLocation>(c2.loc_).toString();
+    return s1 == s2;
+  } else if (std::holds_alternative<antlr4::ParserRuleContext*>(c1.loc_)) {
+    auto a1 = std::get<antlr4::ParserRuleContext*>(c1.loc_);
+    auto a2 = std::get<antlr4::ParserRuleContext*>(c2.loc_);
+    return a1 == a2;
+  }
+  // Should not be reached.
+  return false;
+}
+
 } // namespace io::substrait::textplan
 
 std::size_t std::hash<::io::substrait::textplan::Location>::operator()(

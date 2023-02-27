@@ -3,7 +3,6 @@
 #include <getopt.h>
 
 #include "substrait/textplan/SymbolTablePrinter.h"
-#include "substrait/textplan/converter/InitialPlanProtoVisitor.h"
 #include "substrait/textplan/converter/LoadBinary.h"
 #include "substrait/textplan/converter/ParseBinary.h"
 
@@ -12,9 +11,16 @@ namespace {
 
 void convertJSONToText(const char* filename) {
   std::string json = readFromFile(filename);
-  auto plan = loadFromJSON(json);
+  auto planOrError = loadFromJSON(json);
+  if (!planOrError.ok()) {
+    std::cerr << "An error occurred while reading: " << filename << std::endl;
+    for (const auto& err : planOrError.errors()) {
+      std::cerr << err << std::endl;
+    }
+    return;
+  }
 
-  auto result = parseBinaryPlan(plan);
+  auto result = parseBinaryPlan(*planOrError);
   std::cout << SymbolTablePrinter::outputToText(*result.getSymbolTable());
 }
 

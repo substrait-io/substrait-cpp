@@ -3,9 +3,9 @@
 #pragma once
 
 #include <any>
-#include <map>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -60,19 +60,19 @@ struct SymbolInfo {
   std::string name;
   Location location;
   SymbolType type;
-  std::any relation_type;
+  std::any subtype;
   std::any blob;
 
   SymbolInfo(
       std::string new_name,
       Location new_location,
       SymbolType new_type,
-      std::any new_relation_type,
+      std::any new_subtype,
       std::any new_blob)
       : name(std::move(new_name)),
         location(std::move(new_location)),
         type(new_type),
-        relation_type(std::move(new_relation_type)),
+        subtype(std::move(new_subtype)),
         blob(std::move(new_blob)){};
 };
 
@@ -119,14 +119,11 @@ class SymbolTable {
       const std::any& subtype,
       const std::any& blob);
 
-  std::shared_ptr<const SymbolInfo> lookupSymbolByName(const std::string& name);
+  const SymbolInfo& lookupSymbolByName(const std::string& name);
 
-  std::shared_ptr<const SymbolInfo> lookupSymbolByLocation(
-      const Location& location);
+  const SymbolInfo& lookupSymbolByLocation(const Location& location);
 
-  std::shared_ptr<const SymbolInfo> nthSymbolByType(
-      uint32_t n,
-      SymbolType type);
+  const SymbolInfo& nthSymbolByType(uint32_t n, SymbolType type);
 
   [[nodiscard]] SymbolTableIterator begin() const;
 
@@ -162,14 +159,21 @@ class SymbolTable {
     return os;
   }
 
+  SymbolInfo kUnknownSymbol = {
+      "__UNKNOWN__",
+      Location(ProtoLocation()),
+      SymbolType::kUnknown,
+      std::nullopt,
+      std::nullopt};
+
  private:
   friend SymbolTableIterator;
 
-  std::map<std::string, int32_t> names_;
+  std::unordered_map<std::string, int32_t> names_;
 
   std::vector<std::shared_ptr<SymbolInfo>> symbols_;
-  std::map<std::string, size_t> symbols_by_name_;
-  std::map<Location, size_t> symbols_by_location_;
+  std::unordered_map<std::string, size_t> symbols_by_name_;
+  std::unordered_map<Location, size_t> symbols_by_location_;
 
   std::string cached_output_;
 };

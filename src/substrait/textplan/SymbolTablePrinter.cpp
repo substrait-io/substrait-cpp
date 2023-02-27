@@ -3,6 +3,7 @@
 #include "SymbolTablePrinter.h"
 
 #include <set>
+#include <sstream>
 
 #include "substrait/proto/extensions/extensions.pb.h"
 #include "substrait/textplan/SymbolTable.h"
@@ -10,12 +11,12 @@
 namespace io::substrait::textplan {
 
 std::string SymbolTablePrinter::outputToText(const SymbolTable& symbolTable) {
-  std::string text;
-
-  text = symbolTable.getCachedOutput();
-  if (!text.empty()) {
-    return text;
+  std::string cachedText = symbolTable.getCachedOutput();
+  if (!cachedText.empty()) {
+    return cachedText;
   }
+
+  std::stringstream text;
 
   std::map<uint32_t, std::string> space_names;
   std::set<uint32_t> used_spaces;
@@ -46,9 +47,9 @@ std::string SymbolTablePrinter::outputToText(const SymbolTable& symbolTable) {
   for (const uint32_t space : used_spaces) {
     if (space_names.find(space) == space_names.end()) {
       // TODO: Handle this case as a warning.
-      text += "extension_space {\n";
+      text << "extension_space {\n";
     } else {
-      text += "extension_space " + space_names[space] + " {\n";
+      text << "extension_space " << space_names[space] << " {\n";
     }
 
     for (const SymbolInfo& info : symbolTable) {
@@ -62,12 +63,12 @@ std::string SymbolTablePrinter::outputToText(const SymbolTable& symbolTable) {
       if (extension.extension_uri_reference() != space)
         continue;
 
-      text += "  function " + extension.name() + " as " + info.name + ";\n";
+      text << "  function " << extension.name() << " as " << info.name << ";\n";
     }
-    text += "}\n";
+    text << "}\n";
   }
 
-  return text;
+  return text.str();
 }
 
 } // namespace io::substrait::textplan

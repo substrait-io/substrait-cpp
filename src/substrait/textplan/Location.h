@@ -31,6 +31,9 @@ class Location {
     loc_ = location;
   };
 
+ protected:
+  friend bool operator==(const Location& c1, const Location& c2);
+
  private:
   friend std::hash<Location>;
   friend std::less<Location>;
@@ -42,7 +45,8 @@ class Location {
 
 template <>
 struct std::hash<::io::substrait::textplan::Location> {
-  std::size_t operator()(const ::io::substrait::textplan::Location& loc) const noexcept;
+  std::size_t operator()(
+      const ::io::substrait::textplan::Location& loc) const noexcept;
 };
 
 template <>
@@ -51,3 +55,4 @@ struct std::less<::io::substrait::textplan::Location> {
       const ::io::substrait::textplan::Location& lhs,
       const ::io::substrait::textplan::Location& rhs) const noexcept;
 };
+

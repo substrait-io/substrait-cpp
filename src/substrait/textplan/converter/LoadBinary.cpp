@@ -38,7 +38,7 @@ class StringErrorCollector : public google::protobuf::io::ErrorCollector {
 
 } // namespace
 
-std::string readFromFile(const std::string& msgPath) {
+std::string readFromFile(std::string_view msgPath) {
   std::ifstream textFile(msgPath);
   if (textFile.fail()) {
     auto currdir = std::filesystem::current_path().string();
@@ -53,7 +53,7 @@ std::string readFromFile(const std::string& msgPath) {
   return buffer.str();
 }
 
-::substrait::proto::Plan loadFromJSON(const std::string& json) {
+PlanOrErrors loadFromJSON(std::string_view json) {
   if (json.empty()) {
     SUBSTRAIT_FAIL("Provided JSON string was empty.");
   }
@@ -72,19 +72,18 @@ std::string readFromFile(const std::string& msgPath) {
     SUBSTRAIT_FAIL(
         "Failed to parse Substrait JSON: {}", status.message().ToString());
   }
-  return plan;
+  return PlanOrErrors(plan);
 }
 
-std::variant<::substrait::proto::Plan, std::vector<std::string>> loadFromText(
-    const std::string& text) {
+PlanOrErrors loadFromText(const std::string& text) {
   ::substrait::proto::Plan plan;
   ::google::protobuf::TextFormat::Parser parser;
   StringErrorCollector collector;
   parser.RecordErrorsTo(&collector);
   if (!parser.ParseFromString(text, &plan)) {
-    return collector.GetErrors();
+    return PlanOrErrors(collector.GetErrors());
   }
-  return plan;
+  return PlanOrErrors(plan);
 }
 
 } // namespace io::substrait::textplan
