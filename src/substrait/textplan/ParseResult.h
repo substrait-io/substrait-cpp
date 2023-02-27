@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "SymbolTable.h"
+#include "substrait/textplan/SymbolTable.h"
 
 namespace io::substrait::textplan {
 
