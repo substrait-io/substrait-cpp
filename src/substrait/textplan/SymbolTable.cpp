@@ -27,7 +27,7 @@ std::string SymbolTable::getUniqueName(const std::string& base_name) {
     names_.insert(std::make_pair(base_name, 1));
     return base_name;
   }
-  int32_t count = symbolSeenCount->second + 1
+  int32_t count = symbolSeenCount->second + 1;
   symbolSeenCount->second = count;
   return base_name + std::to_string(count);
 }
