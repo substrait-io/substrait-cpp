@@ -32,7 +32,7 @@ std::vector<TestCase> GetTestCases() {
       {
           "empty plan",
           "",
-          ReparsesAs(""),
+          SerializesTo(""),
       },
       {
           "empty extension space",
@@ -40,7 +40,7 @@ std::vector<TestCase> GetTestCases() {
           "  extension_uri_anchor: 42;\n"
           "  uri: \"http://life@everything\",\n"
           "}",
-          ReparsesAs(""),
+          SerializesTo(""),
       },
       {
           "used extension space",
@@ -55,9 +55,9 @@ std::vector<TestCase> GetTestCases() {
           "    name: \"sum:fp64_fp64\"\n"
           "  }\n"
           "}\n",
-          ReparsesAs("extension_space http://life@everything {\n"
-                     "  function sum:fp64_fp64 as sum;\n"
-                     "}\n"),
+          SerializesTo("extension_space http://life@everything {\n"
+                       "  function sum:fp64_fp64 as sum;\n"
+                       "}\n"),
       },
       {
           "seven extensions, no uris",
@@ -110,15 +110,15 @@ std::vector<TestCase> GetTestCases() {
           "    name: \"multiply:opt_fp64_fp64\"\n"
           "  }\n"
           "}\n",
-          ReparsesAs("extension_space {\n"
-                     "  function lte:fp64_fp64 as lte;\n"
-                     "  function sum:fp64_fp64 as sum;\n"
-                     "  function lt:fp64_fp64 as lt;\n"
-                     "  function is_not_null:fp64 as is_not_null;\n"
-                     "  function and:bool_bool as and;\n"
-                     "  function gte:fp64_fp64 as gte;\n"
-                     "  function multiply:opt_fp64_fp64 as multiply;\n"
-                     "}\n"),
+          SerializesTo("extension_space {\n"
+                       "  function lte:fp64_fp64 as lte;\n"
+                       "  function sum:fp64_fp64 as sum;\n"
+                       "  function lt:fp64_fp64 as lt;\n"
+                       "  function is_not_null:fp64 as is_not_null;\n"
+                       "  function and:bool_bool as and;\n"
+                       "  function gte:fp64_fp64 as gte;\n"
+                       "  function multiply:opt_fp64_fp64 as multiply;\n"
+                       "}\n"),
       },
   };
   return cases;

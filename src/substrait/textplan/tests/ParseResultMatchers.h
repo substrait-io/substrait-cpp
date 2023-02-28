@@ -9,15 +9,15 @@
 
 namespace io::substrait::textplan {
 
-[[maybe_unused]] ::testing::Matcher<const ParseResult&> ParsesSuccessfully();
+[[maybe_unused]] ::testing::Matcher<const ParseResult&> ParsesOk();
 
 [[maybe_unused]] ::testing::Matcher<const ParseResult&> HasSymbols(
-    const std::vector<std::string>& expected_symbols);
+    std::vector<std::string> expected_symbols);
 
-[[maybe_unused]] ::testing::Matcher<const ParseResult&> ReparsesAs(
-    const std::string& expected_result);
+[[maybe_unused]] ::testing::Matcher<const ParseResult&> SerializesTo(
+    std::string expected_result);
 
 [[maybe_unused]] ::testing::Matcher<const ParseResult&> HasErrors(
-    const std::vector<std::string>& expected_errors);
+    std::vector<std::string> expected_errors);
 
 } // namespace io::substrait::textplan
