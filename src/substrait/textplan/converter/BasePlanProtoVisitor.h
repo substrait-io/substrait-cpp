@@ -8,6 +8,9 @@
 
 namespace io::substrait::textplan {
 
+// BasePlanProtoVisitor provides a visitor that will visit all of the major
+// messages within a Plan protobuffer object.  Subclass the visitor to add your
+// own functionality.
 class BasePlanProtoVisitor {
  public:
   BasePlanProtoVisitor() = delete;
@@ -15,6 +18,7 @@ class BasePlanProtoVisitor {
   explicit BasePlanProtoVisitor(::substrait::proto::Plan plan)
       : plan_(std::move(plan)) {}
 
+  // visit() begins the traversal of the entire plan.
   virtual void visit() {
     visitPlan();
   }

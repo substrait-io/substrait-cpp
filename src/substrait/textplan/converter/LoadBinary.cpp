@@ -39,7 +39,7 @@ class StringErrorCollector : public google::protobuf::io::ErrorCollector {
 } // namespace
 
 std::string readFromFile(std::string_view msgPath) {
-  std::ifstream textFile(msgPath);
+  std::ifstream textFile(std::string{msgPath});
   if (textFile.fail()) {
     auto currdir = std::filesystem::current_path().string();
     SUBSTRAIT_FAIL(
