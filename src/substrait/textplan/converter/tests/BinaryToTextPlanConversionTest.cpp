@@ -157,7 +157,9 @@ INSTANTIATE_TEST_SUITE_P(
 class BinaryToTextPlanConversionTest : public ::testing::Test {};
 
 TEST_F(BinaryToTextPlanConversionTest, loadFromJSON) {
-  std::string json = readFromFile("data/q6_first_stage.json");
+  // TODO: Figure out how to pass the test directory to the test.
+  std::string json = readFromFile(
+      "../../../src/substrait/textplan/converter/data/q6_first_stage.json");
   auto planOrError = loadFromJSON(json);
   ASSERT_TRUE(planOrError.ok());
   auto plan = *planOrError;
