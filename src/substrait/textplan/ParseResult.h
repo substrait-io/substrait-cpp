@@ -9,6 +9,9 @@
 
 namespace io::substrait::textplan {
 
+// ParseResult contains the result of a parse (from text to binary) or the
+// conversion (from binary to text).  The symbol table contains nearly
+// all the information necessary to reconstruct either form.
 class ParseResult {
  public:
   ParseResult(
@@ -24,8 +27,8 @@ class ParseResult {
     return syntax_errors_.empty() && semantic_errors_.empty();
   }
 
-  [[nodiscard]] std::shared_ptr<const SymbolTable> getSymbolTable() const {
-    return symbol_table_;
+  [[nodiscard]] const SymbolTable& getSymbolTable() const {
+    return *symbol_table_;
   }
 
   [[nodiscard]] const std::vector<std::string>& getSyntaxErrors() const {

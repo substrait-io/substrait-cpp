@@ -17,6 +17,9 @@ struct ErrorInstance {
   std::string message;
 };
 
+// SubstraitErrorListener is similar in behavior to an antlr4::ErrorListener to
+// provide a similar error collection methodology regardless of how the input
+// data is obtained.
 class SubstraitErrorListener {
  public:
   SubstraitErrorListener() = default;

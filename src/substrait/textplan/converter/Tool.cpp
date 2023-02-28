@@ -21,7 +21,7 @@ void convertJSONToText(const char* filename) {
   }
 
   auto result = parseBinaryPlan(*planOrError);
-  std::cout << SymbolTablePrinter::outputToText(*result.getSymbolTable());
+  std::cout << SymbolTablePrinter::outputToText(result.getSymbolTable());
 }
 
 } // namespace

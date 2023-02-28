@@ -15,7 +15,7 @@ class Plan;
 
 namespace io::substrait::textplan {
 
-// PlanOrErrors behaves similarly to abseil::StatusOk
+// PlanOrErrors behaves similarly to abseil::StatusOr.
 class PlanOrErrors {
  public:
   explicit PlanOrErrors(::substrait::proto::Plan plan)

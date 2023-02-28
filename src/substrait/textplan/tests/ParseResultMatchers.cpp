@@ -59,7 +59,7 @@ class HasSymbolsMatcher {
 
   bool MatchAndExplain(const ParseResult& result, std::ostream* listener)
       const {
-    auto actual_symbols = symbolNames(result.getSymbolTable()->getSymbols());
+    auto actual_symbols = symbolNames(result.getSymbolTable().getSymbols());
     if (listener != nullptr) {
       std::vector<std::string> extra_symbols(actual_symbols.size());
       auto end = std::set_difference(
@@ -127,7 +127,7 @@ class SerializesToMatcher {
   bool MatchAndExplain(const ParseResult& result, std::ostream* listener)
       const {
     std::string outputText =
-        SymbolTablePrinter::outputToText(*result.getSymbolTable());
+        SymbolTablePrinter::outputToText(result.getSymbolTable());
     if (listener) {
       *listener << "has output text \"" << outputText << "\"";
     }

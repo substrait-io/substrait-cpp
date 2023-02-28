@@ -22,6 +22,10 @@ class ProtoLocation {
   std::vector<std::string> location_;
 };
 
+// Location is used for keeping track of where a symbol is within a parse tree.
+// Since SymbolTable supports both antlr4 and protobuf messages there are
+// essentially two flavors of location.  It is expected that only one type of
+// location would be used in any SymbolTable instance.
 class Location {
  public:
   explicit Location(antlr4::ParserRuleContext* node) {

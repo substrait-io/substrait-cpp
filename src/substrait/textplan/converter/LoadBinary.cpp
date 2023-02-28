@@ -55,7 +55,7 @@ std::string readFromFile(std::string_view msgPath) {
 
 PlanOrErrors loadFromJSON(std::string_view json) {
   if (json.empty()) {
-    SUBSTRAIT_FAIL("Provided JSON string was empty.");
+    return PlanOrErrors({"Provided JSON string was empty."});
   }
   std::string_view usable_json = json;
   if (json[0] == '#') {
@@ -69,8 +69,8 @@ PlanOrErrors loadFromJSON(std::string_view json) {
   auto status = google::protobuf::util::JsonStringToMessage(
       std::string{usable_json}, &plan);
   if (!status.ok()) {
-    SUBSTRAIT_FAIL(
-        "Failed to parse Substrait JSON: {}", status.message().ToString());
+    return PlanOrErrors({fmt::format(
+        "Failed to parse Substrait JSON: {}", status.message().ToString())});
   }
   return PlanOrErrors(plan);
 }

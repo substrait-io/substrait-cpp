@@ -164,7 +164,7 @@ TEST_F(BinaryToTextPlanConversionTest, loadFromJSON) {
   EXPECT_THAT(plan.extensions_size(), ::testing::Eq(7));
 
   auto result = parseBinaryPlan(plan);
-  auto symbols = result.getSymbolTable()->getSymbols();
+  auto symbols = result.getSymbolTable().getSymbols();
   ASSERT_THAT(
       result,
       HasSymbols({
