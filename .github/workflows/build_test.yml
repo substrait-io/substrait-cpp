@@ -22,4 +22,4 @@ jobs:
       - name: Build
         run: ninja -C build
       - name: Test
-        run: ctest --test-dir build
+        run: ctest --test-dir build --output-on-failure
