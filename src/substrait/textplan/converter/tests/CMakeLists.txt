@@ -18,7 +18,7 @@ add_custom_command(
   TARGET textplan_conversion_test
   POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E echo "Copying unit test data.."
-  COMMAND ${CMAKE_COMMAND} -E copy_directory
-                           ${TEXTPLAN_SOURCE_DIR}/data
-                           ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tests/data
+  COMMAND ${CMAKE_COMMAND} -E copy
+                           ${TEXTPLAN_SOURCE_DIR}/data/q6_first_stage.json
+                           ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tests/data/q6_first_stage.json
   )
