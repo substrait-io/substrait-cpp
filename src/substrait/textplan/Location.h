@@ -42,8 +42,8 @@ class Location {
 
 template <>
 struct std::hash<::io::substrait::textplan::Location> {
-  std::size_t operator()(
-      const ::io::substrait::textplan::Location& loc) const noexcept;
+  std::size_t operator()(const ::io::substrait::textplan::Location& loc) const
+      noexcept;
 };
 
 template <>

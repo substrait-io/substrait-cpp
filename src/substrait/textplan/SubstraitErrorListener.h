@@ -9,7 +9,7 @@ namespace io::substrait::textplan {
 
 struct ErrorLocation {
   size_t line;
-  size_t char_position_in_line;
+  size_t charPositionInLine;
 };
 
 struct ErrorInstance {

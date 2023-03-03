@@ -73,16 +73,16 @@ struct SymbolInfo {
   std::any blob;
 
   SymbolInfo(
-      std::string new_name,
-      Location new_location,
-      SymbolType new_type,
-      std::any new_subtype,
-      std::any new_blob)
-      : name(std::move(new_name)),
-        location(new_location),
-        type(new_type),
-        subtype(std::move(new_subtype)),
-        blob(std::move(new_blob)){};
+      std::string newName,
+      Location newLocation,
+      SymbolType newType,
+      std::any newSubtype,
+      std::any newBlob)
+      : name(std::move(newName)),
+        location(newLocation),
+        type(newType),
+        subtype(std::move(newSubtype)),
+        blob(std::move(newBlob)){};
 
   friend bool operator==(const SymbolInfo& left, const SymbolInfo& right);
   friend bool operator!=(const SymbolInfo& left, const SymbolInfo& right);
@@ -113,7 +113,7 @@ class SymbolTable {
   // If the given symbol is not yet defined, returns that symbol.  Otherwise
   // it returns a modified version of the symbol (by adding a number) so that
   // it is unique.
-  std::string getUniqueName(const std::string& base_name);
+  std::string getUniqueName(const std::string& baseName);
 
   // Adds a new symbol to the symbol table.
   SymbolInfo* defineSymbol(
@@ -169,8 +169,8 @@ class SymbolTable {
   std::unordered_map<std::string, int32_t> names_;
 
   std::vector<std::shared_ptr<SymbolInfo>> symbols_;
-  std::unordered_map<std::string, size_t> symbols_by_name_;
-  std::unordered_map<Location, size_t> symbols_by_location_;
+  std::unordered_map<std::string, size_t> symbolsByName_;
+  std::unordered_map<Location, size_t> symbolsByLocation_;
 };
 
 } // namespace io::substrait::textplan

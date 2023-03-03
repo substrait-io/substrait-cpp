@@ -27,7 +27,7 @@ using FunctionLookupPtr = std::shared_ptr<const FunctionLookup>;
 
 class ScalarFunctionLookup : public FunctionLookup {
  public:
-  ScalarFunctionLookup(const ExtensionPtr& extension)
+  explicit ScalarFunctionLookup(const ExtensionPtr& extension)
       : FunctionLookup(extension) {}
 
  protected:

@@ -14,18 +14,18 @@ namespace io::substrait::textplan {
 class PlanPrinterVisitor : public BasePlanProtoVisitor {
  public:
   // PlanPrinterVisitor takes ownership of the provided symbol table.
-  explicit PlanPrinterVisitor(const SymbolTable& symbol_table) {
-    symbol_table_ = std::make_shared<SymbolTable>(symbol_table);
-    error_listener_ = std::make_shared<SubstraitErrorListener>();
+  explicit PlanPrinterVisitor(const SymbolTable& symbolTable) {
+    symbolTable_ = std::make_shared<SymbolTable>(symbolTable);
+    errorListener_ = std::make_shared<SubstraitErrorListener>();
   };
 
   [[nodiscard]] std::shared_ptr<const SymbolTable> getSymbolTable() const {
-    return symbol_table_;
+    return symbolTable_;
   };
 
   [[nodiscard]] std::shared_ptr<SubstraitErrorListener> getErrorListener()
       const {
-    return error_listener_;
+    return errorListener_;
   };
 
   std::string printRelation(
@@ -54,8 +54,8 @@ class PlanPrinterVisitor : public BasePlanProtoVisitor {
   std::any visitProjectRelation(
       const ::substrait::proto::ProjectRel& relation) override;
 
-  std::shared_ptr<SymbolTable> symbol_table_;
-  std::shared_ptr<SubstraitErrorListener> error_listener_;
+  std::shared_ptr<SymbolTable> symbolTable_;
+  std::shared_ptr<SubstraitErrorListener> errorListener_;
 };
 
 } // namespace io::substrait::textplan

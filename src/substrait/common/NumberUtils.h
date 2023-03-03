@@ -14,7 +14,7 @@ class NumberUtils {
   }
 
   static bool isNonNegativeInteger(std::string_view s) {
-    return !s.empty() && std::all_of(s.begin(), s.end(),  [](unsigned char d) {
+    return !s.empty() && std::all_of(s.begin(), s.end(), [](unsigned char d) {
       return std::isdigit(d);
     });
   }

@@ -1,19 +1,19 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "substrait/textplan/SymbolTable.h"
+#include <gmock/gmock-matchers.h>
+#include <gtest/gtest.h>
+
 #include "substrait/proto/plan.pb.h"
 #include "substrait/textplan/Any.h"
 #include "substrait/textplan/Location.h"
-
-#include <gmock/gmock-matchers.h>
-#include <gtest/gtest.h>
+#include "substrait/textplan/SymbolTable.h"
 
 namespace io::substrait::textplan {
 namespace {
 
 class SymbolTableTest : public ::testing::Test {
  public:
-  SymbolTableTest() : UnspecifiedLocation(Location::kUnknownLocation){};
+  SymbolTableTest() : unspecifiedLocation_(Location::kUnknownLocation){};
 
  protected:
   static std::vector<std::string> symbolNames(
@@ -52,20 +52,20 @@ class SymbolTableTest : public ::testing::Test {
     return table;
   }
 
-  const Location UnspecifiedLocation;
+  const Location unspecifiedLocation_;
 };
 
 TEST_F(SymbolTableTest, DuplicateSymbolsNotDetected) {
   SymbolTable table;
   table.defineSymbol(
       "a",
-      UnspecifiedLocation,
+      unspecifiedLocation_,
       SymbolType::kUnknown,
       RelationType::kUnknown,
       nullptr);
   table.defineSymbol(
       "a",
-      UnspecifiedLocation,
+      unspecifiedLocation_,
       SymbolType::kUnknown,
       RelationType::kUnknown,
       nullptr);
@@ -78,13 +78,13 @@ TEST_F(SymbolTableTest, DuplicateSymbolsHandledByUnique) {
   SymbolTable table;
   table.defineUniqueSymbol(
       "a",
-      UnspecifiedLocation,
+      unspecifiedLocation_,
       SymbolType::kUnknown,
       RelationType::kUnknown,
       nullptr);
   table.defineUniqueSymbol(
       "a",
-      UnspecifiedLocation,
+      unspecifiedLocation_,
       SymbolType::kUnknown,
       RelationType::kUnknown,
       nullptr);
@@ -100,7 +100,7 @@ TEST_F(SymbolTableTest, LocationsUnchangedAfterCopy) {
   auto* ptr2 = plan.mutable_extension_uris(0);
   auto* ptr3 = &plan.extensions(0);
 
-  SymbolTable table2 = table;
+  const SymbolTable& table2 = table;
   auto symbols = table2.getSymbols();
   ASSERT_THAT(
       symbolNames(symbols),

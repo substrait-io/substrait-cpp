@@ -1,7 +1,8 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include <fmt/format.h>
 #include "substrait/common/Exceptions.h"
+
+#include <fmt/format.h>
 
 namespace io::substrait::common {
 

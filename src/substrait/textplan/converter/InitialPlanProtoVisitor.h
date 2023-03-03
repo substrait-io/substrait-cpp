@@ -15,18 +15,18 @@ namespace io::substrait::textplan {
 // process which identifies the prominent symbols and gives them names.
 class InitialPlanProtoVisitor : public BasePlanProtoVisitor {
  public:
-  explicit InitialPlanProtoVisitor() : BasePlanProtoVisitor() {
-    symbol_table_ = std::make_shared<SymbolTable>();
-    error_listener_ = std::make_shared<SubstraitErrorListener>();
+  explicit InitialPlanProtoVisitor() {
+    symbolTable_ = std::make_shared<SymbolTable>();
+    errorListener_ = std::make_shared<SubstraitErrorListener>();
   };
 
   [[nodiscard]] std::shared_ptr<const SymbolTable> getSymbolTable() const {
-    return symbol_table_;
+    return symbolTable_;
   };
 
   [[nodiscard]] std::shared_ptr<SubstraitErrorListener> getErrorListener()
       const {
-    return error_listener_;
+    return errorListener_;
   };
 
  private:
@@ -53,8 +53,8 @@ class InitialPlanProtoVisitor : public BasePlanProtoVisitor {
   std::any visitExtensionTable(
       const ::substrait::proto::ReadRel_ExtensionTable& table) override;
 
-  std::shared_ptr<SymbolTable> symbol_table_;
-  std::shared_ptr<SubstraitErrorListener> error_listener_;
+  std::shared_ptr<SymbolTable> symbolTable_;
+  std::shared_ptr<SubstraitErrorListener> errorListener_;
 };
 
 } // namespace io::substrait::textplan

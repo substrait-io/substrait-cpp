@@ -10,6 +10,7 @@ header:
     - '.gitmodules'
     - '.clang-format'
     - '.clang-tidy'
+    - '.cmake-format'
     - '.licenserc.yaml'
     - 'third_party/fmt'
     - 'third_party/googletest'

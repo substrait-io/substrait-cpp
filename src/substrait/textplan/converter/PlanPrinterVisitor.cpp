@@ -20,7 +20,7 @@ std::string PlanPrinterVisitor::printRelation(
 
   text << RelTypeCaseName(relation->rel_type_case()) << " relation "
        << symbolName << " {\n";
-  auto symbol = symbol_table_->lookupSymbolByLocation(
+  auto symbol = symbolTable_->lookupSymbolByLocation(
       Location((google::protobuf::Message*)&relation));
   if (symbol != SymbolTable::kUnknownSymbol) {
     text << "  source " << symbol.name << ";\n";
@@ -55,7 +55,7 @@ std::any PlanPrinterVisitor::visitReadRelation(
     const ::substrait::proto::ReadRel& relation) {
   std::stringstream text;
   if (relation.has_base_schema()) {
-    const auto& symbol = symbol_table_->lookupSymbolByLocation(
+    const auto& symbol = symbolTable_->lookupSymbolByLocation(
         Location((google::protobuf::Message*)&relation));
     if (symbol != SymbolTable::kUnknownSymbol) {
       text << "  base_schema " << symbol.name << ";\n";
@@ -111,8 +111,9 @@ std::any PlanPrinterVisitor::visitAggregateRelation(
     }
   }
   for (const auto& measure : relation.measures()) {
-    if (!measure.has_measure())
+    if (!measure.has_measure()) {
       continue;
+    }
     text << "  measure {\n";
     text << "    measure "
          << ANY_CAST(std::string, visitAggregateFunction(measure.measure()))
@@ -162,7 +163,7 @@ std::any PlanPrinterVisitor::visitSortRelation(
         }
         break;
       case ::substrait::proto::SortField::kComparisonFunctionReference: {
-        auto field = symbol_table_->nthSymbolByType(
+        auto field = symbolTable_->nthSymbolByType(
             sort.comparison_function_reference(), SymbolType::kFunction);
         if (field == SymbolTable::kUnknownSymbol) {
           return field.name;

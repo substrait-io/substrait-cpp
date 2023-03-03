@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#include "substrait/type/Type.h"
+
 #include <algorithm>
 #include <sstream>
 #include <stdexcept>
@@ -7,13 +9,12 @@
 #include "substrait/common/Exceptions.h"
 #include "substrait/common/NumberUtils.h"
 #include "substrait/common/StringUtils.h"
-#include "substrait/type/Type.h"
 
 namespace io::substrait {
 
 namespace {
 
-size_t findNextComma(std::string_view str, size_t start) {
+size_t FindNextComma(std::string_view str, size_t start) {
   int cnt = 0;
   for (auto i = start; i < str.size(); i++) {
     if (str[i] == '<') {
@@ -28,22 +29,22 @@ size_t findNextComma(std::string_view str, size_t start) {
   return std::string::npos;
 }
 
-template <TypeKind kind>
-ParameterizedTypePtr decodeType(bool nullable) {
-  return std::make_shared<const ScalarType<kind>>(nullable);
+template <TypeKind Kind>
+ParameterizedTypePtr DecodeType(bool nullable) {
+  return std::make_shared<const ScalarType<Kind>>(nullable);
 }
 
-template <TypeKind kind>
-ParameterizedTypePtr decodeType(
+template <TypeKind Kind>
+ParameterizedTypePtr DecodeType(
     bool isParameterized,
     bool nullable,
     const std::vector<ParameterizedTypePtr>& parameterTypes) {
   SUBSTRAIT_UNSUPPORTED(
-      "Unsupported parameter type: " + TypeTraits<kind>::typeString);
+      "Unsupported parameter type: " + TypeTraits<Kind>::kTypeString);
 }
 
 template <>
-ParameterizedTypePtr decodeType<TypeKind::kList>(
+ParameterizedTypePtr DecodeType<TypeKind::kList>(
     bool isParameterized,
     bool nullable,
     const std::vector<ParameterizedTypePtr>& parameterTypes) {
@@ -56,7 +57,7 @@ ParameterizedTypePtr decodeType<TypeKind::kList>(
 }
 
 template <>
-ParameterizedTypePtr decodeType<TypeKind::kMap>(
+ParameterizedTypePtr DecodeType<TypeKind::kMap>(
     bool isParameterized,
     bool nullable,
     const std::vector<ParameterizedTypePtr>& parameterTypes) {
@@ -72,7 +73,7 @@ ParameterizedTypePtr decodeType<TypeKind::kMap>(
 }
 
 template <>
-ParameterizedTypePtr decodeType<TypeKind::kStruct>(
+ParameterizedTypePtr DecodeType<TypeKind::kStruct>(
     bool isParameterized,
     bool nullable,
     const std::vector<ParameterizedTypePtr>& parameterTypes) {
@@ -90,7 +91,7 @@ ParameterizedTypePtr decodeType<TypeKind::kStruct>(
 }
 
 template <>
-ParameterizedTypePtr decodeType<TypeKind::kDecimal>(
+ParameterizedTypePtr DecodeType<TypeKind::kDecimal>(
     bool isParameterized,
     bool nullable,
     const std::vector<ParameterizedTypePtr>& parameterTypes) {
@@ -108,13 +109,14 @@ ParameterizedTypePtr decodeType<TypeKind::kDecimal>(
           std::stoi(precision->value()), std::stoi(scale->value()), nullable);
     } else {
       SUBSTRAIT_FAIL(
-          "Fail decode to Decimal type, precision or scale parameter must be a positive number")
+          "Fail decode to Decimal type, precision or scale parameter must be a "
+          "positive number")
     }
   }
 }
 
-template <class ParameterizedTypeTag, class TypeTag, TypeKind kind>
-ParameterizedTypePtr decodeLengthBaseType(
+template <class ParameterizedTypeTag, class TypeTag, TypeKind Kind>
+ParameterizedTypePtr DecodeLengthBaseType(
     bool isParameterized,
     bool nullable,
     const std::vector<ParameterizedTypePtr>& parameterTypes) {
@@ -128,41 +130,41 @@ ParameterizedTypePtr decodeLengthBaseType(
     } else {
       SUBSTRAIT_FAIL(
           "Fail decode to {} type, length parameter must be a positive integer",
-          TypeTraits<kind>::typeString);
+          TypeTraits<Kind>::kTypeString);
     }
   }
 }
 
 template <>
-ParameterizedTypePtr decodeType<TypeKind::kVarchar>(
+ParameterizedTypePtr DecodeType<TypeKind::kVarchar>(
     bool isParameterized,
     bool nullable,
     const std::vector<ParameterizedTypePtr>& parameterTypes) {
-  return decodeLengthBaseType<
+  return DecodeLengthBaseType<
       ParameterizedVarchar,
       Varchar,
       TypeKind::kVarchar>(isParameterized, nullable, parameterTypes);
 }
 
 template <>
-ParameterizedTypePtr decodeType<TypeKind::kFixedChar>(
+ParameterizedTypePtr DecodeType<TypeKind::kFixedChar>(
     bool isParameterized,
     bool nullable,
     const std::vector<ParameterizedTypePtr>& parameterTypes) {
-  return decodeLengthBaseType<
+  return DecodeLengthBaseType<
       ParameterizedFixedChar,
-      FixedChar,
+      class FixedChar,
       TypeKind::kFixedChar>(isParameterized, nullable, parameterTypes);
 }
 
 template <>
-ParameterizedTypePtr decodeType<TypeKind::kFixedBinary>(
+ParameterizedTypePtr DecodeType<TypeKind::kFixedBinary>(
     bool isParameterized,
     bool nullable,
     const std::vector<ParameterizedTypePtr>& parameterTypes) {
-  return decodeLengthBaseType<
+  return DecodeLengthBaseType<
       ParameterizedFixedBinary,
-      FixedBinary,
+      class FixedBinary,
       TypeKind::kBinary>(isParameterized, nullable, parameterTypes);
 }
 
@@ -191,38 +193,38 @@ ParameterizedTypePtr ParameterizedType::decode(
         ? matchingType = matchingType.substr(0, questionMaskPos)
         : matchingType;
 
-    if (TypeTraits<TypeKind::kBool>::typeString == baseType) {
-      return decodeType<TypeKind::kBool>(nullable);
-    } else if (TypeTraits<TypeKind::kI8>::typeString == baseType) {
-      return decodeType<TypeKind::kI8>(nullable);
-    } else if (TypeTraits<TypeKind::kI16>::typeString == baseType) {
-      return decodeType<TypeKind::kI16>(nullable);
-    } else if (TypeTraits<TypeKind::kI32>::typeString == baseType) {
-      return decodeType<TypeKind::kI32>(nullable);
-    } else if (TypeTraits<TypeKind::kI64>::typeString == baseType) {
-      return decodeType<TypeKind::kI64>(nullable);
-    } else if (TypeTraits<TypeKind::kFp32>::typeString == baseType) {
-      return decodeType<TypeKind::kFp32>(nullable);
-    } else if (TypeTraits<TypeKind::kFp64>::typeString == baseType) {
-      return decodeType<TypeKind::kFp64>(nullable);
-    } else if (TypeTraits<TypeKind::kString>::typeString == baseType) {
-      return decodeType<TypeKind::kString>(nullable);
-    } else if (TypeTraits<TypeKind::kBinary>::typeString == baseType) {
-      return decodeType<TypeKind::kBinary>(nullable);
-    } else if (TypeTraits<TypeKind::kUuid>::typeString == baseType) {
-      return decodeType<TypeKind::kUuid>(nullable);
-    } else if (TypeTraits<TypeKind::kIntervalYear>::typeString == baseType) {
-      return decodeType<TypeKind::kIntervalYear>(nullable);
-    } else if (TypeTraits<TypeKind::kIntervalDay>::typeString == baseType) {
-      return decodeType<TypeKind::kIntervalDay>(nullable);
-    } else if (TypeTraits<TypeKind::kTimestamp>::typeString == baseType) {
-      return decodeType<TypeKind::kTimestamp>(nullable);
-    } else if (TypeTraits<TypeKind::kTimestampTz>::typeString == baseType) {
-      return decodeType<TypeKind::kTimestampTz>(nullable);
-    } else if (TypeTraits<TypeKind::kDate>::typeString == baseType) {
-      return decodeType<TypeKind::kDate>(nullable);
-    } else if (TypeTraits<TypeKind::kTime>::typeString == baseType) {
-      return decodeType<TypeKind::kTime>(nullable);
+    if (TypeTraits<TypeKind::kBool>::kTypeString == baseType) {
+      return DecodeType<TypeKind::kBool>(nullable);
+    } else if (TypeTraits<TypeKind::kI8>::kTypeString == baseType) {
+      return DecodeType<TypeKind::kI8>(nullable);
+    } else if (TypeTraits<TypeKind::kI16>::kTypeString == baseType) {
+      return DecodeType<TypeKind::kI16>(nullable);
+    } else if (TypeTraits<TypeKind::kI32>::kTypeString == baseType) {
+      return DecodeType<TypeKind::kI32>(nullable);
+    } else if (TypeTraits<TypeKind::kI64>::kTypeString == baseType) {
+      return DecodeType<TypeKind::kI64>(nullable);
+    } else if (TypeTraits<TypeKind::kFp32>::kTypeString == baseType) {
+      return DecodeType<TypeKind::kFp32>(nullable);
+    } else if (TypeTraits<TypeKind::kFp64>::kTypeString == baseType) {
+      return DecodeType<TypeKind::kFp64>(nullable);
+    } else if (TypeTraits<TypeKind::kString>::kTypeString == baseType) {
+      return DecodeType<TypeKind::kString>(nullable);
+    } else if (TypeTraits<TypeKind::kBinary>::kTypeString == baseType) {
+      return DecodeType<TypeKind::kBinary>(nullable);
+    } else if (TypeTraits<TypeKind::kUuid>::kTypeString == baseType) {
+      return DecodeType<TypeKind::kUuid>(nullable);
+    } else if (TypeTraits<TypeKind::kIntervalYear>::kTypeString == baseType) {
+      return DecodeType<TypeKind::kIntervalYear>(nullable);
+    } else if (TypeTraits<TypeKind::kIntervalDay>::kTypeString == baseType) {
+      return DecodeType<TypeKind::kIntervalDay>(nullable);
+    } else if (TypeTraits<TypeKind::kTimestamp>::kTypeString == baseType) {
+      return DecodeType<TypeKind::kTimestamp>(nullable);
+    } else if (TypeTraits<TypeKind::kTimestampTz>::kTypeString == baseType) {
+      return DecodeType<TypeKind::kTimestampTz>(nullable);
+    } else if (TypeTraits<TypeKind::kDate>::kTypeString == baseType) {
+      return DecodeType<TypeKind::kDate>(nullable);
+    } else if (TypeTraits<TypeKind::kTime>::kTypeString == baseType) {
+      return DecodeType<TypeKind::kTime>(nullable);
     } else {
       bool wildcard = matchingType.rfind("any", 0) == 0;
       bool placeholder = !wildcard && !common::NumberUtils::isInteger(rawType);
@@ -239,35 +241,35 @@ ParameterizedTypePtr ParameterizedType::decode(
 
     std::vector<ParameterizedTypePtr> nestedTypes;
     auto prevPos = leftAngleBracketPos + 1;
-    auto commaPos = findNextComma(rawType, prevPos);
+    auto commaPos = FindNextComma(rawType, prevPos);
     while (commaPos != std::string::npos) {
       auto token = rawType.substr(prevPos, commaPos - prevPos);
-      nestedTypes.emplace_back(decode(token.data(), isParameterized));
+      nestedTypes.emplace_back(decode(token, isParameterized));
       prevPos = commaPos + 1;
-      commaPos = findNextComma(rawType, prevPos);
+      commaPos = FindNextComma(rawType, prevPos);
     }
     auto token = rawType.substr(prevPos, rightAngleBracketPos - prevPos);
-    nestedTypes.emplace_back(decode(token.data(), isParameterized));
+    nestedTypes.emplace_back(decode(token, isParameterized));
 
-    if (TypeTraits<TypeKind::kList>::typeString == baseType) {
-      return decodeType<TypeKind::kList>(
+    if (TypeTraits<TypeKind::kList>::kTypeString == baseType) {
+      return DecodeType<TypeKind::kList>(
           isParameterized, nullable, nestedTypes);
-    } else if (TypeTraits<TypeKind::kMap>::typeString == baseType) {
-      return decodeType<TypeKind::kMap>(isParameterized, nullable, nestedTypes);
-    } else if (TypeTraits<TypeKind::kStruct>::typeString == baseType) {
-      return decodeType<TypeKind::kStruct>(
+    } else if (TypeTraits<TypeKind::kMap>::kTypeString == baseType) {
+      return DecodeType<TypeKind::kMap>(isParameterized, nullable, nestedTypes);
+    } else if (TypeTraits<TypeKind::kStruct>::kTypeString == baseType) {
+      return DecodeType<TypeKind::kStruct>(
           isParameterized, nullable, nestedTypes);
-    } else if (TypeTraits<TypeKind::kDecimal>::typeString == baseType) {
-      return decodeType<TypeKind::kDecimal>(
+    } else if (TypeTraits<TypeKind::kDecimal>::kTypeString == baseType) {
+      return DecodeType<TypeKind::kDecimal>(
           isParameterized, nullable, nestedTypes);
-    } else if (TypeTraits<TypeKind::kVarchar>::typeString == baseType) {
-      return decodeType<TypeKind::kVarchar>(
+    } else if (TypeTraits<TypeKind::kVarchar>::kTypeString == baseType) {
+      return DecodeType<TypeKind::kVarchar>(
           isParameterized, nullable, nestedTypes);
-    } else if (TypeTraits<TypeKind::kFixedChar>::typeString == baseType) {
-      return decodeType<TypeKind::kFixedChar>(
+    } else if (TypeTraits<TypeKind::kFixedChar>::kTypeString == baseType) {
+      return DecodeType<TypeKind::kFixedChar>(
           isParameterized, nullable, nestedTypes);
-    } else if (TypeTraits<TypeKind::kFixedBinary>::typeString == baseType) {
-      return decodeType<TypeKind::kFixedBinary>(
+    } else if (TypeTraits<TypeKind::kFixedBinary>::kTypeString == baseType) {
+      return DecodeType<TypeKind::kFixedBinary>(
           isParameterized, nullable, nestedTypes);
     } else {
       SUBSTRAIT_UNSUPPORTED("Unsupported type: " + rawType);
@@ -404,7 +406,7 @@ bool Map::isMatch(const std::shared_ptr<const ParameterizedType>& type) const {
 
 std::string ParameterizedFixedBinary::signature() const {
   std::stringstream sign;
-  sign << TypeTraits<TypeKind::kFixedBinary>::signature;
+  sign << TypeTraits<TypeKind::kFixedBinary>::kSignature;
   sign << "<" << length_->value() << ">";
   return sign.str();
 }
@@ -422,7 +424,7 @@ bool ParameterizedFixedBinary::isMatch(
 
 std::string ParameterizedDecimal::signature() const {
   std::stringstream sign;
-  sign << TypeTraits<TypeKind::kDecimal>::signature;
+  sign << TypeTraits<TypeKind::kDecimal>::kSignature;
   sign << "<" << precision_->value() << "," << scale_->value() << ">";
   return sign.str();
 }
@@ -438,13 +440,13 @@ bool ParameterizedDecimal::isMatch(
 
 std::string ParameterizedFixedChar::signature() const {
   std::stringstream sign;
-  sign << TypeTraits<TypeKind::kFixedChar>::signature;
+  sign << TypeTraits<TypeKind::kFixedChar>::kSignature;
   sign << "<" << length_->value() << ">";
   return sign.str();
 }
 bool ParameterizedFixedChar::isMatch(
     const std::shared_ptr<const ParameterizedType>& type) const {
-  if (auto fixedChar = std::dynamic_pointer_cast<const FixedChar>(type)) {
+  if (auto fixedChar = std::dynamic_pointer_cast<const class FixedChar>(type)) {
     return nullMatch(type);
   }
 
@@ -453,7 +455,7 @@ bool ParameterizedFixedChar::isMatch(
 
 std::string ParameterizedVarchar::signature() const {
   std::stringstream sign;
-  sign << TypeTraits<TypeKind::kVarchar>::signature;
+  sign << TypeTraits<TypeKind::kVarchar>::kSignature;
   sign << "<" << length_->value() << ">";
   return sign.str();
 }
@@ -469,7 +471,7 @@ bool ParameterizedVarchar::isMatch(
 
 std::string ParameterizedList::signature() const {
   std::stringstream sign;
-  sign << TypeTraits<TypeKind::kList>::signature;
+  sign << TypeTraits<TypeKind::kList>::kSignature;
   sign << "<" << elementType()->signature() << ">";
   return sign.str();
 }
@@ -485,7 +487,7 @@ bool ParameterizedList::isMatch(
 
 std::string ParameterizedStruct::signature() const {
   std::stringstream sign;
-  sign << TypeTraits<TypeKind::kStruct>::signature;
+  sign << TypeTraits<TypeKind::kStruct>::kSignature;
   sign << "<";
   for (auto it = children_.begin(); it != children_.end(); ++it) {
     const auto& typeSign = (*it)->signature();
@@ -517,7 +519,7 @@ bool ParameterizedStruct::isMatch(
 
 std::string ParameterizedMap::signature() const {
   std::stringstream sign;
-  sign << TypeTraits<TypeKind::kMap>::signature;
+  sign << TypeTraits<TypeKind::kMap>::kSignature;
   sign << "<";
   sign << keyType()->signature();
   sign << ",";
@@ -582,15 +584,15 @@ std::shared_ptr<const ScalarType<TypeKind::kTime>> TIME() {
   return std::make_shared<const ScalarType<TypeKind::kTime>>(false);
 }
 
-std::shared_ptr<const ScalarType<TypeKind::kIntervalYear>> INTERVAL_YEAR() {
+std::shared_ptr<const ScalarType<TypeKind::kIntervalYear>> IntervalYear() {
   return std::make_shared<const ScalarType<TypeKind::kIntervalYear>>(false);
 }
 
-std::shared_ptr<const ScalarType<TypeKind::kIntervalDay>> INTERVAL_DAY() {
+std::shared_ptr<const ScalarType<TypeKind::kIntervalDay>> IntervalDay() {
   return std::make_shared<const ScalarType<TypeKind::kIntervalDay>>(false);
 }
 
-std::shared_ptr<const ScalarType<TypeKind::kTimestampTz>> TIMESTAMP_TZ() {
+std::shared_ptr<const ScalarType<TypeKind::kTimestampTz>> TimestampTz() {
   return std::make_shared<const ScalarType<TypeKind::kTimestampTz>>(false);
 }
 
@@ -605,12 +607,12 @@ std::shared_ptr<const Decimal> DECIMAL(int precision, int scale) {
 std::shared_ptr<const Varchar> VARCHAR(int len) {
   return std::make_shared<const Varchar>(len, false);
 }
-std::shared_ptr<const FixedChar> FCHAR(int len) {
-  return std::make_shared<const FixedChar>(len, false);
+std::shared_ptr<const class FixedChar> FCHAR(int len) {
+  return std::make_shared<const class FixedChar>(len, false);
 }
 
-std::shared_ptr<const FixedBinary> FIXED_BINARY(int len) {
-  return std::make_shared<const FixedBinary>(len, false);
+std::shared_ptr<const class FixedBinary> FixedBinary(int len) {
+  return std::make_shared<const class FixedBinary>(len, false);
 }
 
 std::shared_ptr<const List> LIST(const TypePtr& elementType) {
@@ -627,8 +629,8 @@ std::shared_ptr<const Struct> STRUCT(const std::vector<TypePtr>& children) {
   return std::make_shared<const Struct>(children, false);
 }
 
-std::shared_ptr<const FixedChar> FIXED_CHAR(int len) {
-  return std::make_shared<const FixedChar>(len);
+std::shared_ptr<const class FixedChar> FixedChar(int len) {
+  return std::make_shared<const class FixedChar>(len);
 }
 
 bool StringLiteral::isMatch(

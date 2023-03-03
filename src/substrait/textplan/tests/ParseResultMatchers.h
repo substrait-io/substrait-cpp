@@ -12,17 +12,17 @@ namespace io::substrait::textplan {
 [[maybe_unused]] ::testing::Matcher<const ParseResult&> ParsesOk();
 
 [[maybe_unused]] ::testing::Matcher<const ParseResult&> HasSymbols(
-    std::vector<std::string> expected_symbols);
+    std::vector<std::string> expectedSymbols);
 
 [[maybe_unused]] ::testing::Matcher<const ParseResult&> WhenSerialized(
-    ::testing::Matcher<const std::string&> string_matcher);
+    ::testing::Matcher<const std::string&> stringMatcher);
 
 [[maybe_unused]] ::testing::Matcher<const ParseResult&> HasErrors(
-    std::vector<std::string> expected_errors);
+    std::vector<std::string> expectedErrors);
 
 // Matches strings ignoring differences in kinds of whitespace (as long as they
 // are present) and ignoring trailing whitespace as well.
 [[maybe_unused]] ::testing::Matcher<const std::string&> EqSquashingWhitespace(
-    std::string expected_string);
+    std::string expectedString);
 
 } // namespace io::substrait::textplan

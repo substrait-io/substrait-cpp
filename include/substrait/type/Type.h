@@ -34,7 +34,7 @@ enum class TypeKind : int8_t {
   kStruct = 21,
   kList = 22,
   kMap = 23,
-  KIND_NOT_SET = 0,
+  kKindNotSet = 0,
 };
 
 template <TypeKind KIND>
@@ -42,140 +42,140 @@ struct TypeTraits {};
 
 template <>
 struct TypeTraits<TypeKind::kBool> {
-  static constexpr const char* signature = "bool";
-  static constexpr const char* typeString = "boolean";
+  static constexpr const char* kSignature = "bool";
+  static constexpr const char* kTypeString = "boolean";
 };
 
 template <>
 struct TypeTraits<TypeKind::kI8> {
-  static constexpr const char* signature = "i8";
-  static constexpr const char* typeString = "i8";
+  static constexpr const char* kSignature = "i8";
+  static constexpr const char* kTypeString = "i8";
 };
 
 template <>
 struct TypeTraits<TypeKind::kI16> {
-  static constexpr const char* signature = "i16";
-  static constexpr const char* typeString = "i16";
+  static constexpr const char* kSignature = "i16";
+  static constexpr const char* kTypeString = "i16";
 };
 
 template <>
 struct TypeTraits<TypeKind::kI32> {
-  static constexpr const char* signature = "i32";
-  static constexpr const char* typeString = "i32";
+  static constexpr const char* kSignature = "i32";
+  static constexpr const char* kTypeString = "i32";
 };
 
 template <>
 struct TypeTraits<TypeKind::kI64> {
-  static constexpr const char* signature = "i64";
-  static constexpr const char* typeString = "i64";
+  static constexpr const char* kSignature = "i64";
+  static constexpr const char* kTypeString = "i64";
 };
 
 template <>
 struct TypeTraits<TypeKind::kFp32> {
-  static constexpr const char* signature = "fp32";
-  static constexpr const char* typeString = "fp32";
+  static constexpr const char* kSignature = "fp32";
+  static constexpr const char* kTypeString = "fp32";
 };
 
 template <>
 struct TypeTraits<TypeKind::kFp64> {
-  static constexpr const char* signature = "fp64";
-  static constexpr const char* typeString = "fp64";
+  static constexpr const char* kSignature = "fp64";
+  static constexpr const char* kTypeString = "fp64";
 };
 
 template <>
 struct TypeTraits<TypeKind::kString> {
-  static constexpr const char* signature = "str";
-  static constexpr const char* typeString = "string";
+  static constexpr const char* kSignature = "str";
+  static constexpr const char* kTypeString = "string";
 };
 
 template <>
 struct TypeTraits<TypeKind::kBinary> {
-  static constexpr const char* signature = "vbin";
-  static constexpr const char* typeString = "binary";
+  static constexpr const char* kSignature = "vbin";
+  static constexpr const char* kTypeString = "binary";
 };
 
 template <>
 struct TypeTraits<TypeKind::kTimestamp> {
-  static constexpr const char* signature = "ts";
-  static constexpr const char* typeString = "timestamp";
+  static constexpr const char* kSignature = "ts";
+  static constexpr const char* kTypeString = "timestamp";
 };
 
 template <>
 struct TypeTraits<TypeKind::kTimestampTz> {
-  static constexpr const char* signature = "tstz";
-  static constexpr const char* typeString = "timestamp_tz";
+  static constexpr const char* kSignature = "tstz";
+  static constexpr const char* kTypeString = "timestamp_tz";
 };
 
 template <>
 struct TypeTraits<TypeKind::kDate> {
-  static constexpr const char* signature = "date";
-  static constexpr const char* typeString = "date";
+  static constexpr const char* kSignature = "date";
+  static constexpr const char* kTypeString = "date";
 };
 
 template <>
 struct TypeTraits<TypeKind::kTime> {
-  static constexpr const char* signature = "time";
-  static constexpr const char* typeString = "time";
+  static constexpr const char* kSignature = "time";
+  static constexpr const char* kTypeString = "time";
 };
 
 template <>
 struct TypeTraits<TypeKind::kIntervalYear> {
-  static constexpr const char* signature = "iyear";
-  static constexpr const char* typeString = "interval_year";
+  static constexpr const char* kSignature = "iyear";
+  static constexpr const char* kTypeString = "interval_year";
 };
 
 template <>
 struct TypeTraits<TypeKind::kIntervalDay> {
-  static constexpr const char* signature = "iday";
-  static constexpr const char* typeString = "interval_day";
+  static constexpr const char* kSignature = "iday";
+  static constexpr const char* kTypeString = "interval_day";
 };
 
 template <>
 struct TypeTraits<TypeKind::kUuid> {
-  static constexpr const char* signature = "uuid";
-  static constexpr const char* typeString = "uuid";
+  static constexpr const char* kSignature = "uuid";
+  static constexpr const char* kTypeString = "uuid";
 };
 
 template <>
 struct TypeTraits<TypeKind::kFixedChar> {
-  static constexpr const char* signature = "fchar";
-  static constexpr const char* typeString = "fixedchar";
+  static constexpr const char* kSignature = "fchar";
+  static constexpr const char* kTypeString = "fixedchar";
 };
 
 template <>
 struct TypeTraits<TypeKind::kVarchar> {
-  static constexpr const char* signature = "vchar";
-  static constexpr const char* typeString = "varchar";
+  static constexpr const char* kSignature = "vchar";
+  static constexpr const char* kTypeString = "varchar";
 };
 
 template <>
 struct TypeTraits<TypeKind::kFixedBinary> {
-  static constexpr const char* signature = "fbin";
-  static constexpr const char* typeString = "fixedbinary";
+  static constexpr const char* kSignature = "fbin";
+  static constexpr const char* kTypeString = "fixedbinary";
 };
 
 template <>
 struct TypeTraits<TypeKind::kDecimal> {
-  static constexpr const char* signature = "dec";
-  static constexpr const char* typeString = "decimal";
+  static constexpr const char* kSignature = "dec";
+  static constexpr const char* kTypeString = "decimal";
 };
 
 template <>
 struct TypeTraits<TypeKind::kStruct> {
-  static constexpr const char* signature = "struct";
-  static constexpr const char* typeString = "struct";
+  static constexpr const char* kSignature = "struct";
+  static constexpr const char* kTypeString = "struct";
 };
 
 template <>
 struct TypeTraits<TypeKind::kList> {
-  static constexpr const char* signature = "list";
-  static constexpr const char* typeString = "list";
+  static constexpr const char* kSignature = "list";
+  static constexpr const char* kTypeString = "list";
 };
 
 template <>
 struct TypeTraits<TypeKind::kMap> {
-  static constexpr const char* signature = "map";
-  static constexpr const char* typeString = "map";
+  static constexpr const char* kSignature = "map";
+  static constexpr const char* kTypeString = "map";
 };
 
 class ParameterizedType {
@@ -240,7 +240,7 @@ class TypeBase : public Type {
   explicit TypeBase(bool nullable = false) : Type(nullable) {}
 
   [[nodiscard]] std::string signature() const override {
-    return TypeTraits<Kind>::signature;
+    return TypeTraits<Kind>::kSignature;
   }
 
   [[nodiscard]] TypeKind kind() const override {
@@ -420,7 +420,7 @@ class StringLiteral : public ParameterizedTypeBase {
   }
 
   [[nodiscard]] TypeKind kind() const override {
-    return TypeKind::KIND_NOT_SET;
+    return TypeKind::kKindNotSet;
   }
 
   [[nodiscard]] const std::string& value() const {
@@ -650,15 +650,15 @@ std::shared_ptr<const ScalarType<TypeKind::kBinary>> BINARY();
 
 std::shared_ptr<const ScalarType<TypeKind::kTimestamp>> TIMESTAMP();
 
-std::shared_ptr<const ScalarType<TypeKind::kTimestampTz>> TIMESTAMP_TZ();
+std::shared_ptr<const ScalarType<TypeKind::kTimestampTz>> TimestampTz();
 
 std::shared_ptr<const ScalarType<TypeKind::kDate>> DATE();
 
 std::shared_ptr<const ScalarType<TypeKind::kTime>> TIME();
 
-std::shared_ptr<const ScalarType<TypeKind::kIntervalYear>> INTERVAL_YEAR();
+std::shared_ptr<const ScalarType<TypeKind::kIntervalYear>> IntervalYear();
 
-std::shared_ptr<const ScalarType<TypeKind::kIntervalDay>> INTERVAL_DAY();
+std::shared_ptr<const ScalarType<TypeKind::kIntervalDay>> IntervalDay();
 
 std::shared_ptr<const ScalarType<TypeKind::kUuid>> UUID();
 
@@ -666,9 +666,9 @@ std::shared_ptr<const Decimal> DECIMAL(int precision, int scale);
 
 std::shared_ptr<const Varchar> VARCHAR(int len);
 
-std::shared_ptr<const FixedChar> FIXED_CHAR(int len);
+std::shared_ptr<const FixedChar> FixedChar(int len);
 
-std::shared_ptr<const FixedBinary> FIXED_BINARY(int len);
+std::shared_ptr<const FixedBinary> FixedBinary(int len);
 
 std::shared_ptr<const List> LIST(const TypePtr& elementType);
 

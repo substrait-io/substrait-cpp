@@ -19,11 +19,12 @@ jobs:
         run: ./scripts/setup-ubuntu.sh
       - name: Check License Header
         uses: apache/skywalking-eyes/header@v0.4.0
-      - name: Check CMake files
-        run: find . \( -name '*.cmake' -o -name 'CMakeLists.txt' \) -exec cmake-format $* {} +
-      - name: Clang-tidy
-        run: python3 scripts/run-clang-tidy.py "." "build" "third_party,scripts,docker,cmake_modules" "h,hpp,cc,cpp"
-      - run: mkdir build
+      - name: Format CMake files
+        run: ./scripts/cmake-format.sh
+      - name: Format code
+        run: ./scripts/clang-format.sh
+      - name: Clang-tidy Check
+        run: ./scripts/clang-tidy.sh
   build:
     runs-on: ubuntu-latest
 

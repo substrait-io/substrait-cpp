@@ -1,7 +1,9 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include <gtest/gtest.h>
+
 #include <iostream>
+
 #include "substrait/function/FunctionLookup.h"
 
 using namespace io::substrait;
@@ -16,10 +18,10 @@ class FunctionLookupTest : public ::testing::Test {
   }
 
   void SetUp() override {
-    ExtensionPtr extension_ = Extension::load(getExtensionAbsolutePath());
-    scalarFunctionLookup_ = std::make_shared<ScalarFunctionLookup>(extension_);
+    ExtensionPtr extension = Extension::load(getExtensionAbsolutePath());
+    scalarFunctionLookup_ = std::make_shared<ScalarFunctionLookup>(extension);
     aggregateFunctionLookup_ =
-        std::make_shared<AggregateFunctionLookup>(extension_);
+        std::make_shared<AggregateFunctionLookup>(extension);
   }
 
   void testScalarFunctionLookup(
@@ -47,7 +49,7 @@ class FunctionLookupTest : public ::testing::Test {
   FunctionLookupPtr aggregateFunctionLookup_;
 };
 
-TEST_F(FunctionLookupTest, compare_function) {
+TEST_F(FunctionLookupTest, compareFunction) {
   testScalarFunctionLookup(
       {"lt", {TINYINT(), TINYINT()}, BOOL()}, "lt:any1_any1");
 
@@ -69,7 +71,7 @@ TEST_F(FunctionLookupTest, compare_function) {
       "between:any1_any1_any1");
 }
 
-TEST_F(FunctionLookupTest, arithmetic_function) {
+TEST_F(FunctionLookupTest, arithmeticFunction) {
   testScalarFunctionLookup(
       {"add", {TINYINT(), TINYINT()}, TINYINT()}, "add:i8_i8");
 
@@ -99,7 +101,7 @@ TEST_F(FunctionLookupTest, logical) {
   testScalarFunctionLookup({"xor", {BOOL(), BOOL()}, BOOL()}, "xor:bool_bool");
 }
 
-TEST_F(FunctionLookupTest, string_function) {
+TEST_F(FunctionLookupTest, stringFunction) {
   testScalarFunctionLookup(
       {"like", {STRING(), STRING()}, BOOL()}, "like:str_str");
   testScalarFunctionLookup(

@@ -16,7 +16,7 @@ namespace io::substrait::textplan {
 
 namespace {
 
-void localFileToText(
+void LocalFileToText(
     const ::substrait::proto::ReadRel::LocalFiles::FileOrFiles& item,
     std::stringstream* text) {
   switch (item.path_type_case()) {
@@ -70,67 +70,79 @@ void localFileToText(
   }
 }
 
-std::string typeToText(const ::substrait::proto::Type& type) {
+std::string TypeToText(const ::substrait::proto::Type& type) {
   switch (type.kind_case()) {
     case ::substrait::proto::Type::kBool:
       if (type.bool_().nullability() ==
-          ::substrait::proto::Type::NULLABILITY_NULLABLE)
+          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
         return "bool?";
+      }
       return "bool";
     case ::substrait::proto::Type::kI8:
       if (type.i8().nullability() ==
-          ::substrait::proto::Type::NULLABILITY_NULLABLE)
+          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
         return "i8?";
+      }
       return "i8";
     case ::substrait::proto::Type::kI16:
       if (type.i16().nullability() ==
-          ::substrait::proto::Type::NULLABILITY_NULLABLE)
+          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
         return "i16?";
+      }
       return "i16";
     case ::substrait::proto::Type::kI32:
       if (type.i32().nullability() ==
-          ::substrait::proto::Type::NULLABILITY_NULLABLE)
+          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
         return "i32?";
+      }
       return "i32";
     case ::substrait::proto::Type::kI64:
       if (type.i64().nullability() ==
-          ::substrait::proto::Type::NULLABILITY_NULLABLE)
+          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
         return "i64?";
+      }
       return "i64";
     case ::substrait::proto::Type::kFp32:
       if (type.fp32().nullability() ==
-          ::substrait::proto::Type::NULLABILITY_NULLABLE)
+          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
         return "fp32?";
+      }
       return "fp32";
     case ::substrait::proto::Type::kFp64:
       if (type.fp64().nullability() ==
-          ::substrait::proto::Type::NULLABILITY_NULLABLE)
+          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
         return "fp64?";
+      }
       return "fp64";
     case ::substrait::proto::Type::kString:
       if (type.string().nullability() ==
-          ::substrait::proto::Type::NULLABILITY_NULLABLE)
+          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
         return "string?";
+      }
       return "string";
     case ::substrait::proto::Type::kDecimal:
       if (type.string().nullability() ==
-          ::substrait::proto::Type::NULLABILITY_NULLABLE)
+          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
         return "decimal?";
+      }
       return "decimal";
     case ::substrait::proto::Type::kVarchar:
       if (type.varchar().nullability() ==
-          ::substrait::proto::Type::NULLABILITY_NULLABLE)
+          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
         return "varchar?";
+      }
       return "varchar";
     case ::substrait::proto::Type::kFixedChar:
       if (type.fixed_char().nullability() ==
-          ::substrait::proto::Type::NULLABILITY_NULLABLE)
+          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
         return "fixedchar?";
+      }
       return "fixedchar";
     case ::substrait::proto::Type::kDate:
       if (type.date().nullability() ==
-          ::substrait::proto::Type::NULLABILITY_NULLABLE)
+          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
         return "date?";
+      }
       return "date";
     case ::substrait::proto::Type::KIND_NOT_SET:
     default:
@@ -138,7 +150,7 @@ std::string typeToText(const ::substrait::proto::Type& type) {
   }
 };
 
-std::string relationToText(
+std::string RelationToText(
     const SymbolTable& symbolTable,
     const SymbolInfo& info) {
   auto relation = ANY_CAST(const ::substrait::proto::Rel*, info.blob);
@@ -147,45 +159,48 @@ std::string relationToText(
   return printer.printRelation(info.name, relation);
 }
 
-std::string outputPipelinesSection(const SymbolTable& symbolTable) {
+std::string OutputPipelinesSection(const SymbolTable& symbolTable) {
   // TODO: Implement.
   return "";
 }
 
-std::string outputRelationsSection(const SymbolTable& symbolTable) {
+std::string OutputRelationsSection(const SymbolTable& symbolTable) {
   std::stringstream text;
   bool hasPreviousText = false;
   for (const SymbolInfo& info : symbolTable) {
-    if (info.type != SymbolType::kRelation)
+    if (info.type != SymbolType::kRelation) {
       continue;
+    }
     // TODO: Put handling this into the PlanPrinterVisitor.
-    if (hasPreviousText)
+    if (hasPreviousText) {
       text << "\n";
-    text << relationToText(symbolTable, info);
+    }
+    text << RelationToText(symbolTable, info);
     hasPreviousText = true;
   }
   return text.str();
 }
 
-std::string outputSchemaSection(const SymbolTable& symbolTable) {
+std::string OutputSchemaSection(const SymbolTable& symbolTable) {
   std::stringstream text;
   bool hasPreviousText = false;
   for (const SymbolInfo& info : symbolTable) {
-    if (info.type != SymbolType::kSchema)
+    if (info.type != SymbolType::kSchema) {
       continue;
+    }
 
-    if (hasPreviousText)
+    if (hasPreviousText) {
       text << "\n";
+    }
 
     const auto* schema =
         ANY_CAST(const ::substrait::proto::NamedStruct*, info.blob);
     text << "schema " << info.name << " {\n";
     int idx = 0;
-    while (idx < schema->names_size() &&
-           idx < schema->struct_().types_size()) {
+    while (idx < schema->names_size() && idx < schema->struct_().types_size()) {
       // TODO -- Handle potential whitespace in the names here or elsewhere.
       text << "  " << schema->names(idx);
-      text << " " << typeToText(schema->struct_().types(idx));
+      text << " " << TypeToText(schema->struct_().types(idx));
       text << ";\n";
       ++idx;
     }
@@ -195,15 +210,17 @@ std::string outputSchemaSection(const SymbolTable& symbolTable) {
   return text.str();
 }
 
-std::string outputSourceSection(const SymbolTable& symbolTable) {
+std::string OutputSourceSection(const SymbolTable& symbolTable) {
   std::stringstream text;
   bool hasPreviousText = false;
   for (const SymbolInfo& info : symbolTable) {
-    if (info.type != SymbolType::kSource)
+    if (info.type != SymbolType::kSource) {
       continue;
+    }
 
-    if (hasPreviousText)
+    if (hasPreviousText) {
       text << "\n";
+    }
     auto subtype = ANY_CAST(SourceType, info.subtype);
     switch (subtype) {
       case SourceType::kNamedTable: {
@@ -227,7 +244,7 @@ std::string outputSourceSection(const SymbolTable& symbolTable) {
         text << "  items = [\n";
         for (const auto& item : files->items()) {
           text << "    {";
-          localFileToText(item, &text);
+          LocalFileToText(item, &text);
           text << "}\n";
         }
         text << "  ]\n";
@@ -247,7 +264,7 @@ std::string outputSourceSection(const SymbolTable& symbolTable) {
   return text.str();
 }
 
-std::string outputFunctionsSection(const SymbolTable& symbolTable) {
+std::string OutputFunctionsSection(const SymbolTable& symbolTable) {
   std::stringstream text;
 
   std::map<uint32_t, std::string> space_names;
@@ -255,8 +272,9 @@ std::string outputFunctionsSection(const SymbolTable& symbolTable) {
 
   // Look at the existing spaces.
   for (const SymbolInfo& info : symbolTable) {
-    if (info.type != SymbolType::kExtensionSpace)
+    if (info.type != SymbolType::kExtensionSpace) {
       continue;
+    }
 
     auto anchor = ANY_CAST(uint32_t, info.blob);
 
@@ -265,8 +283,9 @@ std::string outputFunctionsSection(const SymbolTable& symbolTable) {
 
   // Find any spaces that are used but undefined.
   for (const SymbolInfo& info : symbolTable) {
-    if (info.type != SymbolType::kFunction)
+    if (info.type != SymbolType::kFunction) {
       continue;
+    }
 
     auto extension = ANY_CAST(
         const ::substrait::proto::extensions::
@@ -285,15 +304,17 @@ std::string outputFunctionsSection(const SymbolTable& symbolTable) {
     }
 
     for (const SymbolInfo& info : symbolTable) {
-      if (info.type != SymbolType::kFunction)
+      if (info.type != SymbolType::kFunction) {
         continue;
+      }
 
       auto extension = ANY_CAST(
           const ::substrait::proto::extensions::
               SimpleExtensionDeclaration_ExtensionFunction*,
           info.blob);
-      if (extension->extension_uri_reference() != space)
+      if (extension->extension_uri_reference() != space) {
         continue;
+      }
 
       text << "  function " << extension->name() << " as " << info.name
            << ";\n";
@@ -310,22 +331,13 @@ std::string SymbolTablePrinter::outputToText(const SymbolTable& symbolTable) {
   std::stringstream text;
   bool hasPreviousText = false;
 
-  std::string newText = outputPipelinesSection(symbolTable);
+  std::string newText = OutputPipelinesSection(symbolTable);
   if (!newText.empty()) {
     text << newText;
     hasPreviousText = true;
   }
 
-  newText = outputRelationsSection(symbolTable);
-  if (!newText.empty()) {
-    if (hasPreviousText) {
-      text << "\n";
-    }
-    text << newText;
-    hasPreviousText = true;
-  }
-
-  newText = outputSchemaSection(symbolTable);
+  newText = OutputRelationsSection(symbolTable);
   if (!newText.empty()) {
     if (hasPreviousText) {
       text << "\n";
@@ -334,7 +346,7 @@ std::string SymbolTablePrinter::outputToText(const SymbolTable& symbolTable) {
     hasPreviousText = true;
   }
 
-  newText = outputSourceSection(symbolTable);
+  newText = OutputSchemaSection(symbolTable);
   if (!newText.empty()) {
     if (hasPreviousText) {
       text << "\n";
@@ -343,7 +355,16 @@ std::string SymbolTablePrinter::outputToText(const SymbolTable& symbolTable) {
     hasPreviousText = true;
   }
 
-  newText = outputFunctionsSection(symbolTable);
+  newText = OutputSourceSection(symbolTable);
+  if (!newText.empty()) {
+    if (hasPreviousText) {
+      text << "\n";
+    }
+    text << newText;
+    hasPreviousText = true;
+  }
+
+  newText = OutputFunctionsSection(symbolTable);
   if (!newText.empty()) {
     if (hasPreviousText) {
       text << "\n";

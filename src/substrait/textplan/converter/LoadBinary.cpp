@@ -5,6 +5,7 @@
 #include <google/protobuf/io/tokenizer.h>
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/util/json_util.h>
+
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -28,7 +29,7 @@ class StringErrorCollector : public google::protobuf::io::ErrorCollector {
         message);
   }
 
-  [[nodiscard]] std::vector<std::string> GetErrors() const {
+  [[nodiscard]] std::vector<std::string> getErrors() const {
     return errors_;
   }
 
@@ -38,7 +39,7 @@ class StringErrorCollector : public google::protobuf::io::ErrorCollector {
 
 } // namespace
 
-std::string readFromFile(std::string_view msgPath) {
+std::string ReadFromFile(std::string_view msgPath) {
   std::ifstream textFile(std::string{msgPath});
   if (textFile.fail()) {
     auto currdir = std::filesystem::current_path().string();
@@ -53,7 +54,7 @@ std::string readFromFile(std::string_view msgPath) {
   return buffer.str();
 }
 
-PlanOrErrors loadFromJSON(std::string_view json) {
+PlanOrErrors LoadFromJson(std::string_view json) {
   if (json.empty()) {
     return PlanOrErrors({"Provided JSON string was empty."});
   }
@@ -75,13 +76,13 @@ PlanOrErrors loadFromJSON(std::string_view json) {
   return PlanOrErrors(plan);
 }
 
-PlanOrErrors loadFromText(const std::string& text) {
+PlanOrErrors LoadFromText(const std::string& text) {
   ::substrait::proto::Plan plan;
   ::google::protobuf::TextFormat::Parser parser;
   StringErrorCollector collector;
   parser.RecordErrorsTo(&collector);
   if (!parser.ParseFromString(text, &plan)) {
-    return PlanOrErrors(collector.GetErrors());
+    return PlanOrErrors(collector.getErrors());
   }
   return PlanOrErrors(plan);
 }

@@ -2,9 +2,10 @@
 
 #pragma once
 
+#include <fmt/format.h>
+
 #include <memory>
 #include <utility>
-#include <fmt/format.h>
 
 namespace io::substrait::common {
 namespace error_code {
@@ -100,13 +101,13 @@ class SubstraitRuntimeError final : public SubstraitException {
 };
 
 template <typename... Args>
-std::string errorMessage(fmt::string_view fmt, const Args&... args) {
+std::string ErrorMessage(fmt::string_view fmt, const Args&... args) {
   return fmt::vformat(fmt, fmt::make_format_args(args...));
 }
 
 #define SUBSTRAIT_THROW(exception, errorCode, ...)                         \
   {                                                                        \
-    auto message = ::io::substrait::common::errorMessage(__VA_ARGS__);     \
+    auto message = ::io::substrait::common::ErrorMessage(__VA_ARGS__);     \
     throw exception(__FILE__, __LINE__, __FUNCTION__, errorCode, message); \
   }
 

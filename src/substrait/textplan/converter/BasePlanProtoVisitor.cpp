@@ -169,7 +169,8 @@ std::any BasePlanProtoVisitor::visitType(const ::substrait::proto::Type& type) {
       return visitTypeUserDefined(type.user_defined());
     case ::substrait::proto::Type::kUserDefinedTypeReference:
       SUBSTRAIT_UNSUPPORTED(
-          "user_defined_type_reference was replaced by user_defined_type.  Please update your plan version.");
+          "user_defined_type_reference was replaced by user_defined_type.  "
+          "Please update your plan version.");
     case ::substrait::proto::Type::KIND_NOT_SET:
       break;
   }
@@ -405,8 +406,8 @@ std::any BasePlanProtoVisitor::visitWindowFunction(
 
 std::any BasePlanProtoVisitor::visitIfThen(
     const ::substrait::proto::Expression::IfThen& ifthen) {
-  for (const auto& if_ : ifthen.ifs()) {
-    visitIfClause(if_);
+  for (const auto& ifthenIf : ifthen.ifs()) {
+    visitIfClause(ifthenIf);
   }
   if (ifthen.has_else_()) {
     visitExpression(ifthen.else_());
@@ -419,8 +420,8 @@ std::any BasePlanProtoVisitor::visitSwitchExpression(
   if (expression.has_match()) {
     visitExpression(expression.match());
   }
-  for (const auto& if_ : expression.ifs()) {
-    visitIfValue(if_);
+  for (const auto& ifthenIf : expression.ifs()) {
+    visitIfValue(ifthenIf);
   }
   if (expression.has_else_()) {
     visitExpression(expression.else_());
@@ -541,10 +542,12 @@ std::any BasePlanProtoVisitor::visitMapSelect(
     case ::substrait::proto::Expression_MaskExpression_MapSelect::
         SELECT_NOT_SET:
       break;
+    default:
+       SUBSTRAIT_UNSUPPORTED(
+                  "Unsupported map select type encountered: " +
+                  std::to_string(select.select_case()));
   }
-  SUBSTRAIT_UNSUPPORTED(
-      "Unsupported map select type encountered: " +
-      std::to_string(select.select_case()));
+
 }
 
 std::any BasePlanProtoVisitor::visitExpressionLiteralStruct(
