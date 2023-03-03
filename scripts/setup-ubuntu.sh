@@ -25,3 +25,5 @@ sudo --preserve-env apt install -y \
   libprotobuf-dev \
   libprotobuf23 \
   protobuf-compiler
+
+pip install cmake-format

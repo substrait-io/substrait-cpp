@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 name: Ubuntu Build & Test
 
 on:
@@ -7,6 +8,22 @@ on:
     branches: [main]
 
 jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Setup Ubuntu
+        run: ./scripts/setup-ubuntu.sh
+      - name: Check License Header
+        uses: apache/skywalking-eyes/header@v0.4.0
+      - name: Check CMake files
+        run: find . \( -name '*.cmake' -o -name 'CMakeLists.txt' \) -exec cmake-format $* {} +
+      - name: Clang-tidy
+        run: python3 scripts/run-clang-tidy.py "." "build" "third_party,scripts,docker,cmake_modules" "h,hpp,cc,cpp"
+      - run: mkdir build
   build:
     runs-on: ubuntu-latest
 
