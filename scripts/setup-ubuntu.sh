@@ -18,6 +18,7 @@ sudo --preserve-env apt install -y \
   cmake \
   ccache \
   ninja-build \
+  clang-tidy \
   checkinstall \
   clang-tidy \
   git \
