@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <fmt/format.h>
 #include <memory>
 #include <utility>
+#include <fmt/format.h>
 
 namespace io::substrait::common {
 namespace error_code {
@@ -39,12 +39,14 @@ class SubstraitException : public std::exception {
     // objects.
     kUser = 0,
 
-    // Errors where the root cause of the problem is some unreliable aspect of the
-    // system are classified with SYSTEM.
+    // Errors where the root cause of the problem is some unreliable aspect of
+    // the system are classified with SYSTEM.
     kSystem = 1
   };
-
   SubstraitException(
+      const char* file,
+      size_t line,
+      const char* function,
       const std::string& exceptionCode,
       const std::string& exceptionMessage,
       Type exceptionType = Type::kSystem,
@@ -62,10 +64,16 @@ class SubstraitException : public std::exception {
 class SubstraitUserError : public SubstraitException {
  public:
   SubstraitUserError(
+      const char* file,
+      size_t line,
+      const char* function,
       const std::string& exceptionCode,
       const std::string& exceptionMessage,
       const std::string& exceptionName = "SubstraitUserError")
       : SubstraitException(
+            file,
+            line,
+            function,
             exceptionCode,
             exceptionMessage,
             Type::kUser,
@@ -75,10 +83,16 @@ class SubstraitUserError : public SubstraitException {
 class SubstraitRuntimeError final : public SubstraitException {
  public:
   SubstraitRuntimeError(
+      const char* file,
+      size_t line,
+      const char* function,
       const std::string& exceptionCode,
       const std::string& exceptionMessage,
       const std::string& exceptionName = "SubstraitRuntimeError")
       : SubstraitException(
+            file,
+            line,
+            function,
             exceptionCode,
             exceptionMessage,
             Type::kSystem,
@@ -90,10 +104,10 @@ std::string errorMessage(fmt::string_view fmt, const Args&... args) {
   return fmt::vformat(fmt, fmt::make_format_args(args...));
 }
 
-#define SUBSTRAIT_THROW(exception, errorCode, ...)                     \
-  {                                                                    \
-    auto message = ::io::substrait::common::errorMessage(__VA_ARGS__); \
-    throw exception(errorCode, message);                               \
+#define SUBSTRAIT_THROW(exception, errorCode, ...)                         \
+  {                                                                        \
+    auto message = ::io::substrait::common::errorMessage(__VA_ARGS__);     \
+    throw exception(__FILE__, __LINE__, __FUNCTION__, errorCode, message); \
   }
 
 #define SUBSTRAIT_UNSUPPORTED(...)                       \
