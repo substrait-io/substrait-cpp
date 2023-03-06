@@ -41,7 +41,8 @@ set(PROTO_SRCS)
 set(PROTO_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}")
 
 cmake_path(GET PROTO_OUTPUT_DIR PARENT_PATH PROTO_OUTPUT_PARENT_DIR)
-cmake_path(GET PROTO_OUTPUT_PARENT_DIR PARENT_PATH PROTO_OUTPUT_TOPLEVEL_DIR)
+cmake_path(GET PROTO_OUTPUT_PARENT_DIR PARENT_PATH PROTO_OUTPUT_MIDLEVEL_DIR)
+cmake_path(GET PROTO_OUTPUT_MIDLEVEL_DIR PARENT_PATH PROTO_OUTPUT_TOPLEVEL_DIR)
 
 foreach(PROTO_FILE IN LISTS PROTOBUF_FILELIST)
     file(RELATIVE_PATH RELATIVE_PROTO_PATH "${CMAKE_SOURCE_DIR}/third_party/substrait/proto/substrait" "${PROTO_FILE}")
@@ -56,7 +57,7 @@ foreach(PROTO_FILE IN LISTS PROTOBUF_FILELIST)
             OUTPUT ${PROTO_SRC} ${PROTO_HDR}
             COMMAND protobuf::protoc
             "--proto_path=${GENERATED_PROTO_TOPLEVEL_DIR}"
-            "--cpp_out=${PROTO_OUTPUT_TOPLEVEL_DIR}"
+            "--cpp_out=${PROTO_OUTPUT_MIDLEVEL_DIR}"
             ${GENERATED_PROTO_FILE}
             DEPENDS ${GENERATED_PROTOBUF_LIST} protobuf::protoc
             COMMENT "Generated C++ protobuf module for ${PROTO_FILE}"
@@ -66,7 +67,12 @@ foreach(PROTO_FILE IN LISTS PROTOBUF_FILELIST)
 endforeach()
 
 # Add the generated protobuf C++ files to our exported library.
-add_library(substrait_proto ${PROTO_SRCS})
+add_library(substrait_proto ${PROTO_SRCS} ${PROTO_HDRS})
+
+# Include the protobuf library as a dependency to use this class.
+target_link_libraries(substrait_proto ${PROTOBUF_LIBRARIES})
 
 # Make sure we can see our own generated include files.
-target_include_directories(substrait_proto PUBLIC "${PROTO_OUTPUT_TOPLEVEL_DIR}")
+target_include_directories(
+        substrait_proto
+        PUBLIC "${PROTO_OUTPUT_TOPLEVEL_DIR}/src")
