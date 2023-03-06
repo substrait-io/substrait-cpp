@@ -57,6 +57,14 @@ enum class RelationDetailType {
   kExpression = 1,
 };
 
+enum class SourceType {
+  kUnknown = 0,
+  kLocalFiles = 1,
+  kNamedTable = 2,
+  kVirtualTable = 3,
+  kExtensionTable = 4,
+};
+
 struct SymbolInfo {
   std::string name;
   Location location;
@@ -71,10 +79,13 @@ struct SymbolInfo {
       std::any new_subtype,
       std::any new_blob)
       : name(std::move(new_name)),
-        location(std::move(new_location)),
+        location(new_location),
         type(new_type),
         subtype(std::move(new_subtype)),
         blob(std::move(new_blob)){};
+
+  friend bool operator==(const SymbolInfo& left, const SymbolInfo& right);
+  friend bool operator!=(const SymbolInfo& left, const SymbolInfo& right);
 };
 
 class SymbolTable;
@@ -135,16 +146,6 @@ class SymbolTable {
     return symbols_;
   };
 
-  // Temporary functions to allow externally computed text to be saved.
-  void addCachedOutput(const std::string& text) {
-    cached_output_ = text;
-  }
-  // TODO: Remove after we have the information required to reconstruct the
-  // plan.
-  [[nodiscard]] std::string getCachedOutput() const {
-    return cached_output_;
-  }
-
   // Add the capability for ::testing::PrintToString to print this.
   friend std::ostream& operator<<(std::ostream& os, const SymbolTable& result) {
     os << std::string("{");
@@ -160,12 +161,7 @@ class SymbolTable {
     return os;
   }
 
-  SymbolInfo kUnknownSymbol = {
-      "__UNKNOWN__",
-      Location(ProtoLocation()),
-      SymbolType::kUnknown,
-      std::nullopt,
-      std::nullopt};
+  static const SymbolInfo kUnknownSymbol;
 
  private:
   friend SymbolTableIterator;
@@ -175,8 +171,6 @@ class SymbolTable {
   std::vector<std::shared_ptr<SymbolInfo>> symbols_;
   std::unordered_map<std::string, size_t> symbols_by_name_;
   std::unordered_map<Location, size_t> symbols_by_location_;
-
-  std::string cached_output_;
 };
 
 } // namespace io::substrait::textplan

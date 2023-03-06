@@ -10,17 +10,11 @@ namespace antlr4 {
 class ParserRuleContext;
 }
 
-namespace io::substrait::textplan {
-
-class ProtoLocation {
- public:
-  [[nodiscard]] ProtoLocation visit(const std::string& name) const;
-
-  [[nodiscard]] std::string toString() const;
-
- private:
-  std::vector<std::string> location_;
+namespace google::protobuf {
+class Message;
 };
+
+namespace io::substrait::textplan {
 
 // Location is used for keeping track of where a symbol is within a parse tree.
 // Since SymbolTable supports both antlr4 and protobuf messages there are
@@ -28,12 +22,11 @@ class ProtoLocation {
 // location would be used in any SymbolTable instance.
 class Location {
  public:
-  explicit Location(antlr4::ParserRuleContext* node) {
-    loc_ = node;
-  };
-  explicit Location(ProtoLocation location) {
-    loc_ = location;
-  };
+  constexpr explicit Location(antlr4::ParserRuleContext* node) : loc_(node) {}
+
+  constexpr explicit Location(google::protobuf::Message* msg) : loc_(msg) {}
+
+  static const Location kUnknownLocation;
 
  protected:
   friend bool operator==(const Location& c1, const Location& c2);
@@ -42,7 +35,7 @@ class Location {
   friend std::hash<Location>;
   friend std::less<Location>;
 
-  std::variant<ProtoLocation, antlr4::ParserRuleContext*> loc_;
+  std::variant<antlr4::ParserRuleContext*, google::protobuf::Message*> loc_;
 };
 
 } // namespace io::substrait::textplan
@@ -55,8 +48,7 @@ struct std::hash<::io::substrait::textplan::Location> {
 
 template <>
 struct std::less<::io::substrait::textplan::Location> {
-  std::size_t operator()(
+  bool operator()(
       const ::io::substrait::textplan::Location& lhs,
       const ::io::substrait::textplan::Location& rhs) const noexcept;
 };
-

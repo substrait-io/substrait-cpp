@@ -13,14 +13,11 @@ namespace io::substrait::textplan {
 // own functionality.
 class BasePlanProtoVisitor {
  public:
-  BasePlanProtoVisitor() = delete;
-
-  explicit BasePlanProtoVisitor(::substrait::proto::Plan plan)
-      : plan_(std::move(plan)) {}
+  BasePlanProtoVisitor() = default;
 
   // visit() begins the traversal of the entire plan.
-  virtual void visit() {
-    visitPlan();
+  virtual void visit(const ::substrait::proto::Plan& plan) {
+    visitPlan(plan);
   }
 
  protected:
@@ -187,10 +184,7 @@ class BasePlanProtoVisitor {
       const ::substrait::proto::extensions::AdvancedExtension& extension);
   virtual std::any visitExpectedTypeUrl(const std::string& url);
 
-  virtual std::any visitPlan();
-
- private:
-  ::substrait::proto::Plan plan_;
+  virtual std::any visitPlan(const ::substrait::proto::Plan& plan);
 };
 
 } // namespace io::substrait::textplan

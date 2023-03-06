@@ -135,11 +135,11 @@ class SerializesToMatcher {
   }
 
   void DescribeTo(std::ostream* os) const {
-    *os << "reparses to: " << ::testing::PrintToString(expected_result_);
+    *os << "serializes to: " << ::testing::PrintToString(expected_result_);
   }
 
   void DescribeNegationTo(std::ostream* os) const {
-    *os << "does not reparse to: "
+    *os << "does not serialize to: "
         << ::testing::PrintToString(expected_result_);
   }
 
