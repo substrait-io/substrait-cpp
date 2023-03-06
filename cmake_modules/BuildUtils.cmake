@@ -41,5 +41,6 @@ function(ADD_TEST_CASE TEST_NAME)
     add_dependencies(${TEST_NAME} ${ARG_EXTRA_DEPENDENCIES})
   endif()
 
-  add_test(NAME ${TEST_NAME} COMMAND $<TARGET_FILE:${TEST_NAME}>)
+  add_test(NAME ${TEST_NAME} COMMAND $<TARGET_FILE:${TEST_NAME}>
+                             WORKING_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tests")
 endfunction()

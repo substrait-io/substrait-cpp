@@ -1,0 +1,27 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include "substrait/textplan/converter/ParseBinary.h"
+
+#include "substrait/proto/plan.pb.h"
+#include "substrait/textplan/converter/InitialPlanProtoVisitor.h"
+#include "substrait/textplan/converter/PlanPrinterVisitor.h"
+
+namespace io::substrait::textplan {
+
+ParseResult parseBinaryPlan(const ::substrait::proto::Plan& plan) {
+  InitialPlanProtoVisitor visitor(plan);
+  visitor.visit();
+  auto symbols = visitor.getSymbolTable();
+  auto syntaxErrors = visitor.getErrorListener()->getErrorMessages();
+  std::vector<std::string> semanticErrors;
+
+  PlanPrinterVisitor printer(plan, *symbols);
+  printer.visit();
+  auto moreErrors = printer.getErrorListener()->getErrorMessages();
+  semanticErrors.insert(
+      semanticErrors.end(), moreErrors.begin(), moreErrors.end());
+
+  return {*printer.getSymbolTable(), syntaxErrors, semanticErrors};
+}
+
+} // namespace io::substrait::textplan
