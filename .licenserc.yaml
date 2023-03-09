@@ -13,12 +13,14 @@ header:
     - '.cmake-format'
     - '.licenserc.yaml'
     - 'third_party/abseil-cpp'
+    - 'third_party/antlr4'
     - 'third_party/fmt'
     - 'third_party/googletest'
     - 'third_party/substrait'
     - 'third_party/yaml-cpp'
     - '**/*.md'
     - '**/*.json'
+    - '**/*.splan'
     - '**/*.log'
 
   comment: never

@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "SymbolTablePrinter.h"
+#include "substrait/textplan/SymbolTablePrinter.h"
 
 #include <set>
 #include <sstream>
@@ -9,7 +9,7 @@
 #include "substrait/proto/algebra.pb.h"
 #include "substrait/proto/extensions/extensions.pb.h"
 #include "substrait/textplan/Any.h"
-#include "substrait/textplan/RelationData.h"
+#include "substrait/textplan/StructuredSymbolData.h"
 #include "substrait/textplan/SymbolTable.h"
 #include "substrait/textplan/converter/PlanPrinterVisitor.h"
 
@@ -154,7 +154,19 @@ std::string typeToText(const ::substrait::proto::Type& type) {
 std::string relationToText(
     const SymbolTable& symbolTable,
     const SymbolInfo& info) {
+  if (info.blob.type() != typeid(std::shared_ptr<RelationData>)) {
+    return "not-yet-implemented";
+  }
   auto relationData = ANY_CAST(std::shared_ptr<RelationData>, info.blob);
+  if (relationData->protoAddr == nullptr) {
+    // Not yet ready to process these on the parser side.
+    return "";
+  }
+  if (relationData->protoAddr->rel_type_case() ==
+      ::substrait::proto::Rel::REL_TYPE_NOT_SET) {
+    // The relation isn't defined, so we don't have anything to print.
+    return "";
+  }
 
   PlanPrinterVisitor printer(symbolTable);
   return printer.printRelation(relationData->protoAddr);
@@ -186,6 +198,9 @@ std::string outputPipelinesSection(const SymbolTable& symbolTable) {
     if (info.type != SymbolType::kPlanRelation &&
         info.type != SymbolType::kRelation) {
       continue;
+    }
+    if (info.blob.type() != typeid(std::shared_ptr<RelationData>)) {
+      return "not-yet-implemented";
     }
     auto relationData = ANY_CAST(std::shared_ptr<RelationData>, info.blob);
     for (auto pipelineStart : relationData->newPipelines) {
@@ -235,6 +250,11 @@ std::string outputSchemaSection(const SymbolTable& symbolTable) {
       continue;
     }
 
+    if (info.blob.type() != typeid(const ::substrait::proto::NamedStruct*)) {
+      // TODO -- Implement schemas for text plans.
+      continue;
+    }
+
     if (hasPreviousText) {
       text << "\n";
     }
@@ -266,6 +286,10 @@ std::string outputSourceSection(const SymbolTable& symbolTable) {
 
     if (hasPreviousText) {
       text << "\n";
+    }
+    if (info.subtype.type() != typeid(SourceType)) {
+      // TODO -- Implement sources for text plans.
+      continue;
     }
     auto subtype = ANY_CAST(SourceType, info.subtype);
     switch (subtype) {
@@ -322,9 +346,10 @@ std::string outputFunctionsSection(const SymbolTable& symbolTable) {
       continue;
     }
 
-    auto anchor = ANY_CAST(uint32_t, info.blob);
-
-    spaceNames.insert(std::make_pair(anchor, info.name));
+    auto extensionData =
+        ANY_CAST(std::shared_ptr<ExtensionSpaceData>, info.blob);
+    spaceNames.insert(
+        std::make_pair(extensionData->anchorReference, info.name));
   }
 
   // Find any spaces that are used but undefined.
@@ -333,11 +358,8 @@ std::string outputFunctionsSection(const SymbolTable& symbolTable) {
       continue;
     }
 
-    auto extension = ANY_CAST(
-        const ::substrait::proto::extensions::
-            SimpleExtensionDeclaration_ExtensionFunction*,
-        info.blob);
-    usedSpaces.insert(extension->extension_uri_reference());
+    auto extension = ANY_CAST(std::shared_ptr<FunctionData>, info.blob);
+    usedSpaces.insert(extension->extensionUriReference.value());
   }
 
   // Finally output the extensions by space in the order they were encountered.
@@ -358,16 +380,13 @@ std::string outputFunctionsSection(const SymbolTable& symbolTable) {
         continue;
       }
 
-      auto extension = ANY_CAST(
-          const ::substrait::proto::extensions::
-              SimpleExtensionDeclaration_ExtensionFunction*,
-          info.blob);
-      if (extension->extension_uri_reference() != space) {
+      auto extension = ANY_CAST(std::shared_ptr<FunctionData>, info.blob);
+      if (extension->extensionUriReference.has_value() &&
+          extension->extensionUriReference.value() != space) {
         continue;
       }
 
-      text << "  function " << extension->name() << " as " << info.name
-           << ";\n";
+      text << "  function " << extension->name << " as " << info.name << ";\n";
     }
     text << "}\n";
     hasPreviousOutput = true;

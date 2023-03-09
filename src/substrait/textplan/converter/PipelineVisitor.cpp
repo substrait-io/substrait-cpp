@@ -3,7 +3,7 @@
 #include "substrait/textplan/converter/PipelineVisitor.h"
 
 #include "substrait/textplan/Any.h"
-#include "substrait/textplan/RelationData.h"
+#include "substrait/textplan/StructuredSymbolData.h"
 
 namespace io::substrait::textplan {
 

@@ -12,7 +12,7 @@
 #include "substrait/proto/plan.pb.h"
 #include "substrait/textplan/Any.h"
 #include "substrait/textplan/Location.h"
-#include "substrait/textplan/RelationData.h"
+#include "substrait/textplan/StructuredSymbolData.h"
 #include "substrait/textplan/SymbolTable.h"
 
 namespace io::substrait::textplan {
@@ -46,7 +46,10 @@ std::any InitialPlanProtoVisitor::visitExtension(
       PROTO_LOCATION(extension.extension_function()),
       SymbolType::kFunction,
       std::nullopt,
-      &extension.extension_function());
+      std::make_shared<FunctionData>(
+          extension.extension_function().name(),
+          extension.extension_function().extension_uri_reference(),
+          extension.extension_function().function_anchor()));
   return std::nullopt;
 }
 
@@ -57,7 +60,7 @@ std::any InitialPlanProtoVisitor::visitExtensionUri(
       PROTO_LOCATION(uri),
       SymbolType::kExtensionSpace,
       std::nullopt,
-      uri.extension_uri_anchor());
+      std::make_shared<ExtensionSpaceData>(uri.extension_uri_anchor()));
   return std::nullopt;
 }
 
