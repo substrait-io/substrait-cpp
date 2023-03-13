@@ -8,6 +8,9 @@
 #include "substrait/textplan/tests/ParseResultMatchers.h"
 
 namespace io::substrait::textplan {
+
+using ::testing::Eq;
+
 namespace {
 
 class TestCase {
@@ -31,7 +34,7 @@ std::vector<TestCase> GetTestCases() {
       {
           "empty plan",
           "",
-          SerializesTo(""),
+          WhenSerialized(Eq("")),
       },
       {
           "empty extension space",
@@ -39,7 +42,7 @@ std::vector<TestCase> GetTestCases() {
             extension_uri_anchor: 42;
             uri: "http://life@everything",
           })",
-          SerializesTo(""),
+          WhenSerialized(Eq("")),
       },
       {
           "used extension space",
@@ -54,9 +57,10 @@ std::vector<TestCase> GetTestCases() {
               name: "sum:fp64_fp64"
             }
           })",
-          SerializesTo("extension_space http://life@everything {\n"
-                       "  function sum:fp64_fp64 as sum;\n"
-                       "}\n"),
+          WhenSerialized(EqSquashingWhitespace(
+              R"(extension_space http://life@everything {
+                   function sum:fp64_fp64 as sum;
+                 })")),
       },
       {
           "seven extensions, no uris",
@@ -109,15 +113,16 @@ std::vector<TestCase> GetTestCases() {
               name: "multiply:opt_fp64_fp64"
             }
           })",
-          SerializesTo("extension_space {\n"
-                       "  function lte:fp64_fp64 as lte;\n"
-                       "  function sum:fp64_fp64 as sum;\n"
-                       "  function lt:fp64_fp64 as lt;\n"
-                       "  function is_not_null:fp64 as is_not_null;\n"
-                       "  function and:bool_bool as and;\n"
-                       "  function gte:fp64_fp64 as gte;\n"
-                       "  function multiply:opt_fp64_fp64 as multiply;\n"
-                       "}\n"),
+          WhenSerialized(EqSquashingWhitespace(
+              R"(extension_space {
+                   function lte:fp64_fp64 as lte;
+                   function sum:fp64_fp64 as sum;
+                   function lt:fp64_fp64 as lt;
+                   function is_not_null:fp64 as is_not_null;
+                   function and:bool_bool as and;
+                   function gte:fp64_fp64 as gte;
+                   function multiply:opt_fp64_fp64 as multiply;
+                 })")),
       },
       {
           "read local files",
@@ -140,32 +145,33 @@ std::vector<TestCase> GetTestCases() {
           })",
           AllOf(
               HasSymbols({"local", "read", "root"}),
-              SerializesTo(
-                  "read relation read {\n"
-                  "}\n"
-                  "\n"
-                  "source local_files local {\n"
-                  "  items = [\n"
-                  "    {uri_file: \"/mock_lineitem.orc\" start: 0 length: 3719 orc: {}}\n"
-                  "  ]\n"
-                  "}\n")),
+              WhenSerialized(EqSquashingWhitespace(
+                  R"(read relation read {
+                  }
+
+                  source local_files local {
+                    items = [
+                      {uri_file: "/mock_lineitem.orc" start: 0 length: 3719 orc: {}}
+                    ]
+                  })"))),
       },
       {
           "read named table",
           "relations: { root: { input: { read: { base_schema {} named_table { names: \"#2\" } } } } }",
           AllOf(
               HasSymbols({"schema", "named", "read", "root"}),
-              SerializesTo("read relation read {\n"
-                           "}\n"
-                           "\n"
-                           "schema schema {\n"
-                           "}\n"
-                           "\n"
-                           "source named_table named {\n"
-                           "  names = [\n"
-                           "    \"#2\",\n"
-                           "  ]\n"
-                           "}\n")),
+              WhenSerialized(EqSquashingWhitespace(
+                  R"(read relation read {
+                     }
+
+                     schema schema {
+                     }
+
+                     source named_table named {
+                       names = [
+                         "#2",
+                       ]
+                     })"))),
       },
       {
           "single three node pipeline",
