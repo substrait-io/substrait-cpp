@@ -67,7 +67,10 @@ foreach(PROTO_FILE IN LISTS PROTOBUF_FILELIST)
 endforeach()
 
 # Add the generated protobuf C++ files to our exported library.
-add_library(substrait_proto ${PROTO_SRCS} ${PROTO_HDRS})
+add_library(
+        substrait_proto
+        ${PROTO_SRCS} ${PROTO_HDRS}
+        ProtoUtils.cpp ProtoUtils.h)
 
 # Include the protobuf library as a dependency to use this class.
 target_link_libraries(substrait_proto ${PROTOBUF_LIBRARIES})

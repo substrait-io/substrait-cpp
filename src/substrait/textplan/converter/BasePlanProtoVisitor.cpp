@@ -1062,20 +1062,20 @@ std::any BasePlanProtoVisitor::visitExpectedTypeUrl(const std::string& url) {
   return std::nullopt;
 }
 
-std::any BasePlanProtoVisitor::visitPlan() {
-  for (const auto& uri : plan_.extension_uris()) {
+std::any BasePlanProtoVisitor::visitPlan(const ::substrait::proto::Plan& plan) {
+  for (const auto& uri : plan.extension_uris()) {
     visitExtensionUri(uri);
   }
-  for (const auto& extension : plan_.extensions()) {
+  for (const auto& extension : plan.extensions()) {
     visitExtension(extension);
   }
-  for (const auto& relation : plan_.relations()) {
+  for (const auto& relation : plan.relations()) {
     visitPlanRelation(relation);
   }
-  if (plan_.has_advanced_extensions()) {
-    visitAdvancedExtension(plan_.advanced_extensions());
+  if (plan.has_advanced_extensions()) {
+    visitAdvancedExtension(plan.advanced_extensions());
   }
-  for (const auto& url : plan_.expected_type_urls()) {
+  for (const auto& url : plan.expected_type_urls()) {
     visitExpectedTypeUrl(url);
   }
   return std::nullopt;

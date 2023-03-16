@@ -25,6 +25,45 @@ std::vector<std::string> symbolNames(
   return names;
 }
 
+bool StringEqSquashingWhitespace(
+    const std::string& have,
+    const std::string& expected) {
+  auto atHave = have.begin();
+  auto atExpected = expected.begin();
+  while (atHave != have.end() && atExpected != expected.end()) {
+    if (isspace(*atExpected)) {
+      if (!isspace(*atHave)) {
+        return false;
+      }
+      // Have a match, consume all remaining space.
+      do {
+        atExpected++;
+      } while (atExpected != expected.end() && isspace(*atExpected));
+      do {
+        atHave++;
+      } while (atHave != have.end() && isspace(*atHave));
+      continue;
+    }
+    if (*atHave != *atExpected) {
+      return false;
+    }
+    atHave++;
+    atExpected++;
+  }
+  // For convenience consume any trailing whitespace on both sides.
+  if (atExpected != expected.end()) {
+    do {
+      atExpected++;
+    } while (atExpected != expected.end() && isspace(*atExpected));
+  }
+  if (atHave != have.end()) {
+    do {
+      atHave++;
+    } while (atHave != have.end() && isspace(*atHave));
+  }
+  return atHave == have.end() && atExpected == expected.end();
+}
+
 } // namespace
 
 class ParsesOkMatcher {
@@ -117,39 +156,39 @@ class HasSymbolsMatcher {
   return HasSymbolsMatcher(std::move(expected_symbols));
 }
 
-class SerializesToMatcher {
+class WhenSerializedMatcher {
  public:
   using is_gtest_matcher = void;
 
-  explicit SerializesToMatcher(std::string expected_result)
-      : expected_result_(std::move(expected_result)) {}
+  explicit WhenSerializedMatcher(
+      ::testing::Matcher<const std::string&> string_matcher)
+      : string_matcher_(std::move(string_matcher)) {}
 
-  bool MatchAndExplain(const ParseResult& result, std::ostream* listener)
-      const {
+  bool MatchAndExplain(
+      const ParseResult& result,
+      ::testing::MatchResultListener* listener) const {
     std::string outputText =
         SymbolTablePrinter::outputToText(result.getSymbolTable());
-    if (listener) {
-      *listener << "has output text \"" << outputText << "\"";
-    }
-    return outputText == expected_result_;
+    return MatchPrintAndExplain(outputText, string_matcher_, listener);
   }
 
-  void DescribeTo(std::ostream* os) const {
-    *os << "reparses to: " << ::testing::PrintToString(expected_result_);
+  void DescribeTo(::std::ostream* os) const {
+    *os << "matches after serializing ";
+    string_matcher_.DescribeTo(os);
   }
 
-  void DescribeNegationTo(std::ostream* os) const {
-    *os << "does not reparse to: "
-        << ::testing::PrintToString(expected_result_);
+  void DescribeNegationTo(::std::ostream* os) const {
+    *os << "does not match after serializing ";
+    string_matcher_.DescribeTo(os);
   }
 
  private:
-  const std::string expected_result_;
+  ::testing::Matcher<const std::string&> string_matcher_;
 };
 
-::testing::Matcher<const ParseResult&> SerializesTo(
-    std::string expected_symbols) {
-  return SerializesToMatcher(std::move(expected_symbols));
+::testing::Matcher<const ParseResult&> WhenSerialized(
+    ::testing::Matcher<const std::string&> string_matcher) {
+  return WhenSerializedMatcher(std::move(string_matcher));
 }
 
 class HasErrorsMatcher {
@@ -181,6 +220,37 @@ class HasErrorsMatcher {
 ::testing::Matcher<const ParseResult&> HasErrors(
     std::vector<std::string> expected_errors) {
   return HasErrorsMatcher(std::move(expected_errors));
+}
+
+class EqSquashingWhitespaceMatcher {
+ public:
+  using is_gtest_matcher = void;
+
+  explicit EqSquashingWhitespaceMatcher(std::string expected_string)
+      : expected_string_(std::move(expected_string)) {}
+
+  bool MatchAndExplain(const std::string& str, std::ostream* /* listener */)
+      const {
+    return StringEqSquashingWhitespace(str, expected_string_);
+  }
+
+  void DescribeTo(std::ostream* os) const {
+    *os << "equals squashing whitespace "
+        << ::testing::PrintToString(expected_string_);
+  }
+
+  void DescribeNegationTo(std::ostream* os) const {
+    *os << "does not equal squashing whitespace "
+        << ::testing::PrintToString(expected_string_);
+  }
+
+ private:
+  std::string expected_string_;
+};
+
+::testing::Matcher<const std::string&> EqSquashingWhitespace(
+    std::string expected_string) {
+  return EqSquashingWhitespaceMatcher(std::move(expected_string));
 }
 
 } // namespace io::substrait::textplan

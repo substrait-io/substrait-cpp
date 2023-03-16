@@ -9,14 +9,14 @@
 namespace io::substrait::textplan {
 
 ParseResult parseBinaryPlan(const ::substrait::proto::Plan& plan) {
-  InitialPlanProtoVisitor visitor(plan);
-  visitor.visit();
+  InitialPlanProtoVisitor visitor;
+  visitor.visit(plan);
   auto symbols = visitor.getSymbolTable();
   auto syntaxErrors = visitor.getErrorListener()->getErrorMessages();
   std::vector<std::string> semanticErrors;
 
-  PlanPrinterVisitor printer(plan, *symbols);
-  printer.visit();
+  PlanPrinterVisitor printer(*symbols);
+  printer.visit(plan);
   auto moreErrors = printer.getErrorListener()->getErrorMessages();
   semanticErrors.insert(
       semanticErrors.end(), moreErrors.begin(), moreErrors.end());

@@ -21,6 +21,15 @@ SymbolTableIterator SymbolTableIterator::operator++() {
   return *this;
 }
 
+bool operator==(const SymbolInfo& left, const SymbolInfo& right) {
+  return (left.name == right.name) && (left.location == right.location) &&
+      (left.type == right.type);
+}
+
+bool operator!=(const SymbolInfo& left, const SymbolInfo& right) {
+  return !(left == right);
+}
+
 std::string SymbolTable::getUniqueName(const std::string& base_name) {
   auto symbolSeenCount = names_.find(base_name);
   if (symbolSeenCount == names_.end()) {
@@ -58,8 +67,7 @@ SymbolInfo* SymbolTable::defineUniqueSymbol(
   return defineSymbol(unique_name, location, type, subtype, blob);
 }
 
-const SymbolInfo& SymbolTable::lookupSymbolByName(
-    const std::string& name) {
+const SymbolInfo& SymbolTable::lookupSymbolByName(const std::string& name) {
   auto itr = symbols_by_name_.find(name);
   if (itr == symbols_by_name_.end()) {
     return kUnknownSymbol;
@@ -76,9 +84,7 @@ const SymbolInfo& SymbolTable::lookupSymbolByLocation(
   return *symbols_[itr->second];
 }
 
-const SymbolInfo& SymbolTable::nthSymbolByType(
-    uint32_t n,
-    SymbolType type) {
+const SymbolInfo& SymbolTable::nthSymbolByType(uint32_t n, SymbolType type) {
   int count = 0;
   for (const auto& symbol : symbols_) {
     if (symbol->type == type) {
@@ -96,5 +102,12 @@ SymbolTableIterator SymbolTable::begin() const {
 SymbolTableIterator SymbolTable::end() const {
   return {this, symbols_by_name_.size()};
 }
+
+const SymbolInfo SymbolTable::kUnknownSymbol = {
+    "__UNKNOWN__",
+    Location::kUnknownLocation,
+    SymbolType::kUnknown,
+    std::nullopt,
+    std::nullopt};
 
 } // namespace io::substrait::textplan
