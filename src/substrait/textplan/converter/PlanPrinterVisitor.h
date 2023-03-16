@@ -28,15 +28,64 @@ class PlanPrinterVisitor : public BasePlanProtoVisitor {
     return errorListener_;
   };
 
-  std::string printRelation(
-      const std::string& symbolName,
-      const ::substrait::proto::Rel* relation);
+  std::string printRelation(const ::substrait::proto::Rel* relation);
 
  private:
+  std::string lookupFieldReference(uint32_t field_reference);
+  std::string lookupFunctionReference(uint32_t function_reference);
+
+  std::any visitSelect(
+      const ::substrait::proto::Expression_MaskExpression_Select& select)
+      override;
+  std::any visitType(const ::substrait::proto::Type& type) override;
+  std::any visitStruct(
+      const ::substrait::proto::Type_Struct& structure) override;
+  std::any visitLiteral(
+      const ::substrait::proto::Expression::Literal& literal) override;
+  std::any visitFieldReference(
+      const ::substrait::proto::Expression::FieldReference& ref) override;
+  std::any visitScalarFunction(
+      const ::substrait::proto::Expression::ScalarFunction& function) override;
+  std::any visitWindowFunction(
+      const ::substrait::proto::Expression::WindowFunction& function) override;
+  std::any visitIfThen(
+      const ::substrait::proto::Expression::IfThen& ifthen) override;
+  std::any visitSwitchExpression(
+      const ::substrait::proto::Expression::SwitchExpression& expression)
+      override;
+  std::any visitSingularOrList(
+      const ::substrait::proto::Expression::SingularOrList& expression)
+      override;
+  std::any visitMultiOrList(
+      const ::substrait::proto::Expression::MultiOrList& expression) override;
+  std::any visitCast(const ::substrait::proto::Expression::Cast& cast) override;
+  std::any visitSubquery(
+      const ::substrait::proto::Expression_Subquery& query) override;
+  std::any visitNested(
+      const ::substrait::proto::Expression_Nested& structure) override;
+  std::any visitEnum(const ::substrait::proto::Expression_Enum& value) override;
+  std::any visitStructSelect(
+      const ::substrait::proto::Expression_MaskExpression_StructSelect&
+          structure) override;
+  std::any visitListSelect(
+      const ::substrait::proto::Expression_MaskExpression_ListSelect& select)
+      override;
+  std::any visitListSelectItem(
+      const ::substrait::proto::
+          Expression_MaskExpression_ListSelect_ListSelectItem& item) override;
+  std::any visitMapSelect(
+      const ::substrait::proto::Expression_MaskExpression_MapSelect& select)
+      override;
+  std::any visitExpressionLiteralStruct(
+      const ::substrait::proto::Expression_Literal_Struct& structure) override;
+  std::any visitFileOrFiles(
+      const ::substrait::proto::ReadRel_LocalFiles_FileOrFiles& structure)
+      override;
+  std::any visitReferenceSegment(
+      const ::substrait::proto::Expression_ReferenceSegment& segment) override;
+
   std::any visitAggregateFunction(
       const ::substrait::proto::AggregateFunction& function) override;
-  std::any visitExpression(
-      const ::substrait::proto::Expression& expression) override;
   std::any visitMaskExpression(
       const ::substrait::proto::Expression::MaskExpression& expression)
       override;

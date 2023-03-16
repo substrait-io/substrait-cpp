@@ -12,6 +12,7 @@ header:
     - '.clang-tidy'
     - '.cmake-format'
     - '.licenserc.yaml'
+    - 'third_party/abseil-cpp'
     - 'third_party/fmt'
     - 'third_party/googletest'
     - 'third_party/substrait'

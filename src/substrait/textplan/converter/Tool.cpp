@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include <getopt.h>
+#include <glob.h>
 
 #include <iostream>
 
@@ -23,6 +24,12 @@ void convertJsonToText(const char* filename) {
   }
 
   auto result = parseBinaryPlan(*planOrError);
+  auto errors = result.getAllErrors();
+  if (!errors.empty()) {
+    for (const auto& err : errors) {
+      std::cerr << err << std::endl;
+    }
+  }
   std::cout << SymbolTablePrinter::outputToText(result.getSymbolTable());
 }
 
@@ -47,8 +54,12 @@ int main(int argc, char* argv[]) {
 
   int currArg = optind;
   for (; currArg < argc; currArg++) {
-    printf("===== %s =====\n", argv[currArg]);
-    io::substrait::textplan::convertJsonToText(argv[currArg]);
+    glob_t globResult;
+    glob(argv[currArg], GLOB_TILDE, nullptr, &globResult);
+    for (size_t i = 0; i < globResult.gl_pathc; i++) {
+      printf("===== %s =====\n", globResult.gl_pathv[i]);
+      io::substrait::textplan::convertJSONToText(globResult.gl_pathv[i]);
+    }
   }
 
   return EXIT_SUCCESS;

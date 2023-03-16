@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
+set(ABSL_PROPAGATE_CXX_STD ON)
+add_subdirectory(abseil-cpp)
+
 add_subdirectory(fmt)
 add_subdirectory(googletest)
 

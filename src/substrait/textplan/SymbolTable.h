@@ -65,6 +65,8 @@ enum class SourceType {
   kExtensionTable = 4,
 };
 
+const std::string& SymbolTypeName(SymbolType type);
+
 struct SymbolInfo {
   std::string name;
   Location location;
@@ -83,6 +85,8 @@ struct SymbolInfo {
         type(newType),
         subtype(std::move(newSubtype)),
         blob(std::move(newBlob)){};
+
+  static const SymbolInfo kUnknown;
 
   friend bool operator==(const SymbolInfo& left, const SymbolInfo& right);
   friend bool operator!=(const SymbolInfo& left, const SymbolInfo& right);
@@ -149,19 +153,17 @@ class SymbolTable {
   // Add the capability for ::testing::PrintToString to print this.
   friend std::ostream& operator<<(std::ostream& os, const SymbolTable& result) {
     os << std::string("{");
-    bool outputFirst = false;
+    bool hasPreviousText = false;
     for (const auto& symbol : result.getSymbols()) {
-      if (outputFirst) {
+      if (hasPreviousText) {
         os << std::string(", ");
       }
       os << symbol->name;
-      outputFirst = true;
+      hasPreviousText = true;
     }
     os << std::string("}");
     return os;
   }
-
-  static const SymbolInfo kUnknownSymbol;
 
  private:
   friend SymbolTableIterator;

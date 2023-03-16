@@ -53,6 +53,9 @@ class InitialPlanProtoVisitor : public BasePlanProtoVisitor {
   std::any visitExtensionTable(
       const ::substrait::proto::ReadRel_ExtensionTable& table) override;
 
+  std::any visitNamedStruct(
+      const ::substrait::proto::NamedStruct& named) override;
+
   std::shared_ptr<SymbolTable> symbolTable_;
   std::shared_ptr<SubstraitErrorListener> errorListener_;
 };

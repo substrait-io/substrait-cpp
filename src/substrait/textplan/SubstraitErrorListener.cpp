@@ -17,6 +17,11 @@ void SubstraitErrorListener::addError(
 std::vector<std::string> SubstraitErrorListener::getErrorMessages() {
   std::vector<std::string> messages;
   for (const auto& instance : getErrors()) {
+    if (instance.location.line == -1 ||
+        instance.location.charPositionInLine == -1) {
+      messages.push_back(instance.message);
+      continue;
+    }
     messages.push_back(
         std::to_string(instance.location.line) + ":" +
         std::to_string(instance.location.charPositionInLine) + " → " +
