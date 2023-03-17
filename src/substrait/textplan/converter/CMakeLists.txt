@@ -5,6 +5,9 @@ set(TEXTPLAN_SRCS
     InitialPlanProtoVisitor.h
     BasePlanProtoVisitor.cpp
     BasePlanProtoVisitor.h
+    HierarchyStack.h
+    PipelineVisitor.cpp
+    PipelineVisitor.h
     PlanPrinterVisitor.cpp
     PlanPrinterVisitor.h
     LoadBinary.cpp

@@ -9,6 +9,7 @@
 #include "substrait/proto/algebra.pb.h"
 #include "substrait/proto/extensions/extensions.pb.h"
 #include "substrait/textplan/Any.h"
+#include "substrait/textplan/RelationData.h"
 #include "substrait/textplan/SymbolTable.h"
 #include "substrait/textplan/converter/PlanPrinterVisitor.h"
 
@@ -153,15 +154,56 @@ std::string typeToText(const ::substrait::proto::Type& type) {
 std::string relationToText(
     const SymbolTable& symbolTable,
     const SymbolInfo& info) {
-  auto relation = ANY_CAST(const ::substrait::proto::Rel*, info.blob);
+  auto relationData = ANY_CAST(std::shared_ptr<RelationData>, info.blob);
 
   PlanPrinterVisitor printer(symbolTable);
   return printer.printRelation(relation);
 }
 
+std::vector<std::string> pipelineToPath(
+    const SymbolTable& symbolTable,
+    const ::substrait::proto::Rel* relation) {
+  std::vector<std::string> pipeline;
+  auto info = symbolTable.lookupSymbolByLocation(
+      Location(static_cast<const google::protobuf::Message*>(relation)));
+  auto relationData = ANY_CAST(std::shared_ptr<RelationData>, info.blob);
+  pipeline.push_back(info.name);
+  if (relationData->continuingPipeline != nullptr) {
+    auto tailPipe =
+        pipelineToPath(symbolTable, relationData->continuingPipeline);
+    pipeline.insert(pipeline.end(), tailPipe.begin(), tailPipe.end());
+  }
+  return pipeline;
+}
+
 std::string outputPipelinesSection(const SymbolTable& symbolTable) {
-  // TODO: Implement.
-  return "";
+  std::stringstream text;
+  bool hasPreviousText = false;
+  for (const SymbolInfo& info : symbolTable) {
+    if (info.type != SymbolType::kPlanRelation &&
+        info.type != SymbolType::kRelation)
+      continue;
+    auto relationData = ANY_CAST(std::shared_ptr<RelationData>, info.blob);
+    for (auto pipelineStart : relationData->newPipelines) {
+      auto pipeline = pipelineToPath(symbolTable, pipelineStart);
+      pipeline.insert(pipeline.begin(), info.name);
+      bool isFirstPipe = true;
+      for (auto pipe = pipeline.rbegin(); pipe != pipeline.rend(); pipe++) {
+        if (isFirstPipe) {
+          text << "  " << *pipe;
+        } else {
+          text << " -> " << *pipe;
+        }
+        isFirstPipe = false;
+      }
+      text << ";\n";
+      hasPreviousText = true;
+    }
+  }
+  if (hasPreviousText) {
+    return "pipelines {\n" + text.str() + "}\n";
+  }
+  return text.str();
 }
 
 std::string outputRelationsSection(const SymbolTable& symbolTable) {

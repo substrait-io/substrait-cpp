@@ -10,8 +10,11 @@
 #include "substrait/proto/ProtoUtils.h"
 #include "substrait/proto/algebra.pb.h"
 #include "substrait/proto/plan.pb.h"
+#include "substrait/textplan/Any.h"
 #include "substrait/textplan/Location.h"
+#include "substrait/textplan/RelationData.h"
 #include "substrait/textplan/SymbolTable.h"
+#include "substrait/textplan/converter/HierarchyStack.h"
 
 namespace io::substrait::textplan {
 
@@ -70,7 +73,9 @@ std::any InitialPlanProtoVisitor::visitPlanRelation(
       PROTO_LOCATION(relation),
       SymbolType::kPlanRelation,
       std::nullopt,
-      &relation);
+      // TODO -- Deal with the fact that we aren't passing the right type here.
+      std::make_shared<RelationData>(
+          (const ::substrait::proto::Rel*)(&relation), nullptr));
   return std::nullopt;
 }
 
@@ -78,6 +83,7 @@ std::any InitialPlanProtoVisitor::visitRelation(
     const ::substrait::proto::Rel& relation) {
   std::string name =
       ::substrait::proto::relTypeCaseName(relation.rel_type_case());
+  HierarchyScope mark(hierarchyStack_.get(), &relation);
   BasePlanProtoVisitor::visitRelation(relation);
   auto uniqueName = symbolTable_->getUniqueName(name);
   symbolTable_->defineSymbol(
@@ -85,7 +91,7 @@ std::any InitialPlanProtoVisitor::visitRelation(
       PROTO_LOCATION(relation),
       SymbolType::kRelation,
       relation.rel_type_case(),
-      &relation);
+      std::make_shared<RelationData>(&relation, hierarchyStack_->getEnclosingScope()));
   return std::nullopt;
 }
 

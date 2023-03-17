@@ -135,11 +135,11 @@ class SymbolTable {
       const std::any& subtype,
       const std::any& blob);
 
-  const SymbolInfo& lookupSymbolByName(const std::string& name);
+  const SymbolInfo& lookupSymbolByName(const std::string& name) const;
 
-  const SymbolInfo& lookupSymbolByLocation(const Location& location);
+  const SymbolInfo& lookupSymbolByLocation(const Location& location) const;
 
-  const SymbolInfo& nthSymbolByType(uint32_t n, SymbolType type);
+  const SymbolInfo& nthSymbolByType(uint32_t n, SymbolType type) const;
 
   [[nodiscard]] SymbolTableIterator begin() const;
 

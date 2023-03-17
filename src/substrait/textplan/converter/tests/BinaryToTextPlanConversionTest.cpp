@@ -146,8 +146,11 @@ std::vector<TestCase> getTestCases() {
           AllOf(
               HasSymbols({"local", "read", "root"}),
               WhenSerialized(EqSquashingWhitespace(
-                  R"(read relation read {
-                    source local;
+                  R"(pipelines {
+                    read -> root;
+                  }
+
+                  read relation read {
                   }
 
                   source local_files local {
@@ -178,10 +181,12 @@ std::vector<TestCase> getTestCases() {
               HasSymbols(
                   {"schema", "cost", "count", "named", "#2", "read", "root"}),
               WhenSerialized(EqSquashingWhitespace(
-                  R"(read relation read {
-                           source named;
-                              base_schema schema;
-                           }
+                  R"(pipelines {
+                        read -> root;
+                     }
+
+                     read relation read {
+                     }
 
                            schema schema {
                              cost fp32;
@@ -307,16 +312,25 @@ std::vector<TestCase> getTestCases() {
                    "local2",
                    "read2",
                    "project2",
-                   "root2"})
-#ifdef PIPELINES_IMPLEMENTED
-                  ,
-              WhenSerialized(EqSquashingWhitespace(
-                  R"(pipelines {
-                       read -> project -> root;
-                       read2 -> project2 -> root2;
-                     })"))
-#endif
-                  ),
+                   "root2"}),
+              WhenSerialized(
+                  ::testing::HasSubstr("pipelines {\n"
+                                       "  read -> project -> root;\n"
+                                       "  read2 -> project2 -> root2;\n"
+                                       "}\n"))),
+      },
+      {
+          "pipeline with a hash join",
+          "relations: { root: { input: { hash_join: { left { read: { local_files {} } } right { read: { local_files {} } } } } } }",
+          AllOf(
+              HasSymbols(
+                  {"local", "read", "local2", "read2", "hashjoin", "root"}),
+              WhenSerialized(
+                  ::testing::HasSubstr("pipelines {\n"
+                                       "  read -> hashjoin;\n"
+                                       "  read2 -> hashjoin;\n"
+                                       "  hashjoin -> root;\n"
+                                       "}\n"))),
       },
   };
   return cases;

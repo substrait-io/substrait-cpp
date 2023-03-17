@@ -8,6 +8,7 @@
 #include "substrait/textplan/SubstraitErrorListener.h"
 #include "substrait/textplan/SymbolTable.h"
 #include "substrait/textplan/converter/BasePlanProtoVisitor.h"
+#include "substrait/textplan/converter/HierarchyStack.h"
 
 namespace io::substrait::textplan {
 
@@ -15,9 +16,10 @@ namespace io::substrait::textplan {
 // process which identifies the prominent symbols and gives them names.
 class InitialPlanProtoVisitor : public BasePlanProtoVisitor {
  public:
-  explicit InitialPlanProtoVisitor() {
+  explicit InitialPlanProtoVisitor() : BasePlanProtoVisitor() {
     symbolTable_ = std::make_shared<SymbolTable>();
     errorListener_ = std::make_shared<SubstraitErrorListener>();
+    hierarchyStack_ = std::make_shared<HierarchyStack>();
   };
 
   [[nodiscard]] std::shared_ptr<const SymbolTable> getSymbolTable() const {
@@ -58,6 +60,7 @@ class InitialPlanProtoVisitor : public BasePlanProtoVisitor {
 
   std::shared_ptr<SymbolTable> symbolTable_;
   std::shared_ptr<SubstraitErrorListener> errorListener_;
+  std::shared_ptr<HierarchyStack> hierarchyStack_;
 };
 
 } // namespace io::substrait::textplan

@@ -24,7 +24,8 @@ class Location {
  public:
   constexpr explicit Location(antlr4::ParserRuleContext* node) : loc_(node) {}
 
-  constexpr explicit Location(google::protobuf::Message* msg) : loc_(msg) {}
+  constexpr explicit Location(const google::protobuf::Message* msg)
+      : loc_(msg) {}
 
   static const Location kUnknownLocation;
 
@@ -35,7 +36,8 @@ class Location {
   friend std::hash<Location>;
   friend std::less<Location>;
 
-  std::variant<antlr4::ParserRuleContext*, google::protobuf::Message*> loc_;
+  std::variant<antlr4::ParserRuleContext*, const google::protobuf::Message*>
+      loc_;
 };
 
 } // namespace io::substrait::textplan
