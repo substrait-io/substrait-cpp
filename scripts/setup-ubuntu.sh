@@ -19,6 +19,7 @@ sudo --preserve-env apt install -y \
   ccache \
   ninja-build \
   checkinstall \
+  clang-tidy \
   git \
   wget \
   libprotobuf-dev \
