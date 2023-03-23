@@ -1,13 +1,22 @@
 header:
   license:
     spdx-id: Apache-2.0
-    copyright-owner: Apache Software Foundation
+    content: |
+      SPDX-License-Identifier: Apache-2.0
 
   paths-ignore:
-    - 'dist'
-    - 'licenses'
+    - '.github'
+    - '.gitignore'
+    - '.gitmodules'
+    - '.clang-format'
+    - '.clang-tidy'
+    - '.licenserc.yaml'
+    - 'third_party/fmt'
+    - 'third_party/googletest'
+    - 'third_party/substrait'
+    - 'third_party/yaml-cpp'
     - '**/*.md'
-    - 'LICENSE'
-    - 'NOTICE'
+    - '**/*.json'
+    - '**/*.log'
 
-  comment: on-failure
+  comment: never

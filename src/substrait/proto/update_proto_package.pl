@@ -1,4 +1,5 @@
 #!/bin/perl -w
+# SPDX-License-Identifier: Apache-2.0
 
 # Renames package declarations for protobuffers from substrait to substrait.proto.
 # This allows us to modify where the generated C++ have their definitions without
