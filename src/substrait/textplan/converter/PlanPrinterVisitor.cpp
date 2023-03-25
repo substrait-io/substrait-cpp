@@ -10,6 +10,7 @@
 #include "substrait/proto/ProtoUtils.h"
 #include "substrait/proto/algebra.pb.h"
 #include "substrait/textplan/Any.h"
+#include "substrait/textplan/RelationData.h"
 
 namespace io::substrait::textplan {
 
@@ -51,16 +52,17 @@ std::string PlanPrinterVisitor::printRelation(
 }
 
 std::string PlanPrinterVisitor::lookupFieldReference(uint32_t field_reference) {
-  auto field =
-      symbolTable_->nthSymbolByType(field_reference, SymbolType::kField);
-  if (field != SymbolInfo::kUnknown) {
-    return field.name;
-  } else {
-    errorListener_->addError(
-        "Field number " + std::to_string(field_reference) +
-        " referenced but not defined.");
-    return "field#" + std::to_string(field_reference);
+  if (*currentScope_ != SymbolInfo::kUnknown) {
+    auto relationData =
+        ANY_CAST(std::shared_ptr<RelationData>, currentScope_->blob);
+    if (field_reference < relationData->fieldReferences.size()) {
+      return relationData->fieldReferences[field_reference];
+    }
   }
+  errorListener_->addError(
+      "Field number " + std::to_string(field_reference) +
+      " referenced but not defined.");
+  return "field#" + std::to_string(field_reference);
 }
 
 std::string PlanPrinterVisitor::lookupFunctionReference(
@@ -520,7 +522,7 @@ std::any PlanPrinterVisitor::visitAggregateFunction(
     }
     hasPreviousText = true;
   }
-  for (const auto& arg : function.args()) {
+  for (const auto& arg : function.args()) { // NOLINT(deprecated-declarations)
     if (hasPreviousText) {
       text << ", ";
     }
@@ -554,6 +556,23 @@ std::any PlanPrinterVisitor::visitMaskExpression(
       "Mask expressions are not yet supported: " +
       expression.ShortDebugString());
   return std::string("MASKEXPR-NOT-YET-IMPLEMENTED");
+}
+
+std::any PlanPrinterVisitor::visitRelation(
+    const ::substrait::proto::Rel& relation) {
+  // Mark the current scope for any operations within this relation.
+  auto previousScope = currentScope_;
+  const SymbolInfo& symbol =
+      symbolTable_->lookupSymbolByLocation(PROTO_LOCATION(relation));
+  if (symbol != SymbolInfo::kUnknown) {
+    currentScope_ = &symbol;
+  }
+
+  auto result = BasePlanProtoVisitor::visitRelation(relation);
+
+  // Reset the scope back to what it was before we were called.
+  currentScope_ = previousScope;
+  return result;
 }
 
 std::any PlanPrinterVisitor::visitReadRelation(
@@ -709,6 +728,24 @@ std::any PlanPrinterVisitor::visitProjectRelation(
   std::stringstream text;
   for (const auto& expr : relation.expressions()) {
     text << "  expression " << ANY_CAST(std::string, visitExpression(expr))
+         << ";\n";
+  }
+  return text.str();
+}
+
+std::any PlanPrinterVisitor::visitJoinRelation(
+    const ::substrait::proto::JoinRel& relation) {
+  std::stringstream text;
+  text << "  type "
+       << ::substrait::proto::JoinRel_JoinType_Name(relation.type()) << ";\n";
+  if (relation.has_expression()) {
+    text << "  expression "
+         << ANY_CAST(std::string, visitExpression(relation.expression()))
+         << ";\n";
+  }
+  if (relation.has_post_join_filter()) {
+    text << "  post_join "
+         << ANY_CAST(std::string, visitExpression(relation.post_join_filter()))
          << ";\n";
   }
   return text.str();

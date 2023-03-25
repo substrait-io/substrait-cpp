@@ -204,6 +204,155 @@ std::vector<TestCase> getTestCases() {
                    })"))),
       },
       {
+          "read three named tables with two joins",
+          R"(relations: {
+            root: {
+              input: {
+                join: {
+                  left: {
+                    join: {
+                      left: {
+                        read: {
+                          base_schema {
+                            names: "order_id"
+                            names: "product_id"
+                            names: "count"
+                            struct {
+                              types { i32 { } }
+                              types { i32 { } }
+                              types { i64 { } } }
+                          }
+                          named_table { names: "#1" }
+                        }
+                      }
+                      right: {
+                        read: {
+                          base_schema {
+                            names: "product_id"
+                            names: "cost"
+                            struct {
+                              types { i32 { } }
+                              types { fp32 { } } }
+                          }
+                          named_table { names: "#2" }
+                        }
+                      }
+                      expression: {
+                        selection: {
+                          direct_reference: {
+                            struct_field: {
+                              field: 1
+                            }
+                          }
+                        }
+                      }
+                      post_join_filter: {
+                        selection: {
+                          direct_reference: {
+                            struct_field: {
+                              field: 2
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                  right: {
+                    read: {
+                    base_schema {
+                      names: "company"
+                      names: "order_id"
+                      struct {
+                        types { string { } }
+                        types { i32 { } }
+                      }
+                    }
+                    named_table { names: "#3" }
+                  }
+                }
+                expression: {
+                   selection: {
+                     direct_reference: {
+                       struct_field: {
+                         field: 6
+                       }
+                     }
+                   }
+                 }
+                }
+              }
+            }
+          })",
+          WhenSerialized(EqSquashingWhitespace(
+              R"(pipelines {
+                read -> join;
+                read2 -> join;
+                join -> join2;
+                read3 -> join2;
+                join2 -> root;
+              }
+
+              read relation read {
+                source named;
+                base_schema schema;
+              }
+
+              read relation read2 {
+                source named2;
+                base_schema schema2;
+              }
+
+              join relation join {
+                type JOIN_TYPE_UNSPECIFIED;
+                expression product_id;
+                post_join count;
+              }
+
+              read relation read3 {
+                source named3;
+                base_schema schema3;
+              }
+
+              join relation join2 {
+                type JOIN_TYPE_UNSPECIFIED;
+                expression order_id;
+              }
+
+              schema schema {
+                order_id i32;
+                product_id i32;
+                count i64;
+              }
+
+              schema schema2 {
+                product_id i32;
+                cost fp32;
+              }
+
+              schema schema3 {
+                company string;
+                order_id i32;
+               }
+
+              source named_table named {
+                names = [
+                  "#1",
+                ]
+              }
+
+              source named_table named2 {
+                names = [
+                  "#2",
+                ]
+              }
+
+              source named_table named3 {
+                names = [
+                  "#3",
+                ]
+              })")),
+      },
+      {
           "simple expression with deprecated args",
           R"(relations: {
             root: {
