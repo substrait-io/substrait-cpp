@@ -19,12 +19,14 @@ jobs:
         run: ./scripts/setup-ubuntu.sh
       - name: Check License Header
         uses: apache/skywalking-eyes/header@v0.4.0
-      - name: Format CMake files
-        run: ./scripts/cmake-format.sh
-      - name: Format code
-        run: ./scripts/clang-format.sh
-      - name: Clang-tidy Check
-        run: ./scripts/clang-tidy.sh
+      - name: Formatting Cmake files
+        run: ./scripts/run-cmake-format.sh
+      - name: Formatting Clang files
+        run: ./scripts/run-clang-format.sh
+      - name: Checking formatting
+        run: git diff --exit-code
+      - name: Checking code style
+        run: ./scripts/run-clang-tidy.sh
   build:
     runs-on: ubuntu-latest
 

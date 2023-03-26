@@ -8,7 +8,7 @@
 
 namespace io::substrait::textplan {
 
-ParseResult ParseBinaryPlan(const ::substrait::proto::Plan& plan) {
+ParseResult parseBinaryPlan(const ::substrait::proto::Plan& plan) {
   InitialPlanProtoVisitor visitor;
   visitor.visit(plan);
   auto symbols = visitor.getSymbolTable();

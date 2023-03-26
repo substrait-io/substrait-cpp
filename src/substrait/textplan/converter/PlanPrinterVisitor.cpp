@@ -18,8 +18,8 @@ std::string PlanPrinterVisitor::printRelation(
     const ::substrait::proto::Rel* relation) {
   std::stringstream text;
 
-  text << RelTypeCaseName(relation->rel_type_case()) << " relation "
-       << symbolName << " {\n";
+  text << ::substrait::proto::relTypeCaseName(relation->rel_type_case())
+       << " relation " << symbolName << " {\n";
   auto symbol = symbolTable_->lookupSymbolByLocation(
       Location((google::protobuf::Message*)&relation));
   if (symbol != SymbolTable::kUnknownSymbol) {
@@ -28,7 +28,8 @@ std::string PlanPrinterVisitor::printRelation(
   auto result = this->visitRelation(*relation);
   if (result.type() != typeid(std::string)) {
     return "ERROR:  Relation subtype " +
-        RelTypeCaseName((relation->rel_type_case())) + " not supported!\n";
+        ::substrait::proto::relTypeCaseName((relation->rel_type_case())) +
+        " not supported!\n";
   }
   text << ANY_CAST(std::string, result);
   text << "}\n";

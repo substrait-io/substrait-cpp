@@ -205,6 +205,7 @@ class ParameterizedType {
       const std::shared_ptr<const ParameterizedType>& type) const {
     return nullable() || nullable() == type->nullable();
   }
+
   /// Test whether a type is a Wildcard type or not, always false for non
   /// StringLiteral type.
   [[nodiscard]] virtual bool isWildcard() const {
@@ -616,6 +617,7 @@ class ParameterizedMap : public ParameterizedTypeBase {
   [[nodiscard]] TypeKind kind() const override {
     return TypeKind::kMap;
   }
+
   [[nodiscard]] const ParameterizedTypePtr& valueType() const {
     return valueType_;
   }
@@ -630,52 +632,52 @@ class ParameterizedMap : public ParameterizedTypeBase {
   const ParameterizedTypePtr valueType_;
 };
 
-std::shared_ptr<const ScalarType<TypeKind::kBool>> BOOL();
+std::shared_ptr<const ScalarType<TypeKind::kBool>> boolean();
 
-std::shared_ptr<const ScalarType<TypeKind::kI8>> TINYINT();
+std::shared_ptr<const ScalarType<TypeKind::kI8>> tinyint();
 
-std::shared_ptr<const ScalarType<TypeKind::kI16>> SMALLINT();
+std::shared_ptr<const ScalarType<TypeKind::kI16>> smallint();
 
-std::shared_ptr<const ScalarType<TypeKind::kI32>> INTEGER();
+std::shared_ptr<const ScalarType<TypeKind::kI32>> integer();
 
-std::shared_ptr<const ScalarType<TypeKind::kI64>> BIGINT();
+std::shared_ptr<const ScalarType<TypeKind::kI64>> bigint();
 
-std::shared_ptr<const ScalarType<TypeKind::kFp32>> FLOAT();
+std::shared_ptr<const ScalarType<TypeKind::kFp32>> float4();
 
-std::shared_ptr<const ScalarType<TypeKind::kFp64>> DOUBLE();
+std::shared_ptr<const ScalarType<TypeKind::kFp64>> float8();
 
-std::shared_ptr<const ScalarType<TypeKind::kString>> STRING();
+std::shared_ptr<const ScalarType<TypeKind::kString>> string();
 
-std::shared_ptr<const ScalarType<TypeKind::kBinary>> BINARY();
+std::shared_ptr<const ScalarType<TypeKind::kBinary>> binary();
 
-std::shared_ptr<const ScalarType<TypeKind::kTimestamp>> TIMESTAMP();
+std::shared_ptr<const ScalarType<TypeKind::kTimestamp>> timestamp();
 
-std::shared_ptr<const ScalarType<TypeKind::kTimestampTz>> TimestampTz();
+std::shared_ptr<const ScalarType<TypeKind::kTimestampTz>> timestampTz();
 
-std::shared_ptr<const ScalarType<TypeKind::kDate>> DATE();
+std::shared_ptr<const ScalarType<TypeKind::kDate>> date();
 
-std::shared_ptr<const ScalarType<TypeKind::kTime>> TIME();
+std::shared_ptr<const ScalarType<TypeKind::kTime>> time();
 
-std::shared_ptr<const ScalarType<TypeKind::kIntervalYear>> IntervalYear();
+std::shared_ptr<const ScalarType<TypeKind::kIntervalYear>> intervalYear();
 
-std::shared_ptr<const ScalarType<TypeKind::kIntervalDay>> IntervalDay();
+std::shared_ptr<const ScalarType<TypeKind::kIntervalDay>> intervalDay();
 
-std::shared_ptr<const ScalarType<TypeKind::kUuid>> UUID();
+std::shared_ptr<const ScalarType<TypeKind::kUuid>> uuid();
 
-std::shared_ptr<const Decimal> DECIMAL(int precision, int scale);
+std::shared_ptr<const Decimal> decimal(int precision, int scale);
 
-std::shared_ptr<const Varchar> VARCHAR(int len);
+std::shared_ptr<const Varchar> varchar(int len);
 
-std::shared_ptr<const FixedChar> FixedChar(int len);
+std::shared_ptr<const FixedChar> fixedChar(int len);
 
-std::shared_ptr<const FixedBinary> FixedBinary(int len);
+std::shared_ptr<const FixedBinary> fixedBinary(int len);
 
-std::shared_ptr<const List> LIST(const TypePtr& elementType);
+std::shared_ptr<const List> list(const TypePtr& elementType);
 
-std::shared_ptr<const Map> MAP(
+std::shared_ptr<const Map> map(
     const TypePtr& keyType,
     const TypePtr& valueType);
 
-std::shared_ptr<const Struct> STRUCT(const std::vector<TypePtr>& children);
+std::shared_ptr<const Struct> row(const std::vector<TypePtr>& children);
 
 } // namespace io::substrait

@@ -9,7 +9,7 @@ rm -rf tmp && mkdir tmp && cmake -Btmp -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 pushd tmp/src/substrait/proto && make -j && popd || exit
 # Run clang-tidy
 if [ "$1" == "fix" ]; then
-   python3 scripts/run-clang-tidy.py "$WORKDIR" "tmp" "third_party" "h,hpp,cc,cpp" "--quiet --fix --fix-errors"
+   python3 scripts/run-clang-tidy.py "$WORKDIR" "tmp" "third_party" "h,hpp,cc,cpp" "--quiet --fix"
 else
    python3 scripts/run-clang-tidy.py "$WORKDIR" "tmp" "third_party" "h,hpp,cc,cpp" "--quiet"
 fi

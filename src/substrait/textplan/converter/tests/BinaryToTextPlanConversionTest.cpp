@@ -23,13 +23,13 @@ class TestCase {
 class BinaryToTextPlanConverterTestFixture
     : public ::testing::TestWithParam<TestCase> {};
 
-std::vector<TestCase> GetTestCases() {
+std::vector<TestCase> getTestCases() {
   static std::vector<TestCase> cases = {
       {
           "bad proto input",
           "gibberish",
-          HasErrors({"1:10 → Message type \"substrait.proto.Plan\" has no "
-                     "field named \"gibberish\"."}),
+          HasErrors(
+              {"1:10 → Message type \"substrait.proto.Plan\" has no field named \"gibberish\"."}),
       },
       {
           "empty plan",
@@ -157,8 +157,7 @@ std::vector<TestCase> GetTestCases() {
       },
       {
           "read named table",
-          "relations: { root: { input: { read: { base_schema {} named_table { "
-          "names: \"#2\" } } } } }",
+          "relations: { root: { input: { read: { base_schema {} named_table { names: \"#2\" } } } } }",
           AllOf(
               HasSymbols({"schema", "named", "read", "root"}),
               WhenSerialized(EqSquashingWhitespace(
@@ -176,24 +175,22 @@ std::vector<TestCase> GetTestCases() {
       },
       {
           "single three node pipeline",
-          "relations: { root: { input: { project: { input { read: { "
-          "local_files {} } } } } } }",
+          "relations: { root: { input: { project: { input { read: { local_files {} } } } } } }",
           HasSymbols({"local", "read", "project", "root"}),
       },
       {
           "two identical three node pipelines",
-          "relations: { root: { input: { project: { input { read: { "
-          "local_files {} } } } } } }"
-          "relations: { root: { input: { project: { input { read: { "
-          "local_files {} } } } } } }",
-          HasSymbols({"local",
-                      "read",
-                      "project",
-                      "root",
-                      "local2",
-                      "read2",
-                      "project2",
-                      "root2"}),
+          "relations: { root: { input: { project: { input { read: { local_files {} } } } } } }"
+          "relations: { root: { input: { project: { input { read: { local_files {} } } } } } }",
+          HasSymbols(
+              {"local",
+               "read",
+               "project",
+               "root",
+               "local2",
+               "read2",
+               "project2",
+               "root2"}),
       },
   };
   return cases;
@@ -202,21 +199,21 @@ std::vector<TestCase> GetTestCases() {
 TEST_P(BinaryToTextPlanConverterTestFixture, Parse) {
   auto [name, input, matcher] = GetParam();
 
-  auto planOrError = LoadFromText(input);
+  auto planOrError = loadFromText(input);
   if (!planOrError.ok()) {
     ParseResult result(SymbolTable(), planOrError.errors(), {});
     ASSERT_THAT(result, matcher);
     return;
   }
 
-  auto result = ParseBinaryPlan(*planOrError);
+  auto result = parseBinaryPlan(*planOrError);
   ASSERT_THAT(result, matcher);
 }
 
 INSTANTIATE_TEST_SUITE_P(
     BinaryPlanConversionTests,
     BinaryToTextPlanConverterTestFixture,
-    ::testing::ValuesIn(GetTestCases()),
+    ::testing::ValuesIn(getTestCases()),
     [](const testing::TestParamInfo<TestCase>& info) {
       std::string identifier = info.param.name;
       // Remove non-alphanumeric characters to make the test framework happy.
@@ -232,13 +229,13 @@ INSTANTIATE_TEST_SUITE_P(
 class BinaryToTextPlanConversionTest : public ::testing::Test {};
 
 TEST_F(BinaryToTextPlanConversionTest, loadFromJSON) {
-  std::string json = ReadFromFile("data/q6_first_stage.json");
-  auto planOrError = LoadFromJson(json);
+  std::string json = readFromFile("data/q6_first_stage.json");
+  auto planOrError = loadFromJson(json);
   ASSERT_TRUE(planOrError.ok());
   auto plan = *planOrError;
   EXPECT_THAT(plan.extensions_size(), ::testing::Eq(7));
 
-  auto result = ParseBinaryPlan(plan);
+  auto result = parseBinaryPlan(plan);
   auto symbols = result.getSymbolTable().getSymbols();
   ASSERT_THAT(
       result,

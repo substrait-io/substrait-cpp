@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include "substrait/function/Function.h"
-
 #include <sstream>
 
 namespace io::substrait {

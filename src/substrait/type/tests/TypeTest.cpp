@@ -36,29 +36,29 @@ class TypeTest : public ::testing::Test {
 };
 
 TEST_F(TypeTest, typeCreator) {
-  testType(BOOL(), TypeKind::kBool, "bool");
-  testType(TINYINT(), TypeKind::kI8, "i8");
-  testType(SMALLINT(), TypeKind::kI16, "i16");
-  testType(INTEGER(), TypeKind::kI32, "i32");
-  testType(BIGINT(), TypeKind::kI64, "i64");
-  testType(FLOAT(), TypeKind::kFp32, "fp32");
-  testType(DOUBLE(), TypeKind::kFp64, "fp64");
-  testType(BINARY(), TypeKind::kBinary, "vbin");
-  testType(TIMESTAMP(), TypeKind::kTimestamp, "ts");
-  testType(STRING(), TypeKind::kString, "str");
-  testType(TimestampTz(), TypeKind::kTimestampTz, "tstz");
-  testType(DATE(), TypeKind::kDate, "date");
-  testType(TIME(), TypeKind::kTime, "time");
-  testType(IntervalDay(), TypeKind::kIntervalDay, "iday");
-  testType(IntervalYear(), TypeKind::kIntervalYear, "iyear");
-  testType(UUID(), TypeKind::kUuid, "uuid");
-  testType(FixedChar(12), TypeKind::kFixedChar, "fchar<12>");
-  testType(FixedBinary(12), TypeKind::kFixedBinary, "fbin<12>");
-  testType(VARCHAR(12), TypeKind::kVarchar, "vchar<12>");
-  testType(DECIMAL(12, 23), TypeKind::kDecimal, "dec<12,23>");
-  testType(LIST(FLOAT()), TypeKind::kList, "list<fp32>");
-  testType(MAP(STRING(), FLOAT()), TypeKind::kMap, "map<str,fp32>");
-  testType(STRUCT({STRING(), FLOAT()}), TypeKind::kStruct, "struct<str,fp32>");
+  testType(boolean(), TypeKind::kBool, "bool");
+  testType(tinyint(), TypeKind::kI8, "i8");
+  testType(smallint(), TypeKind::kI16, "i16");
+  testType(integer(), TypeKind::kI32, "i32");
+  testType(bigint(), TypeKind::kI64, "i64");
+  testType(float4(), TypeKind::kFp32, "fp32");
+  testType(float8(), TypeKind::kFp64, "fp64");
+  testType(binary(), TypeKind::kBinary, "vbin");
+  testType(timestamp(), TypeKind::kTimestamp, "ts");
+  testType(string(), TypeKind::kString, "str");
+  testType(timestampTz(), TypeKind::kTimestampTz, "tstz");
+  testType(date(), TypeKind::kDate, "date");
+  testType(time(), TypeKind::kTime, "time");
+  testType(intervalDay(), TypeKind::kIntervalDay, "iday");
+  testType(intervalYear(), TypeKind::kIntervalYear, "iyear");
+  testType(uuid(), TypeKind::kUuid, "uuid");
+  testType(fixedChar(12), TypeKind::kFixedChar, "fchar<12>");
+  testType(fixedBinary(12), TypeKind::kFixedBinary, "fbin<12>");
+  testType(varchar(12), TypeKind::kVarchar, "vchar<12>");
+  testType(decimal(12, 23), TypeKind::kDecimal, "dec<12,23>");
+  testType(list(float4()), TypeKind::kList, "list<fp32>");
+  testType(map(string(), float4()), TypeKind::kMap, "map<str,fp32>");
+  testType(row({string(), float4()}), TypeKind::kStruct, "struct<str,fp32>");
 }
 
 TEST_F(TypeTest, decodeTest) {

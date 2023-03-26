@@ -406,8 +406,8 @@ std::any BasePlanProtoVisitor::visitWindowFunction(
 
 std::any BasePlanProtoVisitor::visitIfThen(
     const ::substrait::proto::Expression::IfThen& ifthen) {
-  for (const auto& ifthenIf : ifthen.ifs()) {
-    visitIfClause(ifthenIf);
+  for (const auto& ifThenIf : ifthen.ifs()) {
+    visitIfClause(ifThenIf);
   }
   if (ifthen.has_else_()) {
     visitExpression(ifthen.else_());
@@ -420,8 +420,8 @@ std::any BasePlanProtoVisitor::visitSwitchExpression(
   if (expression.has_match()) {
     visitExpression(expression.match());
   }
-  for (const auto& ifthenIf : expression.ifs()) {
-    visitIfValue(ifthenIf);
+  for (const auto& ifThenIf : expression.ifs()) {
+    visitIfValue(ifThenIf);
   }
   if (expression.has_else_()) {
     visitExpression(expression.else_());
@@ -542,12 +542,10 @@ std::any BasePlanProtoVisitor::visitMapSelect(
     case ::substrait::proto::Expression_MaskExpression_MapSelect::
         SELECT_NOT_SET:
       break;
-    default:
-       SUBSTRAIT_UNSUPPORTED(
-                  "Unsupported map select type encountered: " +
-                  std::to_string(select.select_case()));
   }
-
+  SUBSTRAIT_UNSUPPORTED(
+      "Unsupported map select type encountered: " +
+      std::to_string(select.select_case()));
 }
 
 std::any BasePlanProtoVisitor::visitExpressionLiteralStruct(

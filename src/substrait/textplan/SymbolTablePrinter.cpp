@@ -16,7 +16,7 @@ namespace io::substrait::textplan {
 
 namespace {
 
-void LocalFileToText(
+void localFileToText(
     const ::substrait::proto::ReadRel::LocalFiles::FileOrFiles& item,
     std::stringstream* text) {
   switch (item.path_type_case()) {
@@ -70,7 +70,7 @@ void LocalFileToText(
   }
 }
 
-std::string TypeToText(const ::substrait::proto::Type& type) {
+std::string typeToText(const ::substrait::proto::Type& type) {
   switch (type.kind_case()) {
     case ::substrait::proto::Type::kBool:
       if (type.bool_().nullability() ==
@@ -150,7 +150,7 @@ std::string TypeToText(const ::substrait::proto::Type& type) {
   }
 };
 
-std::string RelationToText(
+std::string relationToText(
     const SymbolTable& symbolTable,
     const SymbolInfo& info) {
   auto relation = ANY_CAST(const ::substrait::proto::Rel*, info.blob);
@@ -159,12 +159,12 @@ std::string RelationToText(
   return printer.printRelation(info.name, relation);
 }
 
-std::string OutputPipelinesSection(const SymbolTable& symbolTable) {
+std::string outputPipelinesSection(const SymbolTable& symbolTable) {
   // TODO: Implement.
   return "";
 }
 
-std::string OutputRelationsSection(const SymbolTable& symbolTable) {
+std::string outputRelationsSection(const SymbolTable& symbolTable) {
   std::stringstream text;
   bool hasPreviousText = false;
   for (const SymbolInfo& info : symbolTable) {
@@ -175,13 +175,13 @@ std::string OutputRelationsSection(const SymbolTable& symbolTable) {
     if (hasPreviousText) {
       text << "\n";
     }
-    text << RelationToText(symbolTable, info);
+    text << relationToText(symbolTable, info);
     hasPreviousText = true;
   }
   return text.str();
 }
 
-std::string OutputSchemaSection(const SymbolTable& symbolTable) {
+std::string outputSchemaSection(const SymbolTable& symbolTable) {
   std::stringstream text;
   bool hasPreviousText = false;
   for (const SymbolInfo& info : symbolTable) {
@@ -200,7 +200,7 @@ std::string OutputSchemaSection(const SymbolTable& symbolTable) {
     while (idx < schema->names_size() && idx < schema->struct_().types_size()) {
       // TODO -- Handle potential whitespace in the names here or elsewhere.
       text << "  " << schema->names(idx);
-      text << " " << TypeToText(schema->struct_().types(idx));
+      text << " " << typeToText(schema->struct_().types(idx));
       text << ";\n";
       ++idx;
     }
@@ -210,7 +210,7 @@ std::string OutputSchemaSection(const SymbolTable& symbolTable) {
   return text.str();
 }
 
-std::string OutputSourceSection(const SymbolTable& symbolTable) {
+std::string outputSourceSection(const SymbolTable& symbolTable) {
   std::stringstream text;
   bool hasPreviousText = false;
   for (const SymbolInfo& info : symbolTable) {
@@ -244,7 +244,7 @@ std::string OutputSourceSection(const SymbolTable& symbolTable) {
         text << "  items = [\n";
         for (const auto& item : files->items()) {
           text << "    {";
-          LocalFileToText(item, &text);
+          localFileToText(item, &text);
           text << "}\n";
         }
         text << "  ]\n";
@@ -264,11 +264,11 @@ std::string OutputSourceSection(const SymbolTable& symbolTable) {
   return text.str();
 }
 
-std::string OutputFunctionsSection(const SymbolTable& symbolTable) {
+std::string outputFunctionsSection(const SymbolTable& symbolTable) {
   std::stringstream text;
 
-  std::map<uint32_t, std::string> space_names;
-  std::set<uint32_t> used_spaces;
+  std::map<uint32_t, std::string> spaceNames;
+  std::set<uint32_t> usedSpaces;
 
   // Look at the existing spaces.
   for (const SymbolInfo& info : symbolTable) {
@@ -278,7 +278,7 @@ std::string OutputFunctionsSection(const SymbolTable& symbolTable) {
 
     auto anchor = ANY_CAST(uint32_t, info.blob);
 
-    space_names.insert(std::make_pair(anchor, info.name));
+    spaceNames.insert(std::make_pair(anchor, info.name));
   }
 
   // Find any spaces that are used but undefined.
@@ -291,16 +291,16 @@ std::string OutputFunctionsSection(const SymbolTable& symbolTable) {
         const ::substrait::proto::extensions::
             SimpleExtensionDeclaration_ExtensionFunction*,
         info.blob);
-    used_spaces.insert(extension->extension_uri_reference());
+    usedSpaces.insert(extension->extension_uri_reference());
   }
 
   // Finally output the extensions by space in the order they were encountered.
-  for (const uint32_t space : used_spaces) {
-    if (space_names.find(space) == space_names.end()) {
+  for (const uint32_t space : usedSpaces) {
+    if (spaceNames.find(space) == spaceNames.end()) {
       // TODO: Handle this case as a warning.
       text << "extension_space {\n";
     } else {
-      text << "extension_space " << space_names[space] << " {\n";
+      text << "extension_space " << spaceNames[space] << " {\n";
     }
 
     for (const SymbolInfo& info : symbolTable) {
@@ -331,22 +331,13 @@ std::string SymbolTablePrinter::outputToText(const SymbolTable& symbolTable) {
   std::stringstream text;
   bool hasPreviousText = false;
 
-  std::string newText = OutputPipelinesSection(symbolTable);
+  std::string newText = outputPipelinesSection(symbolTable);
   if (!newText.empty()) {
     text << newText;
     hasPreviousText = true;
   }
 
-  newText = OutputRelationsSection(symbolTable);
-  if (!newText.empty()) {
-    if (hasPreviousText) {
-      text << "\n";
-    }
-    text << newText;
-    hasPreviousText = true;
-  }
-
-  newText = OutputSchemaSection(symbolTable);
+  newText = outputRelationsSection(symbolTable);
   if (!newText.empty()) {
     if (hasPreviousText) {
       text << "\n";
@@ -355,7 +346,7 @@ std::string SymbolTablePrinter::outputToText(const SymbolTable& symbolTable) {
     hasPreviousText = true;
   }
 
-  newText = OutputSourceSection(symbolTable);
+  newText = outputSchemaSection(symbolTable);
   if (!newText.empty()) {
     if (hasPreviousText) {
       text << "\n";
@@ -364,7 +355,16 @@ std::string SymbolTablePrinter::outputToText(const SymbolTable& symbolTable) {
     hasPreviousText = true;
   }
 
-  newText = OutputFunctionsSection(symbolTable);
+  newText = outputSourceSection(symbolTable);
+  if (!newText.empty()) {
+    if (hasPreviousText) {
+      text << "\n";
+    }
+    text << newText;
+    hasPreviousText = true;
+  }
+
+  newText = outputFunctionsSection(symbolTable);
   if (!newText.empty()) {
     if (hasPreviousText) {
       text << "\n";

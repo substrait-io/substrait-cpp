@@ -16,7 +16,7 @@
 namespace io::substrait::textplan {
 namespace {
 
-std::vector<std::string> SymbolNames(
+std::vector<std::string> symbolNames(
     const std::vector<std::shared_ptr<SymbolInfo>>& symbols) {
   std::vector<std::string> names;
   for (const auto& symbol : symbols) {
@@ -25,7 +25,7 @@ std::vector<std::string> SymbolNames(
   return names;
 }
 
-bool StringEqSquashingWhitespace(
+bool stringEqSquashingWhitespace(
     const std::string& have,
     const std::string& expected) {
   auto atHave = have.begin();
@@ -85,7 +85,7 @@ class ParsesOkMatcher {
   }
 };
 
-[[maybe_unused]] ::testing::Matcher<const ParseResult&> ParsesOk() {
+[[maybe_unused]] ::testing::Matcher<const ParseResult&> ParsesOk() { // NOLINT
   return ParsesOkMatcher();
 }
 
@@ -99,43 +99,43 @@ class HasSymbolsMatcher {
   bool MatchAndExplain( // NOLINT
       const ParseResult& result,
       std::ostream* listener) const {
-    auto actual_symbols = SymbolNames(result.getSymbolTable().getSymbols());
+    auto actualSymbols = symbolNames(result.getSymbolTable().getSymbols());
     if (listener != nullptr) {
-      std::vector<std::string> extra_symbols(actual_symbols.size());
+      std::vector<std::string> extraSymbols(actualSymbols.size());
       auto end = std::set_difference(
-          actual_symbols.begin(),
-          actual_symbols.end(),
+          actualSymbols.begin(),
+          actualSymbols.end(),
           expectedSymbols_.begin(),
           expectedSymbols_.end(),
-          extra_symbols.begin());
-      extra_symbols.resize(end - extra_symbols.begin());
-      if (!extra_symbols.empty()) {
+          extraSymbols.begin());
+      extraSymbols.resize(end - extraSymbols.begin());
+      if (!extraSymbols.empty()) {
         *listener << std::endl << "          with missing symbols: ";
-        for (const auto& symbol : extra_symbols) {
+        for (const auto& symbol : extraSymbols) {
           *listener << " \"" << symbol << "\"";
         }
       }
 
-      std::vector<std::string> missing_symbols(expectedSymbols_.size());
+      std::vector<std::string> missingSymbols(expectedSymbols_.size());
       end = std::set_difference(
           expectedSymbols_.begin(),
           expectedSymbols_.end(),
-          actual_symbols.begin(),
-          actual_symbols.end(),
-          missing_symbols.begin());
-      missing_symbols.resize(end - missing_symbols.begin());
-      if (!missing_symbols.empty()) {
-        if (!extra_symbols.empty()) {
+          actualSymbols.begin(),
+          actualSymbols.end(),
+          missingSymbols.begin());
+      missingSymbols.resize(end - missingSymbols.begin());
+      if (!missingSymbols.empty()) {
+        if (!extraSymbols.empty()) {
           *listener << ", and extra symbols: ";
         } else {
           *listener << " with extra symbols: ";
         }
-        for (const auto& symbol : missing_symbols) {
+        for (const auto& symbol : missingSymbols) {
           *listener << " \"" << symbol << "\"";
         }
       }
     }
-    return actual_symbols == expectedSymbols_;
+    return actualSymbols == expectedSymbols_;
   }
 
   void DescribeTo(std::ostream* os) const { // NOLINT
@@ -152,7 +152,7 @@ class HasSymbolsMatcher {
   const std::vector<std::string> expectedSymbols_;
 };
 
-::testing::Matcher<const ParseResult&> HasSymbols(
+::testing::Matcher<const ParseResult&> HasSymbols( // NOLINT
     std::vector<std::string> expectedSymbols) {
   return HasSymbolsMatcher(std::move(expectedSymbols));
 }
@@ -187,7 +187,7 @@ class WhenSerializedMatcher {
   ::testing::Matcher<const std::string&> stringMatcher_;
 };
 
-::testing::Matcher<const ParseResult&> WhenSerialized(
+::testing::Matcher<const ParseResult&> WhenSerialized( // NOLINT
     ::testing::Matcher<const std::string&> stringMatcher) {
   return WhenSerializedMatcher(std::move(stringMatcher));
 }
@@ -219,7 +219,7 @@ class HasErrorsMatcher {
   const std::vector<std::string> expectedErrors_;
 };
 
-::testing::Matcher<const ParseResult&> HasErrors(
+::testing::Matcher<const ParseResult&> HasErrors( // NOLINT
     std::vector<std::string> expectedErrors) {
   return HasErrorsMatcher(std::move(expectedErrors));
 }
@@ -234,7 +234,7 @@ class EqSquashingWhitespaceMatcher {
   bool MatchAndExplain( // NOLINT
       const std::string& str,
       std::ostream* /* listener */) const {
-    return StringEqSquashingWhitespace(str, expectedString_);
+    return stringEqSquashingWhitespace(str, expectedString_);
   }
 
   void DescribeTo(std::ostream* os) const { // NOLINT
@@ -251,7 +251,7 @@ class EqSquashingWhitespaceMatcher {
   std::string expectedString_;
 };
 
-::testing::Matcher<const std::string&> EqSquashingWhitespace(
+::testing::Matcher<const std::string&> EqSquashingWhitespace( // NOLINT
     std::string expectedString) {
   return EqSquashingWhitespaceMatcher(std::move(expectedString));
 }

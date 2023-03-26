@@ -42,14 +42,14 @@ class PlanOrErrors {
 
 // Read the contents of a file from disk.
 // Throws an exception if file cannot be read.
-std::string ReadFromFile(std::string_view msgPath);
+std::string readFromFile(std::string_view msgPath);
 
 // Reads a plan from a json-encoded text proto.
 // Returns a list of errors if the file cannot be parsed.
-PlanOrErrors LoadFromJson(std::string_view json);
+PlanOrErrors loadFromJson(std::string_view json);
 
 // Reads a plan encoded as a text protobuf.
 // Returns a list of errors if the file cannot be parsed.
-PlanOrErrors LoadFromText(const std::string& text);
+PlanOrErrors loadFromText(const std::string& text);
 
 } // namespace io::substrait::textplan

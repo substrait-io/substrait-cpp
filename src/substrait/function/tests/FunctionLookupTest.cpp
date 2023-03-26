@@ -11,9 +11,9 @@ using namespace io::substrait;
 class FunctionLookupTest : public ::testing::Test {
  protected:
   static std::string getExtensionAbsolutePath() {
-    const std::string absolute_path = __FILE__;
-    auto const pos = absolute_path.find_last_of('/');
-    return absolute_path.substr(0, pos) +
+    const std::string absolutePath = __FILE__;
+    auto const pos = absolutePath.find_last_of('/');
+    return absolutePath.substr(0, pos) +
         "/../../../../third_party/substrait/extensions/";
   }
 
@@ -51,62 +51,67 @@ class FunctionLookupTest : public ::testing::Test {
 
 TEST_F(FunctionLookupTest, compareFunction) {
   testScalarFunctionLookup(
-      {"lt", {TINYINT(), TINYINT()}, BOOL()}, "lt:any1_any1");
+      {"lt", {tinyint(), tinyint()}, boolean()}, "lt:any1_any1");
 
   testScalarFunctionLookup(
-      {"lt", {SMALLINT(), SMALLINT()}, BOOL()}, "lt:any1_any1");
+      {"lt", {smallint(), smallint()}, boolean()}, "lt:any1_any1");
 
   testScalarFunctionLookup(
-      {"lt", {INTEGER(), INTEGER()}, BOOL()}, "lt:any1_any1");
+      {"lt", {integer(), integer()}, boolean()}, "lt:any1_any1");
 
   testScalarFunctionLookup(
-      {"lt", {BIGINT(), BIGINT()}, BOOL()}, "lt:any1_any1");
-
-  testScalarFunctionLookup({"lt", {FLOAT(), FLOAT()}, BOOL()}, "lt:any1_any1");
+      {"lt", {bigint(), bigint()}, boolean()}, "lt:any1_any1");
 
   testScalarFunctionLookup(
-      {"lt", {DOUBLE(), DOUBLE()}, BOOL()}, "lt:any1_any1");
+      {"lt", {float4(), float4()}, boolean()}, "lt:any1_any1");
+
   testScalarFunctionLookup(
-      {"between", {TINYINT(), TINYINT(), TINYINT()}, BOOL()},
+      {"lt", {float8(), float8()}, boolean()}, "lt:any1_any1");
+  testScalarFunctionLookup(
+      {"between", {tinyint(), tinyint(), tinyint()}, boolean()},
       "between:any1_any1_any1");
 }
 
 TEST_F(FunctionLookupTest, arithmeticFunction) {
   testScalarFunctionLookup(
-      {"add", {TINYINT(), TINYINT()}, TINYINT()}, "add:i8_i8");
+      {"add", {tinyint(), tinyint()}, tinyint()}, "add:i8_i8");
 
   testScalarFunctionLookup(
       {"divide",
        {
-           FLOAT(),
-           FLOAT(),
+           float4(),
+           float4(),
        },
-       FLOAT()},
+       float4()},
       "divide:fp32_fp32");
 }
 
 TEST_F(FunctionLookupTest, aggregate) {
   // for intermediate type
   testAggregateFunctionLookup(
-      {"avg", {STRUCT({DOUBLE(), BIGINT()})}, FLOAT()}, "avg:fp32");
+      {"avg", {row({float8(), bigint()})}, float4()}, "avg:fp32");
 }
 
 TEST_F(FunctionLookupTest, logical) {
-  testScalarFunctionLookup({"and", {}, BOOL()}, "and:bool");
-  testScalarFunctionLookup({"and", {BOOL()}, BOOL()}, "and:bool");
-  testScalarFunctionLookup({"and", {BOOL(), BOOL()}, BOOL()}, "and:bool");
+  testScalarFunctionLookup({"and", {}, boolean()}, "and:bool");
+  testScalarFunctionLookup({"and", {boolean()}, boolean()}, "and:bool");
+  testScalarFunctionLookup(
+      {"and", {boolean(), boolean()}, boolean()}, "and:bool");
 
-  testScalarFunctionLookup({"or", {BOOL(), BOOL()}, BOOL()}, "or:bool");
-  testScalarFunctionLookup({"not", {BOOL()}, BOOL()}, "not:bool");
-  testScalarFunctionLookup({"xor", {BOOL(), BOOL()}, BOOL()}, "xor:bool_bool");
+  testScalarFunctionLookup(
+      {"or", {boolean(), boolean()}, boolean()}, "or:bool");
+  testScalarFunctionLookup({"not", {boolean()}, boolean()}, "not:bool");
+  testScalarFunctionLookup(
+      {"xor", {boolean(), boolean()}, boolean()}, "xor:bool_bool");
 }
 
 TEST_F(FunctionLookupTest, stringFunction) {
   testScalarFunctionLookup(
-      {"like", {STRING(), STRING()}, BOOL()}, "like:str_str");
+      {"like", {string(), string()}, boolean()}, "like:str_str");
   testScalarFunctionLookup(
-      {"like", {VARCHAR(3), VARCHAR(4)}, BOOL()}, "like:vchar<L1>_vchar<L2>");
+      {"like", {varchar(3), varchar(4)}, boolean()},
+      "like:vchar<L1>_vchar<L2>");
   testScalarFunctionLookup(
-      {"substring", {STRING(), INTEGER(), INTEGER()}, STRING()},
+      {"substring", {string(), integer(), integer()}, string()},
       "substring:str_i32_i32");
 }

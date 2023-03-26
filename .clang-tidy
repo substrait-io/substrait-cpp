@@ -47,7 +47,6 @@
 #     `ASSERT_TRUE(variable)` or `ASSERT_TRUE(variable.has_value())`.
 Checks: >
   -*,
-  abseil-*,
   bugprone-*,
   google-*,
   modernize-*,
@@ -57,7 +56,6 @@ Checks: >
   -google-runtime-references,
   -google-readability-todo,
   -google-build-using-namespace,
-  -readability-inconsistent-declaration-parameter-name,
   -google-readability-casting,
   -modernize-return-braced-init-list,
   -modernize-use-trailing-return-type,
@@ -65,6 +63,8 @@ Checks: >
   -performance-move-const-arg,
   -performance-inefficient-vector-operation,
   -readability-identifier-length,
+  -readability-qualified-auto,
+  -readability-inconsistent-declaration-parameter-name,
   -readability-magic-numbers,
   -readability-named-parameter,
   -readability-else-after-return,
@@ -73,7 +73,6 @@ Checks: >
   -readability-implicit-bool-conversion,
   -bugprone-branch-clone,
   -bugprone-exception-escape,
-  -bugprone-narrowing-conversions,
   -bugprone-easily-swappable-parameters,
   -bugprone-implicit-widening-of-multiplication-result,
   -bugprone-unchecked-optional-access
@@ -87,7 +86,7 @@ CheckOptions:
   - { key: readability-identifier-naming.StructCase,                               value: CamelCase }
   - { key: readability-identifier-naming.EnumCase,                                 value: CamelCase }
   - { key: readability-identifier-naming.TemplateParameterCase,                    value: CamelCase }
-  - { key: readability-identifier-naming.FunctionCase,                             value: aNy_CasE  }
+  - { key: readability-identifier-naming.FunctionCase,                             value: camelBack }
   - { key: readability-identifier-naming.VariableCase,                             value: camelBack }
   - { key: readability-identifier-naming.PublicMemberCase,                         value: camelBack }
   - { key: readability-identifier-naming.PublicMethodCase,                         value: camelBack }
@@ -110,31 +109,3 @@ CheckOptions:
   - { key: readability-implicit-bool-conversion.AllowIntegerConditions,            value: 1         }
   - { key: readability-implicit-bool-conversion.AllowPointerConditions,            value: 1         }
   - { key: readability-function-cognitive-complexity.IgnoreMacros,                 value: 1         }
-
-  - { key: readability-identifier-naming.ConstantParameterCase,                    value: camelBack }
-  - { key: readability-identifier-naming.ConstantPointerParameterCase,             value: camelBack }
-  - { key: readability-identifier-naming.PointerParameterCase,                     value: camelBack }
-  - { key: readability-identifier-naming.ParameterCase,                            value: camelBack }
-
-  - { key: readability-identifier-naming.TemplateTemplateParameterCase,            value: CamelCase }
-  - { key: readability-identifier-naming.TypeTemplateParameterCase,                value: CamelCase }
-  - { key: readability-identifier-naming.ValueTemplateParameterCase,               value: CamelCase }
-
-  - { key: readability-identifier-naming.ScopedEnumConstantCase,                   value: CamelCase }
-  - { key: readability-identifier-naming.ScopedEnumConstantPrefix,                 value: k         }
-
-
-  - { key: readability-identifier-naming.ConstantCase,                             value: camelBack }
-  - { key: readability-identifier-naming.ConstantSuffix,                           value: _         }
-  - { key: readability-identifier-naming.MacroDefinitionCase,                      value: UPPER_CASE}
-
-  - { key: readability-identifier-naming.GlobalVariableCase,                       value: UPPER_CASE}
-  - { key: readability-identifier-naming.LocalConstantCase,                        value: aNy_CasE  }
-  - { key: readability-identifier-naming.LocalVariableCase,                        value: aNy_CasE  }
-  - { key: readability-identifier-naming.StaticVariableCase,                       value: aNy_CasE  }
-
-  - { key: readability-identifier-naming.ConstexprFunctionCase,                    value: camelBack }
-  - { key: readability-identifier-naming.ConstexprMethodCase,                      value: camelBack }
-
-  - { key: readability-identifier-naming.MethodCase,                               value: CamelCase }
-  - { key: readability-identifier-naming.MemberCase ,                              value: UPPER_CASE}

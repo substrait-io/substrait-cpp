@@ -39,7 +39,7 @@ class StringErrorCollector : public google::protobuf::io::ErrorCollector {
 
 } // namespace
 
-std::string ReadFromFile(std::string_view msgPath) {
+std::string readFromFile(std::string_view msgPath) {
   std::ifstream textFile(std::string{msgPath});
   if (textFile.fail()) {
     auto currdir = std::filesystem::current_path().string();
@@ -54,21 +54,21 @@ std::string ReadFromFile(std::string_view msgPath) {
   return buffer.str();
 }
 
-PlanOrErrors LoadFromJson(std::string_view json) {
+PlanOrErrors loadFromJson(std::string_view json) {
   if (json.empty()) {
     return PlanOrErrors({"Provided JSON string was empty."});
   }
-  std::string_view usable_json = json;
+  std::string_view usableJson = json;
   if (json[0] == '#') {
     int idx = 0;
     while (idx < json.size() && json[idx] != '\n') {
       idx++;
     }
-    usable_json.remove_prefix(idx);
+    usableJson.remove_prefix(idx);
   }
   ::substrait::proto::Plan plan;
   auto status = google::protobuf::util::JsonStringToMessage(
-      std::string{usable_json}, &plan);
+      std::string{usableJson}, &plan);
   if (!status.ok()) {
     return PlanOrErrors({fmt::format(
         "Failed to parse Substrait JSON: {}", status.message().ToString())});
@@ -76,7 +76,7 @@ PlanOrErrors LoadFromJson(std::string_view json) {
   return PlanOrErrors(plan);
 }
 
-PlanOrErrors LoadFromText(const std::string& text) {
+PlanOrErrors loadFromText(const std::string& text) {
   ::substrait::proto::Plan plan;
   ::google::protobuf::TextFormat::Parser parser;
   StringErrorCollector collector;

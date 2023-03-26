@@ -64,8 +64,8 @@ SymbolInfo* SymbolTable::defineUniqueSymbol(
     SymbolType type,
     const std::any& subtype,
     const std::any& blob) {
-  std::string unique_name = getUniqueName(name);
-  return defineSymbol(unique_name, location, type, subtype, blob);
+  std::string uniqueName = getUniqueName(name);
+  return defineSymbol(uniqueName, location, type, subtype, blob);
 }
 
 const SymbolInfo& SymbolTable::lookupSymbolByName(const std::string& name) {
@@ -105,10 +105,11 @@ SymbolTableIterator SymbolTable::end() const {
   return {this, symbolsByName_.size()};
 }
 
-const SymbolInfo SymbolTable::kUnknownSymbol = {"__UNKNOWN__",
-                                                Location::kUnknownLocation,
-                                                SymbolType::kUnknown,
-                                                std::nullopt,
-                                                std::nullopt};
+const SymbolInfo SymbolTable::kUnknownSymbol = {
+    "__UNKNOWN__",
+    Location::kUnknownLocation,
+    SymbolType::kUnknown,
+    std::nullopt,
+    std::nullopt};
 
 } // namespace io::substrait::textplan

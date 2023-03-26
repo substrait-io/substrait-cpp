@@ -4,7 +4,7 @@
 
 #include <yaml-cpp/yaml.h>
 
-bool DecodeFunctionImpl(
+bool decodeFunctionImpl(
     const YAML::Node& node,
     io::substrait::FunctionImplementation& function) {
   const auto& returnType = node["return"];
@@ -102,7 +102,7 @@ struct YAML::convert<io::substrait::ScalarFunctionImplementation> {
   static bool decode(
       const Node& node,
       io::substrait::ScalarFunctionImplementation& function) {
-    return DecodeFunctionImpl(node, function);
+    return decodeFunctionImpl(node, function);
   };
 };
 
@@ -111,7 +111,7 @@ struct YAML::convert<io::substrait::AggregateFunctionImplementation> {
   static bool decode(
       const Node& node,
       io::substrait::AggregateFunctionImplementation& function) {
-    const auto& res = DecodeFunctionImpl(node, function);
+    const auto& res = decodeFunctionImpl(node, function);
     if (res) {
       const auto& intermediate = node["intermediate"];
       if (intermediate) {
