@@ -93,8 +93,8 @@ digits to translate the result by).
 #### Example Decimal Literals
 
 ```
--123<3,0>_decimal  // -123
-42<5,-4>_decimal  // 420000
+-123_decimal<3,0>  // -123
+42_decimal<5,-4>  // 420000
 ```
 
 ### String Literals
