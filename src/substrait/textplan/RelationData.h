@@ -18,7 +18,8 @@ struct RelationData {
   // The node that directly contains this symbol.
   const ::google::protobuf::Message* originProtoAddr;
 
-  // continuingPipeline is the next step in a pipeline that this symbol is part of.
+  // continuingPipeline is the next step in a pipeline that this symbol is part
+  // of.
   const ::substrait::proto::Rel* continuingPipeline;
 
   // A list of pipelines that start with this node and continue onward.
