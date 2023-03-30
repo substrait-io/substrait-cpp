@@ -9,20 +9,22 @@
 
 namespace io::substrait::textplan {
 
-[[maybe_unused]] ::testing::Matcher<const ParseResult&> ParsesOk();
+[[maybe_unused]] ::testing::Matcher<const ParseResult&> ParsesOk(); // NOLINT
 
-[[maybe_unused]] ::testing::Matcher<const ParseResult&> HasSymbols(
-    std::vector<std::string> expected_symbols);
+[[maybe_unused]] ::testing::Matcher<const ParseResult&> HasSymbols( // NOLINT
+    std::vector<std::string> expectedSymbols);
 
-[[maybe_unused]] ::testing::Matcher<const ParseResult&> WhenSerialized(
-    ::testing::Matcher<const std::string&> string_matcher);
+[[maybe_unused]] ::testing::Matcher<const ParseResult&>
+WhenSerialized( // NOLINT
+    ::testing::Matcher<const std::string&> stringMatcher);
 
-[[maybe_unused]] ::testing::Matcher<const ParseResult&> HasErrors(
-    std::vector<std::string> expected_errors);
+[[maybe_unused]] ::testing::Matcher<const ParseResult&> HasErrors( // NOLINT
+    std::vector<std::string> expectedErrors);
 
 // Matches strings ignoring differences in kinds of whitespace (as long as they
 // are present) and ignoring trailing whitespace as well.
-[[maybe_unused]] ::testing::Matcher<const std::string&> EqSquashingWhitespace(
-    std::string expected_string);
+[[maybe_unused]] ::testing::Matcher<const std::string&>
+EqSquashingWhitespace( // NOLINT
+    std::string expectedString);
 
 } // namespace io::substrait::textplan

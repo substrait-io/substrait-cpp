@@ -1,3 +1,4 @@
+
 # substrait-cpp
 
 Planned home for CPP libraries to help build/consume Substrait query plans.
@@ -17,12 +18,23 @@ git submodule update --init --recursive
 
 ### Setting up on Linux (Ubuntu 20.04 or later)
 
-Once you have checked out substrait-cpp, you can setup and build like so:
+Once you have checked out substrait-cpp, you can set up and build like so:
 
 ```shell
 $ ./scripts/setup-ubuntu.sh 
 $ make
 ```
+
+### Coding style
+Basically the coding style is based on Google C++ Style, but there are some naming style changed:
+- Function case style change to 'camelBack'
+- Variable case style change to 'camelBack'
+- Class Member case style change to 'camelBack' with '_' as suffix
+
+For more detail information please refer to .clang-tidy under root directory.
+
+
+You can run `make format` script to formatting source code and run `make tidy` to checking coding style, and run `make tidy-fix`to fix the coding style automatically.
 
 ## License
 

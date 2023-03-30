@@ -37,10 +37,10 @@ std::any InitialPlanProtoVisitor::visitExtension(
         "Unknown mapping type case " +
         std::to_string(extension.mapping_type_case()) + " encountered.");
   }
-  const auto& unique_name = symbol_table_->getUniqueName(
+  const auto& uniqueName = symbolTable_->getUniqueName(
       shortName(extension.extension_function().name()));
-  symbol_table_->defineSymbol(
-      unique_name,
+  symbolTable_->defineSymbol(
+      uniqueName,
       Location((::google::protobuf::Message*)&extension.extension_function()),
       SymbolType::kFunction,
       std::nullopt,
@@ -50,7 +50,7 @@ std::any InitialPlanProtoVisitor::visitExtension(
 
 std::any InitialPlanProtoVisitor::visitExtensionUri(
     const ::substrait::proto::extensions::SimpleExtensionURI& uri) {
-  symbol_table_->defineSymbol(
+  symbolTable_->defineSymbol(
       uri.uri(),
       Location((::google::protobuf::Message*)&uri),
       SymbolType::kExtensionSpace,
@@ -62,10 +62,11 @@ std::any InitialPlanProtoVisitor::visitExtensionUri(
 std::any InitialPlanProtoVisitor::visitPlanRelation(
     const ::substrait::proto::PlanRel& relation) {
   BasePlanProtoVisitor::visitPlanRelation(relation);
-  std::string name = PlanRelTypeCaseName(relation.rel_type_case());
-  auto unique_name = symbol_table_->getUniqueName(name);
-  symbol_table_->defineSymbol(
-      unique_name,
+  std::string name =
+      ::substrait::proto::planRelTypeCaseName(relation.rel_type_case());
+  auto uniqueName = symbolTable_->getUniqueName(name);
+  symbolTable_->defineSymbol(
+      uniqueName,
       Location((google::protobuf::Message*)&relation),
       SymbolType::kPlanRelation,
       std::nullopt,
@@ -75,11 +76,12 @@ std::any InitialPlanProtoVisitor::visitPlanRelation(
 
 std::any InitialPlanProtoVisitor::visitRelation(
     const ::substrait::proto::Rel& relation) {
-  std::string name = RelTypeCaseName(relation.rel_type_case());
+  std::string name =
+      ::substrait::proto::relTypeCaseName(relation.rel_type_case());
   BasePlanProtoVisitor::visitRelation(relation);
-  auto unique_name = symbol_table_->getUniqueName(name);
-  symbol_table_->defineSymbol(
-      unique_name,
+  auto uniqueName = symbolTable_->getUniqueName(name);
+  symbolTable_->defineSymbol(
+      uniqueName,
       Location((google::protobuf::Message*)&relation),
       SymbolType::kRelation,
       relation.rel_type_case(),
@@ -96,8 +98,8 @@ std::any InitialPlanProtoVisitor::visitRelationRoot(
 std::any InitialPlanProtoVisitor::visitReadRelation(
     const ::substrait::proto::ReadRel& relation) {
   if (relation.has_base_schema()) {
-    const std::string& name = symbol_table_->getUniqueName("schema");
-    symbol_table_->defineSymbol(
+    const std::string& name = symbolTable_->getUniqueName("schema");
+    symbolTable_->defineSymbol(
         name,
         Location((google::protobuf::Message*)&relation.base_schema()),
         SymbolType::kSchema,
@@ -110,9 +112,9 @@ std::any InitialPlanProtoVisitor::visitReadRelation(
 
 std::any InitialPlanProtoVisitor::visitVirtualTable(
     const ::substrait::proto::ReadRel_VirtualTable& table) {
-  const auto& unique_name = symbol_table_->getUniqueName("virtual");
-  symbol_table_->defineSymbol(
-      unique_name,
+  const auto& uniqueName = symbolTable_->getUniqueName("virtual");
+  symbolTable_->defineSymbol(
+      uniqueName,
       Location((google::protobuf::Message*)&table),
       SymbolType::kSource,
       SourceType::kVirtualTable,
@@ -122,9 +124,9 @@ std::any InitialPlanProtoVisitor::visitVirtualTable(
 
 std::any InitialPlanProtoVisitor::visitLocalFiles(
     const ::substrait::proto::ReadRel_LocalFiles& local) {
-  const auto& unique_name = symbol_table_->getUniqueName("local");
-  symbol_table_->defineSymbol(
-      unique_name,
+  const auto& uniqueName = symbolTable_->getUniqueName("local");
+  symbolTable_->defineSymbol(
+      uniqueName,
       Location((google::protobuf::Message*)&local),
       SymbolType::kSource,
       SourceType::kLocalFiles,
@@ -134,9 +136,9 @@ std::any InitialPlanProtoVisitor::visitLocalFiles(
 
 std::any InitialPlanProtoVisitor::visitNamedTable(
     const ::substrait::proto::ReadRel_NamedTable& table) {
-  const auto& unique_name = symbol_table_->getUniqueName("named");
-  symbol_table_->defineSymbol(
-      unique_name,
+  const auto& uniqueName = symbolTable_->getUniqueName("named");
+  symbolTable_->defineSymbol(
+      uniqueName,
       Location((google::protobuf::Message*)&table),
       SymbolType::kSource,
       SourceType::kNamedTable,
@@ -146,9 +148,9 @@ std::any InitialPlanProtoVisitor::visitNamedTable(
 
 std::any InitialPlanProtoVisitor::visitExtensionTable(
     const ::substrait::proto::ReadRel_ExtensionTable& table) {
-  const auto& unique_name = symbol_table_->getUniqueName("extensiontable");
-  symbol_table_->defineSymbol(
-      unique_name,
+  const auto& uniqueName = symbolTable_->getUniqueName("extensiontable");
+  symbolTable_->defineSymbol(
+      uniqueName,
       Location((google::protobuf::Message*)&table),
       SymbolType::kSource,
       SourceType::kExtensionTable,

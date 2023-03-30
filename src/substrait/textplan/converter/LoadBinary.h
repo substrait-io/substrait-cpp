@@ -46,7 +46,7 @@ std::string readFromFile(std::string_view msgPath);
 
 // Reads a plan from a json-encoded text proto.
 // Returns a list of errors if the file cannot be parsed.
-PlanOrErrors loadFromJSON(std::string_view json);
+PlanOrErrors loadFromJson(std::string_view json);
 
 // Reads a plan encoded as a text protobuf.
 // Returns a list of errors if the file cannot be parsed.

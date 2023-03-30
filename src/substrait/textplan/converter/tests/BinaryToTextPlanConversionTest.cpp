@@ -23,7 +23,7 @@ class TestCase {
 class BinaryToTextPlanConverterTestFixture
     : public ::testing::TestWithParam<TestCase> {};
 
-std::vector<TestCase> GetTestCases() {
+std::vector<TestCase> getTestCases() {
   static std::vector<TestCase> cases = {
       {
           "bad proto input",
@@ -213,7 +213,7 @@ TEST_P(BinaryToTextPlanConverterTestFixture, Parse) {
 INSTANTIATE_TEST_SUITE_P(
     BinaryPlanConversionTests,
     BinaryToTextPlanConverterTestFixture,
-    ::testing::ValuesIn(GetTestCases()),
+    ::testing::ValuesIn(getTestCases()),
     [](const testing::TestParamInfo<TestCase>& info) {
       std::string identifier = info.param.name;
       // Remove non-alphanumeric characters to make the test framework happy.
@@ -230,7 +230,7 @@ class BinaryToTextPlanConversionTest : public ::testing::Test {};
 
 TEST_F(BinaryToTextPlanConversionTest, loadFromJSON) {
   std::string json = readFromFile("data/q6_first_stage.json");
-  auto planOrError = loadFromJSON(json);
+  auto planOrError = loadFromJson(json);
   ASSERT_TRUE(planOrError.ok());
   auto plan = *planOrError;
   EXPECT_THAT(plan.extensions_size(), ::testing::Eq(7));

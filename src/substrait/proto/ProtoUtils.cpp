@@ -4,22 +4,22 @@
 
 namespace substrait::proto {
 
-std::string PlanRelTypeCaseName(::substrait::proto::PlanRel::RelTypeCase num) {
-  static std::vector<std::string> case_names = {
+std::string planRelTypeCaseName(::substrait::proto::PlanRel::RelTypeCase num) {
+  static std::vector<std::string> caseNames = {
       "unknown",
       "rel",
       "root",
   };
 
-  if (num >= case_names.size()) {
+  if (num >= caseNames.size()) {
     return "unknown";
   }
 
-  return case_names[num];
+  return caseNames[num];
 }
 
-std::string RelTypeCaseName(::substrait::proto::Rel::RelTypeCase num) {
-  static std::vector<std::string> case_names = {
+std::string relTypeCaseName(::substrait::proto::Rel::RelTypeCase num) {
+  static std::vector<std::string> caseNames = {
       "unknown",
       "read",
       "filter",
@@ -37,11 +37,11 @@ std::string RelTypeCaseName(::substrait::proto::Rel::RelTypeCase num) {
       "mergejoin",
   };
 
-  if (num >= case_names.size()) {
+  if (num >= caseNames.size()) {
     return "unknown";
   }
 
-  return case_names[num];
+  return caseNames[num];
 }
 
 } // namespace substrait::proto

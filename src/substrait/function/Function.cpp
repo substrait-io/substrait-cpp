@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include <sstream>
 #include "substrait/function/Function.h"
+#include <sstream>
 
 namespace io::substrait {
 
@@ -19,7 +19,7 @@ bool FunctionImplementation::tryMatch(const FunctionSignature& signature) {
     // actual type must same as the variadicArgument
     if (const auto& variadicValueArgument =
             std::dynamic_pointer_cast<const ValueArgument>(variadicArgument)) {
-      for (auto& actualType : actualTypes) {
+      for (const auto& actualType : actualTypes) {
         if (!variadicValueArgument->type->isMatch(actualType)) {
           return false;
         }
@@ -72,7 +72,8 @@ std::string FunctionImplementation::signature() const {
   return ss.str();
 }
 
-bool AggregateFunctionImplementation::tryMatch(const FunctionSignature& signature) {
+bool AggregateFunctionImplementation::tryMatch(
+    const FunctionSignature& signature) {
   bool matched = FunctionImplementation::tryMatch(signature);
   if (!matched && intermediate) {
     const auto& actualTypes = signature.arguments;

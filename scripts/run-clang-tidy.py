@@ -11,11 +11,9 @@ import os, sys, subprocess, multiprocessing
 manager = multiprocessing.Manager()
 failedfiles = manager.list()
 
-# Get absolute current path and remove trailing seperators
-currentdir = os.path.realpath(os.getcwd()).rstrip(os.sep)
 print("Arguments: " + str(sys.argv))
 # Get absolute source dir after removing leading and trailing seperators from input.
-sourcedir = currentdir + sys.argv[1].lstrip(os.sep).rstrip(os.sep)
+sourcedir = sys.argv[1].rstrip(os.sep)
 print("Source directory: " + sourcedir)
 builddir = sourcedir + os.sep + sys.argv[2].rstrip(os.sep)
 print("Build directory: " + builddir)
@@ -29,10 +27,13 @@ print("Exclude directories: " + str(excludedirs))
 extensions = tuple([("." + s) for s in sys.argv[4].split(',')])
 print("Extensions: " + str(extensions))
 
+clang_tidy_options = sys.argv[5]
+print("clang-tidy options: " + str(clang_tidy_options))
+
 def runclangtidy(filepath):
-    print("Checking: " + filepath)
-    proc = subprocess.Popen("clang-tidy --quiet -p=" + builddir + " " + filepath, shell=True)
+    proc = subprocess.Popen("clang-tidy " + clang_tidy_options + "  -p=" + builddir + " " + filepath, shell=True)
     if proc.wait() != 0:
+        print("Error file: " + filepath)
         failedfiles.append(filepath)
 
 def collectfiles(dir, exclude, exts):
@@ -52,7 +53,7 @@ pool.map(runclangtidy, collectfiles(sourcedir, excludedirs, extensions))
 pool.close()
 pool.join()
 if len(failedfiles) > 0:
-    print("Errors in " + len(failedfiles) + " files")
+    print("Errors in " + str(len(failedfiles)) + " files")
     sys.exit(1)
 print("No errors found")
 sys.exit(0)

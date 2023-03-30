@@ -1,7 +1,8 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include <yaml-cpp/yaml.h>
 #include "substrait/function/Extension.h"
+
+#include <yaml-cpp/yaml.h>
 
 bool decodeFunctionImpl(
     const YAML::Node& node,
@@ -17,11 +18,12 @@ bool decodeFunctionImpl(
     std::string lastReturnType;
     while (std::getline(ss, lastReturnType, '\n')) {
     }
-    function.returnType = io::substrait::ParameterizedType::decode(lastReturnType);
+    function.returnType =
+        io::substrait::ParameterizedType::decode(lastReturnType);
   }
   const auto& args = node["args"];
   if (args && args.IsSequence()) {
-    for (auto& arg : args) {
+    for (const auto& arg : args) {
       if (arg["options"]) { // enum argument
         auto enumArgument = std::make_shared<io::substrait::EnumArgument>(
             arg.as<io::substrait::EnumArgument>());
@@ -40,8 +42,8 @@ bool decodeFunctionImpl(
 
   const auto& variadic = node["variadic"];
   if (variadic) {
-    auto& min = variadic["min"];
-    auto& max = variadic["max"];
+    const auto& min = variadic["min"];
+    const auto& max = variadic["max"];
     if (min) {
       function.variadic = std::make_optional<io::substrait::FunctionVariadic>(
           {min.as<int>(),
@@ -62,7 +64,7 @@ struct YAML::convert<io::substrait::EnumArgument> {
     // 'options' is required property
     const auto& options = node["options"];
     if (options && options.IsSequence()) {
-      auto& required = node["required"];
+      const auto& required = node["required"];
       argument.required = required && required.as<bool>();
       return true;
     } else {
@@ -91,10 +93,7 @@ struct YAML::convert<io::substrait::TypeArgument> {
       io::substrait::TypeArgument& argument) {
     // no properties need to populate for type argument, just return true if
     // 'type' element exists.
-    if (node["type"]) {
-      return true;
-    }
-    return false;
+    return static_cast<bool>(node["type"]);
   }
 };
 
@@ -116,8 +115,8 @@ struct YAML::convert<io::substrait::AggregateFunctionImplementation> {
     if (res) {
       const auto& intermediate = node["intermediate"];
       if (intermediate) {
-        function.intermediate =
-            io::substrait::ParameterizedType::decode(intermediate.as<std::string>());
+        function.intermediate = io::substrait::ParameterizedType::decode(
+            intermediate.as<std::string>());
       }
     }
     return res;
@@ -139,7 +138,7 @@ struct YAML::convert<io::substrait::TypeVariant> {
 namespace io::substrait {
 
 std::shared_ptr<Extension> Extension::load(const std::string& basePath) {
-  static const std::vector<std::string> extensionFiles{
+  static const std::vector<std::string> kExtensionFiles{
       "functions_aggregate_approx.yaml",
       "functions_aggregate_generic.yaml",
       "functions_arithmetic.yaml",
@@ -152,7 +151,7 @@ std::shared_ptr<Extension> Extension::load(const std::string& basePath) {
       "functions_string.yaml",
       "functions_set.yaml",
   };
-  return load(basePath, extensionFiles);
+  return load(basePath, kExtensionFiles);
 }
 
 std::shared_ptr<Extension> Extension::load(
@@ -160,7 +159,7 @@ std::shared_ptr<Extension> Extension::load(
     const std::vector<std::string>& extensionFiles) {
   std::vector<std::string> yamlExtensionFiles;
   yamlExtensionFiles.reserve(extensionFiles.size());
-  for (auto& extensionFile : extensionFiles) {
+  for (const auto& extensionFile : extensionFiles) {
     auto const pos = basePath.find_last_of('/');
     const auto& extensionUri = basePath.substr(0, pos) + "/" + extensionFile;
     yamlExtensionFiles.emplace_back(extensionUri);
@@ -176,9 +175,9 @@ std::shared_ptr<Extension> Extension::load(
 
     const auto& scalarFunctions = node["scalar_functions"];
     if (scalarFunctions && scalarFunctions.IsSequence()) {
-      for (auto& scalarFunctionNode : scalarFunctions) {
+      for (const auto& scalarFunctionNode : scalarFunctions) {
         const auto functionName = scalarFunctionNode["name"].as<std::string>();
-        for (auto& scalaFunctionImplNode : scalarFunctionNode["impls"]) {
+        for (const auto& scalaFunctionImplNode : scalarFunctionNode["impls"]) {
           auto scalarFunctionImpl =
               scalaFunctionImplNode.as<ScalarFunctionImplementation>();
           scalarFunctionImpl.name = functionName;
@@ -192,10 +191,10 @@ std::shared_ptr<Extension> Extension::load(
 
     const auto& aggregateFunctions = node["aggregate_functions"];
     if (aggregateFunctions && aggregateFunctions.IsSequence()) {
-      for (auto& aggregateFunctionNode : aggregateFunctions) {
+      for (const auto& aggregateFunctionNode : aggregateFunctions) {
         const auto functionName =
             aggregateFunctionNode["name"].as<std::string>();
-        for (auto& aggregateFunctionImplNode :
+        for (const auto& aggregateFunctionImplNode :
              aggregateFunctionNode["impls"]) {
           auto aggregateFunctionImpl =
               aggregateFunctionImplNode.as<AggregateFunctionImplementation>();
@@ -210,7 +209,7 @@ std::shared_ptr<Extension> Extension::load(
 
     const auto& types = node["types"];
     if (types && types.IsSequence()) {
-      for (auto& type : types) {
+      for (const auto& type : types) {
         auto typeAnchor = type.as<TypeVariant>();
         typeAnchor.uri = extensionUri;
         extension->addTypeVariant(std::make_shared<TypeVariant>(typeAnchor));
@@ -222,16 +221,14 @@ std::shared_ptr<Extension> Extension::load(
 
 void Extension::addWindowFunctionImpl(
     const FunctionImplementationPtr& functionImpl) {
-  const auto& functionImpls =
-      windowFunctionImplMap_.find(functionImpl->name);
+  const auto& functionImpls = windowFunctionImplMap_.find(functionImpl->name);
   if (functionImpls != windowFunctionImplMap_.end()) {
     auto& impls = functionImpls->second;
     impls.emplace_back(functionImpl);
   } else {
     std::vector<FunctionImplementationPtr> impls;
     impls.emplace_back(functionImpl);
-    windowFunctionImplMap_.insert(
-        {functionImpl->name, std::move(impls)});
+    windowFunctionImplMap_.insert({functionImpl->name, std::move(impls)});
   }
 }
 
@@ -249,16 +246,14 @@ TypeVariantPtr Extension::lookupType(const std::string& typeName) const {
 
 void Extension::addScalarFunctionImpl(
     const FunctionImplementationPtr& functionImpl) {
-  const auto& functionImpls =
-      scalarFunctionImplMap_.find(functionImpl->name);
+  const auto& functionImpls = scalarFunctionImplMap_.find(functionImpl->name);
   if (functionImpls != scalarFunctionImplMap_.end()) {
     auto& impls = functionImpls->second;
     impls.emplace_back(functionImpl);
   } else {
     std::vector<FunctionImplementationPtr> impls;
     impls.emplace_back(functionImpl);
-    scalarFunctionImplMap_.insert(
-        {functionImpl->name, std::move(impls)});
+    scalarFunctionImplMap_.insert({functionImpl->name, std::move(impls)});
   }
 }
 
@@ -272,8 +267,7 @@ void Extension::addAggregateFunctionImpl(
   } else {
     std::vector<FunctionImplementationPtr> impls;
     impls.emplace_back(functionImpl);
-    aggregateFunctionImplMap_.insert(
-        {functionImpl->name, std::move(impls)});
+    aggregateFunctionImplMap_.insert({functionImpl->name, std::move(impls)});
   }
 }
 

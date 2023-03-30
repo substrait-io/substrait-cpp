@@ -6,7 +6,6 @@ namespace io::substrait {
 
 FunctionImplementationPtr FunctionLookup::lookupFunction(
     const FunctionSignature& signature) const {
-
   const auto& functionImpls = getFunctionImpls();
   auto functionImplsIter = functionImpls.find(signature.name);
   if (functionImplsIter != functionImpls.end()) {

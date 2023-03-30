@@ -19,7 +19,7 @@ std::vector<std::string> SubstraitErrorListener::getErrorMessages() {
   for (const auto& instance : getErrors()) {
     messages.push_back(
         std::to_string(instance.location.line) + ":" +
-        std::to_string(instance.location.char_position_in_line) + " → " +
+        std::to_string(instance.location.charPositionInLine) + " → " +
         instance.message);
   }
   return messages;

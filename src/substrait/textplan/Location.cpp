@@ -6,7 +6,7 @@
 
 namespace io::substrait::textplan {
 
-constexpr const Location Location::kUnknownLocation(
+const Location Location::kUnknownLocation(
     static_cast<google::protobuf::Message*>(nullptr));
 
 bool operator==(const Location& c1, const Location& c2) {

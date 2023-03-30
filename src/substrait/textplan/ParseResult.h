@@ -18,32 +18,31 @@ class ParseResult {
       SymbolTable symbolTable,
       std::vector<std::string> syntaxErrors,
       std::vector<std::string> semanticErrors) {
-    symbol_table_ = std::make_shared<SymbolTable>(std::move(symbolTable));
-    syntax_errors_ = std::move(syntaxErrors);
-    semantic_errors_ = std::move(semanticErrors);
+    symbolTable_ = std::make_shared<SymbolTable>(std::move(symbolTable));
+    syntaxErrors_ = std::move(syntaxErrors);
+    semanticErrors_ = std::move(semanticErrors);
   }
 
   [[nodiscard]] bool successful() const {
-    return syntax_errors_.empty() && semantic_errors_.empty();
+    return syntaxErrors_.empty() && semanticErrors_.empty();
   }
 
   [[nodiscard]] const SymbolTable& getSymbolTable() const {
-    return *symbol_table_;
+    return *symbolTable_;
   }
 
   [[nodiscard]] const std::vector<std::string>& getSyntaxErrors() const {
-    return syntax_errors_;
+    return syntaxErrors_;
   }
 
   [[nodiscard]] const std::vector<std::string>& getSemanticErrors() const {
-    return semantic_errors_;
+    return semanticErrors_;
   }
 
   [[nodiscard]] std::vector<std::string> getAllErrors() const {
     std::vector<std::string> errors;
-    errors.insert(errors.end(), syntax_errors_.begin(), syntax_errors_.end());
-    errors.insert(
-        errors.end(), semantic_errors_.begin(), semantic_errors_.end());
+    errors.insert(errors.end(), syntaxErrors_.begin(), syntaxErrors_.end());
+    errors.insert(errors.end(), semanticErrors_.begin(), semanticErrors_.end());
     return errors;
   }
 
@@ -51,9 +50,9 @@ class ParseResult {
   friend std::ostream& operator<<(std::ostream& os, const ParseResult& result);
 
  private:
-  std::shared_ptr<const SymbolTable> symbol_table_;
-  std::vector<std::string> syntax_errors_;
-  std::vector<std::string> semantic_errors_;
+  std::shared_ptr<const SymbolTable> symbolTable_;
+  std::vector<std::string> syntaxErrors_;
+  std::vector<std::string> semanticErrors_;
 };
 
 } // namespace io::substrait::textplan

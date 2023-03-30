@@ -9,7 +9,7 @@ namespace io::substrait::textplan {
 
 std::ostream& operator<<(std::ostream& os, const ParseResult& result) {
   if (result.successful()) {
-    os << *result.symbol_table_;
+    os << *result.symbolTable_;
   }
   auto msgs = result.getSyntaxErrors();
   if (!msgs.empty()) {

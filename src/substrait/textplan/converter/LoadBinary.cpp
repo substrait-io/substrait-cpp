@@ -5,6 +5,7 @@
 #include <google/protobuf/io/tokenizer.h>
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/util/json_util.h>
+
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -28,7 +29,7 @@ class StringErrorCollector : public google::protobuf::io::ErrorCollector {
         message);
   }
 
-  [[nodiscard]] std::vector<std::string> GetErrors() const {
+  [[nodiscard]] std::vector<std::string> getErrors() const {
     return errors_;
   }
 
@@ -53,21 +54,21 @@ std::string readFromFile(std::string_view msgPath) {
   return buffer.str();
 }
 
-PlanOrErrors loadFromJSON(std::string_view json) {
+PlanOrErrors loadFromJson(std::string_view json) {
   if (json.empty()) {
     return PlanOrErrors({"Provided JSON string was empty."});
   }
-  std::string_view usable_json = json;
+  std::string_view usableJson = json;
   if (json[0] == '#') {
     int idx = 0;
     while (idx < json.size() && json[idx] != '\n') {
       idx++;
     }
-    usable_json.remove_prefix(idx);
+    usableJson.remove_prefix(idx);
   }
   ::substrait::proto::Plan plan;
   auto status = google::protobuf::util::JsonStringToMessage(
-      std::string{usable_json}, &plan);
+      std::string{usableJson}, &plan);
   if (!status.ok()) {
     return PlanOrErrors({fmt::format(
         "Failed to parse Substrait JSON: {}", status.message().ToString())});
@@ -81,7 +82,7 @@ PlanOrErrors loadFromText(const std::string& text) {
   StringErrorCollector collector;
   parser.RecordErrorsTo(&collector);
   if (!parser.ParseFromString(text, &plan)) {
-    return PlanOrErrors(collector.GetErrors());
+    return PlanOrErrors(collector.getErrors());
   }
   return PlanOrErrors(plan);
 }

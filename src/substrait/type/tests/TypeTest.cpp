@@ -1,16 +1,17 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include <gtest/gtest.h>
+
 #include "substrait/type/Type.h"
 
 using namespace io::substrait;
 
 class TypeTest : public ::testing::Test {
  protected:
-  template <TypeKind kind>
+  template <TypeKind Kind>
   void testDecode(const std::string& rawType, const std::string& signature) {
     const auto& type = ParameterizedType::decode(rawType);
-    ASSERT_TRUE(type->kind() == kind);
+    ASSERT_TRUE(type->kind() == Kind);
     ASSERT_EQ(type->signature(), signature);
   }
 
@@ -22,12 +23,12 @@ class TypeTest : public ::testing::Test {
     ASSERT_EQ(type->signature(), signature);
   }
 
-  template <class T, bool param = true>
+  template <class T, bool Param = true>
   void testDecode(
       const std::string& rawType,
       const std::function<void(const std::shared_ptr<const T>&)>&
           typeCallBack) {
-    const auto& type = ParameterizedType::decode(rawType, param);
+    const auto& type = ParameterizedType::decode(rawType, Param);
     if (typeCallBack) {
       typeCallBack(std::dynamic_pointer_cast<const T>(type));
     }
@@ -35,29 +36,29 @@ class TypeTest : public ::testing::Test {
 };
 
 TEST_F(TypeTest, typeCreator) {
-  testType(BOOL(), TypeKind::kBool, "bool");
-  testType(TINYINT(), TypeKind::kI8, "i8");
-  testType(SMALLINT(), TypeKind::kI16, "i16");
-  testType(INTEGER(), TypeKind::kI32, "i32");
-  testType(BIGINT(), TypeKind::kI64, "i64");
-  testType(FLOAT(), TypeKind::kFp32, "fp32");
-  testType(DOUBLE(), TypeKind::kFp64, "fp64");
-  testType(BINARY(), TypeKind::kBinary, "vbin");
-  testType(TIMESTAMP(), TypeKind::kTimestamp, "ts");
-  testType(STRING(), TypeKind::kString, "str");
-  testType(TIMESTAMP_TZ(), TypeKind::kTimestampTz, "tstz");
-  testType(DATE(), TypeKind::kDate, "date");
-  testType(TIME(), TypeKind::kTime, "time");
-  testType(INTERVAL_DAY(), TypeKind::kIntervalDay, "iday");
-  testType(INTERVAL_YEAR(), TypeKind::kIntervalYear, "iyear");
-  testType(UUID(), TypeKind::kUuid, "uuid");
-  testType(FIXED_CHAR(12), TypeKind::kFixedChar, "fchar<12>");
-  testType(FIXED_BINARY(12), TypeKind::kFixedBinary, "fbin<12>");
-  testType(VARCHAR(12), TypeKind::kVarchar, "vchar<12>");
-  testType(DECIMAL(12, 23), TypeKind::kDecimal, "dec<12,23>");
-  testType(LIST(FLOAT()), TypeKind::kList, "list<fp32>");
-  testType(MAP(STRING(), FLOAT()), TypeKind::kMap, "map<str,fp32>");
-  testType(STRUCT({STRING(), FLOAT()}), TypeKind::kStruct, "struct<str,fp32>");
+  testType(boolean(), TypeKind::kBool, "bool");
+  testType(tinyint(), TypeKind::kI8, "i8");
+  testType(smallint(), TypeKind::kI16, "i16");
+  testType(integer(), TypeKind::kI32, "i32");
+  testType(bigint(), TypeKind::kI64, "i64");
+  testType(float4(), TypeKind::kFp32, "fp32");
+  testType(float8(), TypeKind::kFp64, "fp64");
+  testType(binary(), TypeKind::kBinary, "vbin");
+  testType(timestamp(), TypeKind::kTimestamp, "ts");
+  testType(string(), TypeKind::kString, "str");
+  testType(timestampTz(), TypeKind::kTimestampTz, "tstz");
+  testType(date(), TypeKind::kDate, "date");
+  testType(time(), TypeKind::kTime, "time");
+  testType(intervalDay(), TypeKind::kIntervalDay, "iday");
+  testType(intervalYear(), TypeKind::kIntervalYear, "iyear");
+  testType(uuid(), TypeKind::kUuid, "uuid");
+  testType(fixedChar(12), TypeKind::kFixedChar, "fchar<12>");
+  testType(fixedBinary(12), TypeKind::kFixedBinary, "fbin<12>");
+  testType(varchar(12), TypeKind::kVarchar, "vchar<12>");
+  testType(decimal(12, 23), TypeKind::kDecimal, "dec<12,23>");
+  testType(list(float4()), TypeKind::kList, "list<fp32>");
+  testType(map(string(), float4()), TypeKind::kMap, "map<str,fp32>");
+  testType(row({string(), float4()}), TypeKind::kStruct, "struct<str,fp32>");
 }
 
 TEST_F(TypeTest, decodeTest) {
@@ -87,8 +88,9 @@ TEST_F(TypeTest, decodeTest) {
         ASSERT_EQ(typePtr->signature(), "fchar<L1>");
       });
 
-  testDecode<FixedChar, false>(
-      "fixedchar<12>", [](const std::shared_ptr<const FixedChar>& typePtr) {
+  testDecode<class FixedChar, false>(
+      "fixedchar<12>",
+      [](const std::shared_ptr<const class FixedChar>& typePtr) {
         ASSERT_EQ(typePtr->length(), 12);
         ASSERT_EQ(typePtr->signature(), "fchar<12>");
       });
@@ -100,8 +102,9 @@ TEST_F(TypeTest, decodeTest) {
         ASSERT_EQ(typePtr->signature(), "fbin<L1>");
       });
 
-  testDecode<FixedBinary, false>(
-      "fixedbinary<10>", [](const std::shared_ptr<const FixedBinary>& typePtr) {
+  testDecode<class FixedBinary, false>(
+      "fixedbinary<10>",
+      [](const std::shared_ptr<const class FixedBinary>& typePtr) {
         ASSERT_EQ(typePtr->length(), 10);
         ASSERT_EQ(typePtr->signature(), "fbin<10>");
       });
