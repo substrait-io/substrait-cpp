@@ -65,7 +65,7 @@ enum class SourceType {
   kExtensionTable = 4,
 };
 
-const std::string& SymbolTypeName(SymbolType type);
+const std::string& symbolTypeName(SymbolType type);
 
 struct SymbolInfo {
   std::string name;

@@ -5,8 +5,6 @@
 #include <map>
 #include <string>
 
-#include "SymbolTable.h"
-
 #include "substrait/common/Exceptions.h"
 #include "substrait/textplan/Location.h"
 

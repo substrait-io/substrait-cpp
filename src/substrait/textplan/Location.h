@@ -55,4 +55,4 @@ struct std::less<::io::substrait::textplan::Location> {
 
 // Convenience macro useful for construction protobuffer based locations.
 #define PROTO_LOCATION(proto)                                                  \
-  ::io::substrait::textplan::Location((::google::protobuf::Message*)&proto)
+  ::io::substrait::textplan::Location((::google::protobuf::Message*)&(proto))

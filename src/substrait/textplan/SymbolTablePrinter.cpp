@@ -297,8 +297,9 @@ std::string outputFunctionsSection(const SymbolTable& symbolTable) {
   // Finally output the extensions by space in the order they were encountered.
   bool hasPreviousOutput = false;
   for (const uint32_t space : usedSpaces) {
-    if (hasPreviousOutput)
+    if (hasPreviousOutput) {
       text << "\n";
+    }
     if (spaceNames.find(space) == spaceNames.end()) {
       // TODO: Handle this case as a warning.
       text << "extension_space {\n";

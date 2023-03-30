@@ -19,7 +19,7 @@ class TestCase {
 };
 
 static DecimalLiteral
-createDecimal(std::string value, int32_t scale, int32_t precision) {
+createDecimal(const std::string& value, int32_t scale, int32_t precision) {
   ::substrait::proto::Expression_Literal_Decimal proto;
   proto.set_value(value);
   proto.set_precision(precision);
@@ -29,22 +29,28 @@ createDecimal(std::string value, int32_t scale, int32_t precision) {
 
 class DecimalTest : public ::testing::TestWithParam<TestCase> {};
 
-std::vector<TestCase> GetTestCases() {
+std::vector<TestCase> getTestCases() {
   static std::vector<TestCase> cases = {
-      {"42noscale", createDecimal("\x2A", 0, 3), false, "42@precision=3"},
+      {"42noscale",
+       createDecimal("\x2A", 0, 3), // NOLINT
+       false,
+       "42@precision=3"},
       {"42positivescale",
-       createDecimal("\x2A", +2, 3),
+       createDecimal("\x2A", +2, 3), // NOLINT
        false,
        "42E-2@precision=3"},
       {"42negativescale",
-       createDecimal("\x2A", -2, 3),
+       createDecimal("\x2A", -2, 3), // NOLINT
        false,
        "42E+2@precision=3"},
 
       {"8bit, 0", createDecimal({"\x00", 1}, 0, 4), false, "0@precision=4"},
       {"8bit, 1", createDecimal("\x01", 0, 4), false, "1@precision=4"},
       {"8bit, 2", createDecimal("\x02", 0, 4), false, "2@precision=4"},
-      {"8bit, 126", createDecimal("\x7E", 0, 4), false, "126@precision=4"},
+      {"8bit, 126",
+       createDecimal("\x7E", 0, 4), // NOLINT
+       false,
+       "126@precision=4"},
       {"8bit, 127", createDecimal("\x7F", 0, 4), false, "127@precision=4"},
       {"8bit, 128", createDecimal("\x80", 0, 4), false, "-128@precision=4"},
       {"8bit, 129", createDecimal("\x81", 0, 4), false, "-127@precision=4"},
@@ -62,7 +68,7 @@ std::vector<TestCase> GetTestCases() {
        false,
        "128@precision=4"},
       {"16bit, 33333",
-       createDecimal("\x39\x30", 0, 4),
+       createDecimal("\x39\x30", 0, 4), // NOLINT
        false,
        "12345@precision=4"},
       {"16bit, 53191",
@@ -156,7 +162,7 @@ TEST_P(DecimalTest, toString) {
 INSTANTIATE_TEST_SUITE_P(
     DecimalTests,
     DecimalTest,
-    ::testing::ValuesIn(GetTestCases()),
+    ::testing::ValuesIn(getTestCases()),
     [](const testing::TestParamInfo<TestCase>& info) {
       std::string identifier = info.param.name;
       // Remove non-alphanumeric characters to make the test framework happy.
