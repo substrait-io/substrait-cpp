@@ -181,8 +181,9 @@ std::string outputPipelinesSection(const SymbolTable& symbolTable) {
   bool hasPreviousText = false;
   for (const SymbolInfo& info : symbolTable) {
     if (info.type != SymbolType::kPlanRelation &&
-        info.type != SymbolType::kRelation)
+        info.type != SymbolType::kRelation) {
       continue;
+    }
     auto relationData = ANY_CAST(std::shared_ptr<RelationData>, info.blob);
     for (auto pipelineStart : relationData->newPipelines) {
       auto pipeline = pipelineToPath(symbolTable, pipelineStart);

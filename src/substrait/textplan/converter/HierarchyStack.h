@@ -20,8 +20,9 @@ class HierarchyStack {
   }
 
   const ::google::protobuf::Message* getEnclosingScope() {
-    if (stack_.empty())
+    if (stack_.empty()) {
       return nullptr;
+    }
     return stack_[stack_.size() - 1];
   }
 

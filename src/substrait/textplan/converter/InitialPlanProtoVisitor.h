@@ -16,7 +16,7 @@ namespace io::substrait::textplan {
 // process which identifies the prominent symbols and gives them names.
 class InitialPlanProtoVisitor : public BasePlanProtoVisitor {
  public:
-  explicit InitialPlanProtoVisitor() : BasePlanProtoVisitor() {
+  explicit InitialPlanProtoVisitor() {
     symbolTable_ = std::make_shared<SymbolTable>();
     errorListener_ = std::make_shared<SubstraitErrorListener>();
     hierarchyStack_ = std::make_shared<HierarchyStack>();
