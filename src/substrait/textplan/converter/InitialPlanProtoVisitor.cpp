@@ -91,7 +91,8 @@ std::any InitialPlanProtoVisitor::visitRelation(
       PROTO_LOCATION(relation),
       SymbolType::kRelation,
       relation.rel_type_case(),
-      std::make_shared<RelationData>(&relation, hierarchyStack_->getEnclosingScope()));
+      std::make_shared<RelationData>(
+          &relation, hierarchyStack_->getEnclosingScope()));
   return std::nullopt;
 }
 

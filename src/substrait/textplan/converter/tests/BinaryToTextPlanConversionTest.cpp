@@ -325,12 +325,11 @@ std::vector<TestCase> getTestCases() {
           AllOf(
               HasSymbols(
                   {"local", "read", "local2", "read2", "hashjoin", "root"}),
-              WhenSerialized(
-                  ::testing::HasSubstr("pipelines {\n"
-                                       "  read -> hashjoin;\n"
-                                       "  read2 -> hashjoin;\n"
-                                       "  hashjoin -> root;\n"
-                                       "}\n"))),
+              WhenSerialized(::testing::HasSubstr("pipelines {\n"
+                                                  "  read -> hashjoin;\n"
+                                                  "  read2 -> hashjoin;\n"
+                                                  "  hashjoin -> root;\n"
+                                                  "}\n"))),
       },
   };
   return cases;
