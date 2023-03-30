@@ -38,7 +38,6 @@ bool DecimalLiteral::isValid() {
   return value_.size() == 16 && precision_ >= 1 && precision_ <= 38;
 }
 
-
 std::string DecimalLiteral::toBaseString() {
   std::stringstream decimalString;
   if (value_.empty()) {
@@ -56,7 +55,7 @@ std::string DecimalLiteral::toBaseString() {
   }
 
   // Collect the bytes into an unsigned integer.
-  absl::uint128 value = 0;  // Will only hold 16 hex chars.
+  absl::uint128 value = 0; // Will only hold 16 hex chars.
   for (size_t i = numBytes; i > 0; i--) {
     value = (value << 8) | static_cast<unsigned char>(processingValue[i - 1]);
   }
@@ -93,4 +92,4 @@ std::string DecimalLiteral::toString() {
   return decimalString.str();
 }
 
-} // namespace io::substrait::common
+} // namespace io::substrait::expression

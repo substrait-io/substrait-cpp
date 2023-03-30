@@ -5,7 +5,7 @@
 #include <string>
 
 namespace substrait::proto {
-  class Expression_Literal_Decimal;
+class Expression_Literal_Decimal;
 }
 
 namespace io::substrait::expression {
@@ -29,9 +29,13 @@ class DecimalLiteral {
   // a string.
   std::string toString();
 
-  [[nodiscard]] int32_t precision() const { return precision_; }
+  [[nodiscard]] int32_t precision() const {
+    return precision_;
+  }
 
-  [[nodiscard]] int32_t scale() const { return scale_; }
+  [[nodiscard]] int32_t scale() const {
+    return scale_;
+  }
 
  private:
   // Little-endian twos-complement integer representation of complete value
@@ -44,4 +48,4 @@ class DecimalLiteral {
   int32_t scale_;
 };
 
-} // namespace io::substrait::common
+} // namespace io::substrait::expression

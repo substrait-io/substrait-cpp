@@ -25,7 +25,10 @@ class SubstraitErrorListener {
   SubstraitErrorListener() = default;
 
   void addError(size_t linenum, size_t charnum, const std::string& msg);
-  void addError(const std::string& msg) { addError(-1, -1, msg); };
+
+  void addError(const std::string& msg) {
+    addError(-1, -1, msg);
+  };
 
   const std::vector<ErrorInstance>& getErrors() {
     return errors_;

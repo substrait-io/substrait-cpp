@@ -169,4 +169,4 @@ INSTANTIATE_TEST_SUITE_P(
       return identifier;
     });
 
-}  // namespace io::substrait::expression
+} // namespace io::substrait::expression

@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
     glob(argv[currArg], GLOB_TILDE, nullptr, &globResult);
     for (size_t i = 0; i < globResult.gl_pathc; i++) {
       printf("===== %s =====\n", globResult.gl_pathv[i]);
-      io::substrait::textplan::convertJSONToText(globResult.gl_pathv[i]);
+      io::substrait::textplan::convertJsonToText(globResult.gl_pathv[i]);
     }
   }
 
