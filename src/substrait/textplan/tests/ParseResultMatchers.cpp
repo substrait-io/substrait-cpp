@@ -250,7 +250,7 @@ class HasSymbolsWithTypesMatcher {
       if (hasPreviousOutput) {
         *os << ", ";
       }
-      *os << SymbolTypeName(type);
+      *os << symbolTypeName(type);
       hasPreviousOutput = true;
     }
   }
