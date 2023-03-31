@@ -83,7 +83,7 @@ std::any InitialPlanProtoVisitor::visitRelation(
     const ::substrait::proto::Rel& relation) {
   std::string name =
       ::substrait::proto::relTypeCaseName(relation.rel_type_case());
-  HierarchyScope mark(hierarchyStack_.get(), &relation);
+  HierarchyScope mark(relationStack_.get(), &relation);
   BasePlanProtoVisitor::visitRelation(relation);
   auto uniqueName = symbolTable_->getUniqueName(name);
   symbolTable_->defineSymbol(
@@ -92,7 +92,7 @@ std::any InitialPlanProtoVisitor::visitRelation(
       SymbolType::kRelation,
       relation.rel_type_case(),
       std::make_shared<RelationData>(
-          &relation, hierarchyStack_->getEnclosingScope()));
+          &relation, relationStack_->getEnclosingScope()));
   return std::nullopt;
 }
 

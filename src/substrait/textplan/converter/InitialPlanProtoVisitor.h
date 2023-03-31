@@ -19,7 +19,7 @@ class InitialPlanProtoVisitor : public BasePlanProtoVisitor {
   explicit InitialPlanProtoVisitor() {
     symbolTable_ = std::make_shared<SymbolTable>();
     errorListener_ = std::make_shared<SubstraitErrorListener>();
-    hierarchyStack_ = std::make_shared<HierarchyStack>();
+    relationStack_ = std::make_shared<HierarchyStack>();
   };
 
   [[nodiscard]] std::shared_ptr<const SymbolTable> getSymbolTable() const {
@@ -60,7 +60,7 @@ class InitialPlanProtoVisitor : public BasePlanProtoVisitor {
 
   std::shared_ptr<SymbolTable> symbolTable_;
   std::shared_ptr<SubstraitErrorListener> errorListener_;
-  std::shared_ptr<HierarchyStack> hierarchyStack_;
+  std::shared_ptr<HierarchyStack> relationStack_;
 };
 
 } // namespace io::substrait::textplan
