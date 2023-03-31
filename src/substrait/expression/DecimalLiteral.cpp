@@ -11,8 +11,8 @@ namespace io::substrait::expression {
 
 namespace {
 
-// invertBits flips the sign of a two-complements value.
-std::string invertBits(const std::string& value) {
+// negate flips the sign of a two-complements value.
+std::string negate(const std::string& value) {
   std::string newValue = value;
   // Flip all of the bits and add one.
   bool carryover = true;
@@ -51,7 +51,7 @@ std::string DecimalLiteral::toBaseString() {
   bool isNegative = ((value_[numBytes - 1] & 0x80) != 0);
   if (isNegative) {
     decimalString << "-";
-    processingValue = invertBits(value_);
+    processingValue = negate(value_);
   }
 
   // Collect the bytes into an unsigned integer.

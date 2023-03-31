@@ -36,11 +36,6 @@ std::string PlanPrinterVisitor::printRelation(
   text << ::substrait::proto::relTypeCaseName(relation->rel_type_case())
        << " relation " << symbol.name << " {\n";
 
-#if 0
-  if (symbol != SymbolTable::kUnknownSymbol) {
-    text << "  source " << symbol.name << ";\n";
-  }
-#endif
   auto result = this->visitRelation(*relation);
   if (result.type() != typeid(std::string)) {
     errorListener_->addError(
