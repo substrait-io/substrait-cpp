@@ -100,7 +100,7 @@ digits to translate the result by).
 ### String Literals
 
 Strings with no size limit may be specified without a type specifier for brevity.  Substrait text plans are UTF-8
-encoded throughout so any characters contained in strings must also co valid UTF-8.  For byte content that is not in
+encoded throughout so any characters contained in strings must also be valid UTF-8.  For byte content that is not in
 UTF-8 use a series of byte escape sequences instead.
 
 The syntax for raw strings is any number of backticks followed by any unescaped characters followed by a similar number
