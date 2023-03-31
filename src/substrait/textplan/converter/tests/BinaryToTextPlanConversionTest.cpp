@@ -188,17 +188,17 @@ std::vector<TestCase> getTestCases() {
                      read relation read {
                      }
 
-                           schema schema {
-                             cost fp32;
-                             count i64;
-                           }
+                     schema schema {
+                       cost fp32;
+                       count i64;
+                     }
 
-                           source named_table named {
-                             names = [
-                               "#2",
-                             ]
-                           }
-                         })"))),
+                     source named_table named {
+                       names = [
+                         "#2",
+                       ]
+                     }
+                   })"))),
       },
       {
           "simple expression with deprecated args",

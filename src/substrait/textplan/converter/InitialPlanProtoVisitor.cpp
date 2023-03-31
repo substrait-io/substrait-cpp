@@ -14,7 +14,6 @@
 #include "substrait/textplan/Location.h"
 #include "substrait/textplan/RelationData.h"
 #include "substrait/textplan/SymbolTable.h"
-#include "substrait/textplan/converter/HierarchyStack.h"
 
 namespace io::substrait::textplan {
 
@@ -83,7 +82,6 @@ std::any InitialPlanProtoVisitor::visitRelation(
     const ::substrait::proto::Rel& relation) {
   std::string name =
       ::substrait::proto::relTypeCaseName(relation.rel_type_case());
-  HierarchyScope mark(relationStack_.get(), &relation);
   BasePlanProtoVisitor::visitRelation(relation);
   auto uniqueName = symbolTable_->getUniqueName(name);
   symbolTable_->defineSymbol(
@@ -91,8 +89,7 @@ std::any InitialPlanProtoVisitor::visitRelation(
       PROTO_LOCATION(relation),
       SymbolType::kRelation,
       relation.rel_type_case(),
-      std::make_shared<RelationData>(
-          &relation, relationStack_->getEnclosingScope()));
+      std::make_shared<RelationData>(&relation, nullptr));
   return std::nullopt;
 }
 
