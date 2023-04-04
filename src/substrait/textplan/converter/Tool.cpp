@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include <getopt.h>
+#ifndef _WIN32
+#include <glob.h>
+#endif
 
 #include <iostream>
 
@@ -23,6 +25,12 @@ void convertJsonToText(const char* filename) {
   }
 
   auto result = parseBinaryPlan(*planOrError);
+  auto errors = result.getAllErrors();
+  if (!errors.empty()) {
+    for (const auto& err : errors) {
+      std::cerr << err << std::endl;
+    }
+  }
   std::cout << SymbolTablePrinter::outputToText(result.getSymbolTable());
 }
 
@@ -30,26 +38,26 @@ void convertJsonToText(const char* filename) {
 } // namespace io::substrait::textplan
 
 int main(int argc, char* argv[]) {
-  while (true) {
-    int optionIndex = 0;
-    static struct option longOptions[] = {{nullptr, 0, nullptr, 0}};
-
-    int c = getopt_long(argc, argv, "", longOptions, &optionIndex);
-    if (c == -1) {
-      break;
-    }
-  }
-
-  if (optind >= argc) {
+  if (argc <= 1) {
     printf("Usage:  planconverter <file1> <file2> ...\n");
     return EXIT_FAILURE;
   }
 
-  int currArg = optind;
-  for (; currArg < argc; currArg++) {
+#ifdef _WIN32
+  for (int currArg = 1; currArg < argc; currArg++) {
     printf("===== %s =====\n", argv[currArg]);
     io::substrait::textplan::convertJsonToText(argv[currArg]);
   }
+#else
+  for (int currArg = 1; currArg < argc; currArg++) {
+    glob_t globResult;
+    glob(argv[currArg], GLOB_TILDE, nullptr, &globResult);
+    for (size_t i = 0; i < globResult.gl_pathc; i++) {
+      printf("===== %s =====\n", globResult.gl_pathv[i]);
+      io::substrait::textplan::convertJsonToText(globResult.gl_pathv[i]);
+    }
+  }
+#endif
 
   return EXIT_SUCCESS;
 }

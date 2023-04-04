@@ -9,6 +9,7 @@ set(ADDITIONAL_CLEAN_FILES
 
 add_subdirectory(common)
 add_subdirectory(type)
+add_subdirectory(expression)
 add_subdirectory(function)
 add_subdirectory(proto)
 add_subdirectory(textplan)

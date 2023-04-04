@@ -18,6 +18,8 @@ sudo --preserve-env apt install -y \
   libprotobuf-dev \
   libprotobuf23 \
   protobuf-compiler \
-  clang-format
+  clang-format \
+  uuid-dev \
+  default-jre
 
 pip install cmake-format

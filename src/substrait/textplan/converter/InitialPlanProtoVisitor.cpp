@@ -41,7 +41,7 @@ std::any InitialPlanProtoVisitor::visitExtension(
       shortName(extension.extension_function().name()));
   symbolTable_->defineSymbol(
       uniqueName,
-      Location((::google::protobuf::Message*)&extension.extension_function()),
+      PROTO_LOCATION(extension.extension_function()),
       SymbolType::kFunction,
       std::nullopt,
       &extension.extension_function());
@@ -52,7 +52,7 @@ std::any InitialPlanProtoVisitor::visitExtensionUri(
     const ::substrait::proto::extensions::SimpleExtensionURI& uri) {
   symbolTable_->defineSymbol(
       uri.uri(),
-      Location((::google::protobuf::Message*)&uri),
+      PROTO_LOCATION(uri),
       SymbolType::kExtensionSpace,
       std::nullopt,
       uri.extension_uri_anchor());
@@ -67,7 +67,7 @@ std::any InitialPlanProtoVisitor::visitPlanRelation(
   auto uniqueName = symbolTable_->getUniqueName(name);
   symbolTable_->defineSymbol(
       uniqueName,
-      Location((google::protobuf::Message*)&relation),
+      PROTO_LOCATION(relation),
       SymbolType::kPlanRelation,
       std::nullopt,
       &relation);
@@ -82,7 +82,7 @@ std::any InitialPlanProtoVisitor::visitRelation(
   auto uniqueName = symbolTable_->getUniqueName(name);
   symbolTable_->defineSymbol(
       uniqueName,
-      Location((google::protobuf::Message*)&relation),
+      PROTO_LOCATION(relation),
       SymbolType::kRelation,
       relation.rel_type_case(),
       &relation);
@@ -101,10 +101,11 @@ std::any InitialPlanProtoVisitor::visitReadRelation(
     const std::string& name = symbolTable_->getUniqueName("schema");
     symbolTable_->defineSymbol(
         name,
-        Location((google::protobuf::Message*)&relation.base_schema()),
+        PROTO_LOCATION(relation.base_schema()),
         SymbolType::kSchema,
         std::nullopt,
         &relation.base_schema());
+    visitNamedStruct(relation.base_schema());
   }
 
   return BasePlanProtoVisitor::visitReadRelation(relation);
@@ -115,7 +116,7 @@ std::any InitialPlanProtoVisitor::visitVirtualTable(
   const auto& uniqueName = symbolTable_->getUniqueName("virtual");
   symbolTable_->defineSymbol(
       uniqueName,
-      Location((google::protobuf::Message*)&table),
+      PROTO_LOCATION(table),
       SymbolType::kSource,
       SourceType::kVirtualTable,
       &table);
@@ -127,7 +128,7 @@ std::any InitialPlanProtoVisitor::visitLocalFiles(
   const auto& uniqueName = symbolTable_->getUniqueName("local");
   symbolTable_->defineSymbol(
       uniqueName,
-      Location((google::protobuf::Message*)&local),
+      PROTO_LOCATION(local),
       SymbolType::kSource,
       SourceType::kLocalFiles,
       &local);
@@ -139,10 +140,18 @@ std::any InitialPlanProtoVisitor::visitNamedTable(
   const auto& uniqueName = symbolTable_->getUniqueName("named");
   symbolTable_->defineSymbol(
       uniqueName,
-      Location((google::protobuf::Message*)&table),
+      PROTO_LOCATION(table),
       SymbolType::kSource,
       SourceType::kNamedTable,
       &table);
+  for (const auto& name : table.names()) {
+    symbolTable_->defineSymbol(
+        name,
+        Location::kUnknownLocation,
+        SymbolType::kField,
+        SourceType::kUnknown,
+        &table); // Field names are in this scope.
+  }
   return BasePlanProtoVisitor::visitNamedTable(table);
 }
 
@@ -151,11 +160,27 @@ std::any InitialPlanProtoVisitor::visitExtensionTable(
   const auto& uniqueName = symbolTable_->getUniqueName("extensiontable");
   symbolTable_->defineSymbol(
       uniqueName,
-      Location((google::protobuf::Message*)&table),
+      PROTO_LOCATION(table),
       SymbolType::kSource,
       SourceType::kExtensionTable,
       &table);
   return BasePlanProtoVisitor::visitExtensionTable(table);
+}
+
+std::any InitialPlanProtoVisitor::visitNamedStruct(
+    const ::substrait::proto::NamedStruct& named) {
+  for (const auto& name : named.names()) {
+    if (symbolTable_->lookupSymbolByName(name) != SymbolInfo::kUnknown) {
+      continue;
+    }
+    symbolTable_->defineSymbol(
+        name,
+        PROTO_LOCATION(named),
+        SymbolType::kField,
+        SourceType::kUnknown,
+        &named); // Field names are in this scope.
+  }
+  return BasePlanProtoVisitor::visitNamedStruct(named);
 }
 
 } // namespace io::substrait::textplan

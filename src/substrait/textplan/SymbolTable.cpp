@@ -5,9 +5,36 @@
 #include <map>
 #include <string>
 
+#include "substrait/common/Exceptions.h"
 #include "substrait/textplan/Location.h"
 
 namespace io::substrait::textplan {
+
+const std::string& symbolTypeName(SymbolType type) {
+  static std::vector<std::string> names = {
+      "kExtensionSpace",
+      "kFunction",
+      "kPlanRelation",
+      "kRelation",
+      "kRelationDetail",
+      "kSchema",
+      "kSchemaColumn",
+      "kSource",
+      "kSourceDetail",
+      "kField",
+  };
+  auto typeNum = int32_t(type);
+  if (typeNum == -1) {
+    static std::string unknown = "kUnknown";
+    return unknown;
+  }
+  if (typeNum > names.size()) {
+    SUBSTRAIT_FAIL(
+        "Unknown symbol type " + std::to_string(typeNum) + " referenced.");
+  }
+
+  return names[typeNum];
+}
 
 bool SymbolTableIterator::operator!=(SymbolTableIterator const& other) const {
   return index_ != other.index_;
@@ -21,6 +48,13 @@ SymbolTableIterator SymbolTableIterator::operator++() {
   ++index_;
   return *this;
 }
+
+const SymbolInfo SymbolInfo::kUnknown = {
+    "__UNKNOWN__",
+    Location::kUnknownLocation,
+    SymbolType::kUnknown,
+    std::nullopt,
+    std::nullopt};
 
 bool operator==(const SymbolInfo& left, const SymbolInfo& right) {
   return (left.name == right.name) && (left.location == right.location) &&
@@ -71,7 +105,7 @@ SymbolInfo* SymbolTable::defineUniqueSymbol(
 const SymbolInfo& SymbolTable::lookupSymbolByName(const std::string& name) {
   auto itr = symbolsByName_.find(name);
   if (itr == symbolsByName_.end()) {
-    return kUnknownSymbol;
+    return SymbolInfo::kUnknown;
   }
   return *symbols_[itr->second];
 }
@@ -80,7 +114,7 @@ const SymbolInfo& SymbolTable::lookupSymbolByLocation(
     const Location& location) {
   auto itr = symbolsByLocation_.find(location);
   if (itr == symbolsByLocation_.end()) {
-    return kUnknownSymbol;
+    return SymbolInfo::kUnknown;
   }
   return *symbols_[itr->second];
 }
@@ -94,7 +128,7 @@ const SymbolInfo& SymbolTable::nthSymbolByType(uint32_t n, SymbolType type) {
       }
     }
   }
-  return kUnknownSymbol;
+  return SymbolInfo::kUnknown;
 }
 
 SymbolTableIterator SymbolTable::begin() const {
@@ -104,12 +138,5 @@ SymbolTableIterator SymbolTable::begin() const {
 SymbolTableIterator SymbolTable::end() const {
   return {this, symbolsByName_.size()};
 }
-
-const SymbolInfo SymbolTable::kUnknownSymbol = {
-    "__UNKNOWN__",
-    Location::kUnknownLocation,
-    SymbolType::kUnknown,
-    std::nullopt,
-    std::nullopt};
 
 } // namespace io::substrait::textplan

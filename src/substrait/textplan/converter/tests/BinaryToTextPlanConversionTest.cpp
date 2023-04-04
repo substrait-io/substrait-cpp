@@ -147,6 +147,7 @@ std::vector<TestCase> getTestCases() {
               HasSymbols({"local", "read", "root"}),
               WhenSerialized(EqSquashingWhitespace(
                   R"(read relation read {
+                    source local;
                   }
 
                   source local_files local {
@@ -157,20 +158,135 @@ std::vector<TestCase> getTestCases() {
       },
       {
           "read named table",
-          "relations: { root: { input: { read: { base_schema {} named_table { names: \"#2\" } } } } }",
+          R"(relations: {
+            root: {
+              input: {
+                read: {
+                  base_schema {
+                    names: "cost"
+                    names: "count"
+                    struct {
+                      types { fp32 { } }
+                      types { i64 { } } }
+                  }
+                  named_table { names: "#2" }
+                }
+              }
+            }
+          })",
           AllOf(
-              HasSymbols({"schema", "named", "read", "root"}),
+              HasSymbols(
+                  {"schema", "cost", "count", "named", "#2", "read", "root"}),
               WhenSerialized(EqSquashingWhitespace(
                   R"(read relation read {
-                     }
+                           source named;
+                              base_schema schema;
+                           }
 
-                     schema schema {
-                     }
+                           schema schema {
+                             cost fp32;
+                             count i64;
+                           }
 
-                     source named_table named {
-                       names = [
-                         "#2",
-                       ]
+                           source named_table named {
+                             names = [
+                               "#2",
+                             ]
+                           }
+                         })"))),
+      },
+      {
+          "simple expression with deprecated args",
+          R"(relations: {
+            root: {
+              input: {
+                filter: {
+                  condition: {
+                    scalar_function: {
+                      function_reference: 4,
+                      args: [
+                        {
+                          selection: {
+                            direct_reference: {
+                              struct_field: {
+                                field: 2
+                              }
+                            }
+                          }
+                        },
+                        {
+                          literal: {
+                            nullable: false,
+                            fp64: 0.07
+                          }
+                        }
+                      ],
+                      output_type: {
+                        bool: {
+                          type_variation_reference: 0,
+                          nullability: NULLABILITY_NULLABLE
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          })",
+          AllOf(
+              HasSymbols({"filter", "root"}),
+              WhenSerialized(EqSquashingWhitespace(
+                  R"(filter relation filter {
+                       condition functionref#4(field#2, 0.07_fp64);
+                     })"))),
+      },
+      {
+          "simple expression with function arguments",
+          R"(relations: {
+            root: {
+              input: {
+                filter: {
+                  condition: {
+                    scalar_function: {
+                      function_reference: 4,
+                      arguments: [
+                        {
+                          value: {
+                            selection: {
+                              direct_reference: {
+                                struct_field: {
+                                  field: 2
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          value: {
+                            literal: {
+                              nullable: false,
+                              fp64: 0.07
+                            }
+                          }
+                        }
+                      ],
+                      output_type: {
+                        bool: {
+                          type_variation_reference: 0,
+                          nullability: NULLABILITY_NULLABLE
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          })",
+          AllOf(
+              HasSymbols({"filter", "root"}),
+              WhenSerialized(EqSquashingWhitespace(
+                  R"(filter relation filter {
+                       condition functionref#4(field#2, 0.07_fp64);
                      })"))),
       },
       {
@@ -182,15 +298,25 @@ std::vector<TestCase> getTestCases() {
           "two identical three node pipelines",
           "relations: { root: { input: { project: { input { read: { local_files {} } } } } } }"
           "relations: { root: { input: { project: { input { read: { local_files {} } } } } } }",
-          HasSymbols(
-              {"local",
-               "read",
-               "project",
-               "root",
-               "local2",
-               "read2",
-               "project2",
-               "root2"}),
+          AllOf(
+              HasSymbols(
+                  {"local",
+                   "read",
+                   "project",
+                   "root",
+                   "local2",
+                   "read2",
+                   "project2",
+                   "root2"})
+#ifdef PIPELINES_IMPLEMENTED
+                  ,
+              WhenSerialized(EqSquashingWhitespace(
+                  R"(pipelines {
+                       read -> project -> root;
+                       read2 -> project2 -> root2;
+                     })"))
+#endif
+                  ),
       },
   };
   return cases;
@@ -238,25 +364,37 @@ TEST_F(BinaryToTextPlanConversionTest, loadFromJSON) {
   auto result = parseBinaryPlan(plan);
   auto symbols = result.getSymbolTable().getSymbols();
   ASSERT_THAT(
+
       result,
-      HasSymbols({
-          "lte",
-          "sum",
-          "lt",
-          "is_not_null",
-          "and",
-          "gte",
-          "multiply",
+      AllOf(
+          HasSymbolsWithTypes(
+              {
+                  "lte",
+                  "sum",
+                  "lt",
+                  "is_not_null",
+                  "and",
+                  "gte",
+                  "multiply",
+              },
+              {SymbolType::kFunction}),
+          HasSymbolsWithTypes(
+              {
+                  "schema",
+                  "local",
 
-          "schema",
-          "local",
-
-          "read",
-          "filter",
-          "project",
-          "aggregate",
-          "root",
-      }));
+                  "read",
+                  "filter",
+                  "project",
+                  "aggregate",
+                  "root",
+              },
+              {
+                  SymbolType::kPlanRelation,
+                  SymbolType::kRelation,
+                  SymbolType::kSource,
+                  SymbolType::kSchema,
+              })));
 }
 
 } // namespace

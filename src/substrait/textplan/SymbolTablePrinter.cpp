@@ -156,7 +156,7 @@ std::string relationToText(
   auto relation = ANY_CAST(const ::substrait::proto::Rel*, info.blob);
 
   PlanPrinterVisitor printer(symbolTable);
-  return printer.printRelation(info.name, relation);
+  return printer.printRelation(relation);
 }
 
 std::string outputPipelinesSection(const SymbolTable& symbolTable) {
@@ -295,7 +295,11 @@ std::string outputFunctionsSection(const SymbolTable& symbolTable) {
   }
 
   // Finally output the extensions by space in the order they were encountered.
+  bool hasPreviousOutput = false;
   for (const uint32_t space : usedSpaces) {
+    if (hasPreviousOutput) {
+      text << "\n";
+    }
     if (spaceNames.find(space) == spaceNames.end()) {
       // TODO: Handle this case as a warning.
       text << "extension_space {\n";
@@ -320,6 +324,7 @@ std::string outputFunctionsSection(const SymbolTable& symbolTable) {
            << ";\n";
     }
     text << "}\n";
+    hasPreviousOutput = true;
   }
 
   return text.str();

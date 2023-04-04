@@ -12,6 +12,7 @@ add_test_case(
   SymbolTableTest.cpp
   EXTRA_LINK_LIBS
   symbol_table
+  substrait_common
   substrait_proto
   fmt::fmt-header-only
   gmock
