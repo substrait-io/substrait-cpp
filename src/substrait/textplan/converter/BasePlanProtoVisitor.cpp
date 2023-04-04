@@ -10,6 +10,8 @@
 #include "substrait/proto/algebra.pb.h"
 #include "substrait/proto/plan.pb.h"
 
+// The visitor should try and be tolerant of older plans.  This
+// requires calling deprecated APIs.
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma gcc diagnostic push
