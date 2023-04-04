@@ -151,6 +151,7 @@ std::vector<TestCase> getTestCases() {
                   }
 
                   read relation read {
+                    source local;
                   }
 
                   source local_files local {
@@ -186,6 +187,8 @@ std::vector<TestCase> getTestCases() {
                      }
 
                      read relation read {
+                        source named;
+                        base_schema schema;
                      }
 
                      schema schema {
@@ -241,7 +244,11 @@ std::vector<TestCase> getTestCases() {
           AllOf(
               HasSymbols({"filter", "root"}),
               WhenSerialized(EqSquashingWhitespace(
-                  R"(filter relation filter {
+                  R"(pipelines {
+                       filter -> root;
+                     }
+
+                     filter relation filter {
                        condition functionref#4(field#2, 0.07_fp64);
                      })"))),
       },
@@ -290,7 +297,11 @@ std::vector<TestCase> getTestCases() {
           AllOf(
               HasSymbols({"filter", "root"}),
               WhenSerialized(EqSquashingWhitespace(
-                  R"(filter relation filter {
+                  R"(pipelines {
+                       filter -> root;
+                     }
+
+                     filter relation filter {
                        condition functionref#4(field#2, 0.07_fp64);
                      })"))),
       },

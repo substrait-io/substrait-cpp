@@ -157,7 +157,7 @@ std::string relationToText(
   auto relationData = ANY_CAST(std::shared_ptr<RelationData>, info.blob);
 
   PlanPrinterVisitor printer(symbolTable);
-  return printer.printRelation(relation);
+  return printer.printRelation(relationData->protoAddr);
 }
 
 std::vector<std::string> pipelineToPath(
@@ -166,6 +166,9 @@ std::vector<std::string> pipelineToPath(
   std::vector<std::string> pipeline;
   auto info = symbolTable.lookupSymbolByLocation(
       Location(static_cast<const google::protobuf::Message*>(relation)));
+  if (info == SymbolInfo::kUnknown) {
+    return pipeline;
+  }
   auto relationData = ANY_CAST(std::shared_ptr<RelationData>, info.blob);
   pipeline.push_back(info.name);
   if (relationData->continuingPipeline != nullptr) {
