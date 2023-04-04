@@ -80,8 +80,7 @@ std::any PipelineVisitor::visitRelation(
 
 std::any PipelineVisitor::visitPlanRelation(
     const ::substrait::proto::PlanRel& relation) {
-  auto symbol = symbolTable_->lookupSymbolByLocation(
-      Location((google::protobuf::Message*)&relation));
+  auto symbol = symbolTable_->lookupSymbolByLocation(PROTO_LOCATION(relation));
   auto relationData = ANY_CAST(std::shared_ptr<RelationData>, symbol.blob);
   switch (relation.rel_type_case()) {
     case ::substrait::proto::PlanRel::kRel:

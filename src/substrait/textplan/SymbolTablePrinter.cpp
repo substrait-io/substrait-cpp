@@ -164,8 +164,7 @@ std::vector<std::string> pipelineToPath(
     const SymbolTable& symbolTable,
     const ::substrait::proto::Rel* relation) {
   std::vector<std::string> pipeline;
-  auto info = symbolTable.lookupSymbolByLocation(
-      Location(static_cast<const google::protobuf::Message*>(relation)));
+  auto info = symbolTable.lookupSymbolByLocation(PROTO_LOCATION(relation));
   if (info == SymbolInfo::kUnknown) {
     return pipeline;
   }
