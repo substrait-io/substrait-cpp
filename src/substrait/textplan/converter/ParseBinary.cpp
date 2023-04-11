@@ -4,6 +4,7 @@
 
 #include "substrait/proto/plan.pb.h"
 #include "substrait/textplan/converter/InitialPlanProtoVisitor.h"
+#include "substrait/textplan/converter/PipelineVisitor.h"
 #include "substrait/textplan/converter/PlanPrinterVisitor.h"
 
 namespace io::substrait::textplan {
@@ -15,7 +16,10 @@ ParseResult parseBinaryPlan(const ::substrait::proto::Plan& plan) {
   auto syntaxErrors = visitor.getErrorListener()->getErrorMessages();
   std::vector<std::string> semanticErrors;
 
-  PlanPrinterVisitor printer(*symbols);
+  PipelineVisitor pipeliner(*symbols);
+  pipeliner.visit(plan);
+
+  PlanPrinterVisitor printer(*pipeliner.getSymbolTable());
   printer.visit(plan);
   auto moreErrors = printer.getErrorListener()->getErrorMessages();
   semanticErrors.insert(

@@ -10,7 +10,8 @@ add_library(
   SymbolTable.h
   SymbolTablePrinter.cpp
   SymbolTablePrinter.h
-  Any.h)
+  Any.h
+  RelationData.h)
 
 add_library(error_listener SubstraitErrorListener.cpp SubstraitErrorListener.h)
 

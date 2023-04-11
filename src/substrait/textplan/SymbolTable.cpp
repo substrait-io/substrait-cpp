@@ -102,7 +102,8 @@ SymbolInfo* SymbolTable::defineUniqueSymbol(
   return defineSymbol(uniqueName, location, type, subtype, blob);
 }
 
-const SymbolInfo& SymbolTable::lookupSymbolByName(const std::string& name) {
+const SymbolInfo& SymbolTable::lookupSymbolByName(
+    const std::string& name) const {
   auto itr = symbolsByName_.find(name);
   if (itr == symbolsByName_.end()) {
     return SymbolInfo::kUnknown;
@@ -111,7 +112,7 @@ const SymbolInfo& SymbolTable::lookupSymbolByName(const std::string& name) {
 }
 
 const SymbolInfo& SymbolTable::lookupSymbolByLocation(
-    const Location& location) {
+    const Location& location) const {
   auto itr = symbolsByLocation_.find(location);
   if (itr == symbolsByLocation_.end()) {
     return SymbolInfo::kUnknown;
@@ -119,7 +120,8 @@ const SymbolInfo& SymbolTable::lookupSymbolByLocation(
   return *symbols_[itr->second];
 }
 
-const SymbolInfo& SymbolTable::nthSymbolByType(uint32_t n, SymbolType type) {
+const SymbolInfo& SymbolTable::nthSymbolByType(uint32_t n, SymbolType type)
+    const {
   int count = 0;
   for (const auto& symbol : symbols_) {
     if (symbol->type == type) {

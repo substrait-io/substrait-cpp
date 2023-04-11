@@ -146,7 +146,11 @@ std::vector<TestCase> getTestCases() {
           AllOf(
               HasSymbols({"local", "read", "root"}),
               WhenSerialized(EqSquashingWhitespace(
-                  R"(read relation read {
+                  R"(pipelines {
+                    read -> root;
+                  }
+
+                  read relation read {
                     source local;
                   }
 
@@ -178,22 +182,26 @@ std::vector<TestCase> getTestCases() {
               HasSymbols(
                   {"schema", "cost", "count", "named", "#2", "read", "root"}),
               WhenSerialized(EqSquashingWhitespace(
-                  R"(read relation read {
-                           source named;
-                              base_schema schema;
-                           }
+                  R"(pipelines {
+                        read -> root;
+                     }
 
-                           schema schema {
-                             cost fp32;
-                             count i64;
-                           }
+                     read relation read {
+                        source named;
+                        base_schema schema;
+                     }
 
-                           source named_table named {
-                             names = [
-                               "#2",
-                             ]
-                           }
-                         })"))),
+                     schema schema {
+                       cost fp32;
+                       count i64;
+                     }
+
+                     source named_table named {
+                       names = [
+                         "#2",
+                       ]
+                     }
+                   })"))),
       },
       {
           "simple expression with deprecated args",
@@ -236,7 +244,11 @@ std::vector<TestCase> getTestCases() {
           AllOf(
               HasSymbols({"filter", "root"}),
               WhenSerialized(EqSquashingWhitespace(
-                  R"(filter relation filter {
+                  R"(pipelines {
+                       filter -> root;
+                     }
+
+                     filter relation filter {
                        condition functionref#4(field#2, 0.07_fp64);
                      })"))),
       },
@@ -285,7 +297,11 @@ std::vector<TestCase> getTestCases() {
           AllOf(
               HasSymbols({"filter", "root"}),
               WhenSerialized(EqSquashingWhitespace(
-                  R"(filter relation filter {
+                  R"(pipelines {
+                       filter -> root;
+                     }
+
+                     filter relation filter {
                        condition functionref#4(field#2, 0.07_fp64);
                      })"))),
       },
@@ -307,16 +323,24 @@ std::vector<TestCase> getTestCases() {
                    "local2",
                    "read2",
                    "project2",
-                   "root2"})
-#ifdef PIPELINES_IMPLEMENTED
-                  ,
-              WhenSerialized(EqSquashingWhitespace(
-                  R"(pipelines {
-                       read -> project -> root;
-                       read2 -> project2 -> root2;
-                     })"))
-#endif
-                  ),
+                   "root2"}),
+              WhenSerialized(
+                  ::testing::HasSubstr("pipelines {\n"
+                                       "  read -> project -> root;\n"
+                                       "  read2 -> project2 -> root2;\n"
+                                       "}\n"))),
+      },
+      {
+          "pipeline with a hash join",
+          "relations: { root: { input: { hash_join: { left { read: { local_files {} } } right { read: { local_files {} } } } } } }",
+          AllOf(
+              HasSymbols(
+                  {"local", "read", "local2", "read2", "hashjoin", "root"}),
+              WhenSerialized(::testing::HasSubstr("pipelines {\n"
+                                                  "  read -> hashjoin;\n"
+                                                  "  read2 -> hashjoin;\n"
+                                                  "  hashjoin -> root;\n"
+                                                  "}\n"))),
       },
   };
   return cases;
