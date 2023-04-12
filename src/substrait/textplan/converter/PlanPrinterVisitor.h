@@ -18,6 +18,7 @@ class PlanPrinterVisitor : public BasePlanProtoVisitor {
     symbolTable_ = std::make_shared<SymbolTable>(symbolTable);
     errorListener_ = std::make_shared<SubstraitErrorListener>();
     currentScope_ = &SymbolInfo::kUnknown;
+    functionDepth_ = 0;
   };
 
   [[nodiscard]] std::shared_ptr<const SymbolTable> getSymbolTable() const {
@@ -111,6 +112,7 @@ class PlanPrinterVisitor : public BasePlanProtoVisitor {
   std::shared_ptr<SymbolTable> symbolTable_;
   std::shared_ptr<SubstraitErrorListener> errorListener_;
   const SymbolInfo* currentScope_; /* not owned */
+  int functionDepth_;
 };
 
 } // namespace io::substrait::textplan

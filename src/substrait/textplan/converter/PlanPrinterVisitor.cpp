@@ -12,6 +12,13 @@
 #include "substrait/textplan/Any.h"
 #include "substrait/textplan/RelationData.h"
 
+// The visitor should try and be tolerant of older plans.  This
+// requires calling deprecated APIs.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma gcc diagnostic push
+#pragma gcc diagnostic ignored "-Wdeprecated-declarations"
+
 namespace io::substrait::textplan {
 
 namespace {
@@ -26,6 +33,23 @@ std::string stringEscape(std::string_view str) {
     result << c;
   }
   return result.str();
+}
+
+template <typename F>
+struct FinalAction {
+  explicit FinalAction(F f) : clean_{f} {}
+
+  ~FinalAction() {
+    clean_();
+  }
+
+ private:
+  F clean_;
+};
+
+template <typename F>
+FinalAction<F> finally(F f) {
+  return FinalAction<F>(f);
 }
 
 } // namespace
@@ -333,6 +357,14 @@ std::any PlanPrinterVisitor::visitFieldReference(
 std::any PlanPrinterVisitor::visitScalarFunction(
     const ::substrait::proto::Expression::ScalarFunction& function) {
   std::stringstream text;
+  if (functionDepth_ > 0) {
+    text << "\n";
+    for (int i = 0; i <= functionDepth_; ++i) {
+      text << "  ";
+    }
+  }
+  functionDepth_++;
+  auto resetFunctionDepth = finally([&]() { functionDepth_--; });
   text << lookupFunctionReference(function.function_reference()) << "(";
   // TODO -- Eventually handle options.
   bool hasPreviousText = false;
@@ -499,6 +531,14 @@ std::any PlanPrinterVisitor::visitFileOrFiles(
 std::any PlanPrinterVisitor::visitAggregateFunction(
     const ::substrait::proto::AggregateFunction& function) {
   std::stringstream text;
+  if (functionDepth_ > 0) {
+    text << "\n";
+    for (int i = 0; i <= functionDepth_; ++i) {
+      text << "  ";
+    }
+  }
+  functionDepth_++;
+  auto resetFunctionDepth = finally([&]() { functionDepth_--; });
   text << lookupFunctionReference(function.function_reference()) << "(";
   bool hasPreviousText = false;
   for (const auto& arg : function.arguments()) {
@@ -522,7 +562,7 @@ std::any PlanPrinterVisitor::visitAggregateFunction(
     }
     hasPreviousText = true;
   }
-  for (const auto& arg : function.args()) { // NOLINT(deprecated-declarations)
+  for (const auto& arg : function.args()) {
     if (hasPreviousText) {
       text << ", ";
     }
@@ -562,6 +602,7 @@ std::any PlanPrinterVisitor::visitRelation(
     const ::substrait::proto::Rel& relation) {
   // Mark the current scope for any operations within this relation.
   auto previousScope = currentScope_;
+  auto resetCurrentScope = finally([&]() { currentScope_ = previousScope; });
   const SymbolInfo& symbol =
       symbolTable_->lookupSymbolByLocation(PROTO_LOCATION(relation));
   if (symbol != SymbolInfo::kUnknown) {
@@ -570,8 +611,6 @@ std::any PlanPrinterVisitor::visitRelation(
 
   auto result = BasePlanProtoVisitor::visitRelation(relation);
 
-  // Reset the scope back to what it was before we were called.
-  currentScope_ = previousScope;
   return result;
 }
 
@@ -752,3 +791,6 @@ std::any PlanPrinterVisitor::visitJoinRelation(
 }
 
 } // namespace io::substrait::textplan
+
+#pragma clang diagnostic pop
+#pragma gcc diagnostic pop
