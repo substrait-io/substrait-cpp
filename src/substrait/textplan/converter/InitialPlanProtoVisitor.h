@@ -5,6 +5,7 @@
 #include <any>
 
 #include "substrait/proto/plan.pb.h"
+#include "substrait/textplan/RelationData.h"
 #include "substrait/textplan/SubstraitErrorListener.h"
 #include "substrait/textplan/SymbolTable.h"
 #include "substrait/textplan/converter/BasePlanProtoVisitor.h"
@@ -55,6 +56,28 @@ class InitialPlanProtoVisitor : public BasePlanProtoVisitor {
 
   std::any visitNamedStruct(
       const ::substrait::proto::NamedStruct& named) override;
+
+  void updateLocalSchema(
+      const std::shared_ptr<RelationData>& relationData,
+      const ::substrait::proto::Rel& relation);
+
+  void addFieldsToRelation(
+      const std::shared_ptr<RelationData>& relationData,
+      const ::substrait::proto::Rel& relation);
+
+  void addFieldsToRelation(
+      const std::shared_ptr<RelationData>& relationData,
+      const ::substrait::proto::Rel& left,
+      const ::substrait::proto::Rel& right);
+
+  template <typename T>
+  void addFieldsToRelation(
+      const std::shared_ptr<RelationData>& relationData,
+      const T& relations) {
+    for (const auto& rel : relations) {
+      addFieldsToRelation(relationData, rel);
+    }
+  };
 
   std::shared_ptr<SymbolTable> symbolTable_;
   std::shared_ptr<SubstraitErrorListener> errorListener_;

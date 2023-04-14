@@ -4,6 +4,8 @@
 
 #include "substrait/proto/algebra.pb.h"
 
+namespace io::substrait::textplan {
+
 struct RelationData {
   RelationData(
       const ::substrait::proto::Rel* relation,
@@ -24,4 +26,10 @@ struct RelationData {
 
   // A list of pipelines that start with this node and continue onward.
   std::vector<const ::substrait::proto::Rel*> newPipelines;
+
+  // Column name for each field known to this relation (in field order).
+  // TODO -- Use symbols instead of column names here.
+  std::vector<std::string> fieldReferences;
 };
+
+} // namespace io::substrait::textplan

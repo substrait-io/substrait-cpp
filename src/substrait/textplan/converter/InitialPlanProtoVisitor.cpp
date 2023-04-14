@@ -67,14 +67,14 @@ std::any InitialPlanProtoVisitor::visitPlanRelation(
   std::string name =
       ::substrait::proto::planRelTypeCaseName(relation.rel_type_case());
   auto uniqueName = symbolTable_->getUniqueName(name);
+  auto relationData = std::make_shared<RelationData>(
+      (const ::substrait::proto::Rel*)(&relation), nullptr);
   symbolTable_->defineSymbol(
       uniqueName,
       PROTO_LOCATION(relation),
       SymbolType::kPlanRelation,
       std::nullopt,
-      // TODO -- Deal with the fact that we aren't passing the right type here.
-      std::make_shared<RelationData>(
-          (const ::substrait::proto::Rel*)(&relation), nullptr));
+      relationData);
   return std::nullopt;
 }
 
@@ -84,12 +84,15 @@ std::any InitialPlanProtoVisitor::visitRelation(
       ::substrait::proto::relTypeCaseName(relation.rel_type_case());
   BasePlanProtoVisitor::visitRelation(relation);
   auto uniqueName = symbolTable_->getUniqueName(name);
+  auto relationData = std::make_shared<RelationData>(
+      (const ::substrait::proto::Rel*)(&relation), nullptr);
+  updateLocalSchema(relationData, relation);
   symbolTable_->defineSymbol(
       uniqueName,
       PROTO_LOCATION(relation),
       SymbolType::kRelation,
       relation.rel_type_case(),
-      std::make_shared<RelationData>(&relation, nullptr));
+      relationData);
   return std::nullopt;
 }
 
@@ -185,6 +188,93 @@ std::any InitialPlanProtoVisitor::visitNamedStruct(
         &named); // Field names are in this scope.
   }
   return BasePlanProtoVisitor::visitNamedStruct(named);
+}
+
+void InitialPlanProtoVisitor::addFieldsToRelation(
+    const std::shared_ptr<RelationData>& relationData,
+    const ::substrait::proto::Rel& relation) {
+  auto symbol = symbolTable_->lookupSymbolByLocation(PROTO_LOCATION(relation));
+  if (symbol == SymbolInfo::kUnknown || symbol.type != SymbolType::kRelation) {
+    return;
+  }
+  auto symbolRelationData =
+      ANY_CAST(std::shared_ptr<RelationData>, symbol.blob);
+  for (const auto& field : symbolRelationData->fieldReferences) {
+    relationData->fieldReferences.push_back(field);
+  }
+}
+
+void InitialPlanProtoVisitor::addFieldsToRelation(
+    const std::shared_ptr<RelationData>& relationData,
+    const ::substrait::proto::Rel& left,
+    const ::substrait::proto::Rel& right) {
+  addFieldsToRelation(relationData, left);
+  addFieldsToRelation(relationData, right);
+}
+
+void InitialPlanProtoVisitor::updateLocalSchema(
+    const std::shared_ptr<RelationData>& relationData,
+    const ::substrait::proto::Rel& relation) {
+  switch (relation.rel_type_case()) {
+    case ::substrait::proto::Rel::RelTypeCase::kRead:
+      if (relation.read().has_base_schema()) {
+        for (const auto& name : relation.read().base_schema().names()) {
+          relationData->fieldReferences.emplace_back(name);
+        }
+      }
+      break;
+    case ::substrait::proto::Rel::RelTypeCase::kFilter:
+      addFieldsToRelation(relationData, relation.filter().input());
+      break;
+    case ::substrait::proto::Rel::RelTypeCase::kFetch:
+      addFieldsToRelation(relationData, relation.fetch().input());
+      break;
+    case ::substrait::proto::Rel::RelTypeCase::kAggregate:
+      addFieldsToRelation(relationData, relation.aggregate().input());
+      break;
+    case ::substrait::proto::Rel::RelTypeCase::kSort:
+      addFieldsToRelation(relationData, relation.sort().input());
+      break;
+    case ::substrait::proto::Rel::RelTypeCase::kJoin:
+      addFieldsToRelation(
+          relationData, relation.join().left(), relation.join().right());
+      break;
+    case ::substrait::proto::Rel::RelTypeCase::kProject:
+      addFieldsToRelation(relationData, relation.project().input());
+      break;
+    case ::substrait::proto::Rel::RelTypeCase::kSet:
+      addFieldsToRelation(relationData, relation.set().inputs());
+      break;
+    case ::substrait::proto::Rel::RelTypeCase::kExtensionSingle:
+      addFieldsToRelation(relationData, relation.extension_single().input());
+      break;
+    case ::substrait::proto::Rel::RelTypeCase::kExtensionMulti:
+      addFieldsToRelation(relationData, relation.extension_multi().inputs());
+      break;
+    case ::substrait::proto::Rel::RelTypeCase::kExtensionLeaf:
+      // There is no defined way to get the schema for a leaf.
+      break;
+    case ::substrait::proto::Rel::RelTypeCase::kCross:
+      addFieldsToRelation(
+          relationData, relation.cross().left(), relation.cross().right());
+      break;
+    case ::substrait::proto::Rel::RelTypeCase::kHashJoin:
+      addFieldsToRelation(
+          relationData,
+          relation.hash_join().left(),
+          relation.hash_join().right());
+      break;
+    case ::substrait::proto::Rel::RelTypeCase::kMergeJoin:
+      addFieldsToRelation(
+          relationData,
+          relation.merge_join().left(),
+          relation.merge_join().right());
+      break;
+    case ::substrait::proto::Rel::REL_TYPE_NOT_SET:
+      break;
+  }
+  // TODO -- Utilize the data in relation.common().emit() to alter the order of
+  // the fields that leave this relation.
 }
 
 } // namespace io::substrait::textplan

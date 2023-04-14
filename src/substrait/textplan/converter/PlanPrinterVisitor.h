@@ -17,6 +17,7 @@ class PlanPrinterVisitor : public BasePlanProtoVisitor {
   explicit PlanPrinterVisitor(const SymbolTable& symbolTable) {
     symbolTable_ = std::make_shared<SymbolTable>(symbolTable);
     errorListener_ = std::make_shared<SubstraitErrorListener>();
+    currentScope_ = &SymbolInfo::kUnknown;
   };
 
   [[nodiscard]] std::shared_ptr<const SymbolTable> getSymbolTable() const {
@@ -90,6 +91,8 @@ class PlanPrinterVisitor : public BasePlanProtoVisitor {
       const ::substrait::proto::Expression::MaskExpression& expression)
       override;
 
+  std::any visitRelation(const ::substrait::proto::Rel& relation) override;
+
   std::any visitReadRelation(
       const ::substrait::proto::ReadRel& relation) override;
   std::any visitFilterRelation(
@@ -102,9 +105,12 @@ class PlanPrinterVisitor : public BasePlanProtoVisitor {
       const ::substrait::proto::SortRel& relation) override;
   std::any visitProjectRelation(
       const ::substrait::proto::ProjectRel& relation) override;
+  std::any visitJoinRelation(
+      const ::substrait::proto::JoinRel& relation) override;
 
   std::shared_ptr<SymbolTable> symbolTable_;
   std::shared_ptr<SubstraitErrorListener> errorListener_;
+  const SymbolInfo* currentScope_; /* not owned */
 };
 
 } // namespace io::substrait::textplan
