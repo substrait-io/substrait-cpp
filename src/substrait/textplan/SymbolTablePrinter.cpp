@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "SymbolTablePrinter.h"
+#include "substrait/textplan/SymbolTablePrinter.h"
 
 #include <set>
 #include <sstream>
@@ -11,6 +11,7 @@
 #include "substrait/textplan/Any.h"
 #include "substrait/textplan/RelationData.h"
 #include "substrait/textplan/SymbolTable.h"
+#include "substrait/textplan/TypeConversion.h"
 #include "substrait/textplan/converter/PlanPrinterVisitor.h"
 
 namespace io::substrait::textplan {
@@ -70,86 +71,6 @@ void localFileToText(
           std::to_string(item.file_format_case()) + "provided.");
   }
 }
-
-std::string typeToText(const ::substrait::proto::Type& type) {
-  switch (type.kind_case()) {
-    case ::substrait::proto::Type::kBool:
-      if (type.bool_().nullability() ==
-          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
-        return "bool?";
-      }
-      return "bool";
-    case ::substrait::proto::Type::kI8:
-      if (type.i8().nullability() ==
-          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
-        return "i8?";
-      }
-      return "i8";
-    case ::substrait::proto::Type::kI16:
-      if (type.i16().nullability() ==
-          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
-        return "i16?";
-      }
-      return "i16";
-    case ::substrait::proto::Type::kI32:
-      if (type.i32().nullability() ==
-          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
-        return "i32?";
-      }
-      return "i32";
-    case ::substrait::proto::Type::kI64:
-      if (type.i64().nullability() ==
-          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
-        return "i64?";
-      }
-      return "i64";
-    case ::substrait::proto::Type::kFp32:
-      if (type.fp32().nullability() ==
-          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
-        return "fp32?";
-      }
-      return "fp32";
-    case ::substrait::proto::Type::kFp64:
-      if (type.fp64().nullability() ==
-          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
-        return "fp64?";
-      }
-      return "fp64";
-    case ::substrait::proto::Type::kString:
-      if (type.string().nullability() ==
-          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
-        return "string?";
-      }
-      return "string";
-    case ::substrait::proto::Type::kDecimal:
-      if (type.string().nullability() ==
-          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
-        return "decimal?";
-      }
-      return "decimal";
-    case ::substrait::proto::Type::kVarchar:
-      if (type.varchar().nullability() ==
-          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
-        return "varchar?";
-      }
-      return "varchar";
-    case ::substrait::proto::Type::kFixedChar:
-      if (type.fixed_char().nullability() ==
-          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
-        return "fixedchar?";
-      }
-      return "fixedchar";
-    case ::substrait::proto::Type::kDate:
-      if (type.date().nullability() ==
-          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
-        return "date?";
-      }
-      return "date";
-    case ::substrait::proto::Type::KIND_NOT_SET:
-    default:
-      return "UNSUPPORTED_TYPE";
-  }
-};
 
 std::string relationToText(
     const SymbolTable& symbolTable,

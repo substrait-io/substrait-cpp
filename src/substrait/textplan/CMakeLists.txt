@@ -10,6 +10,8 @@ add_library(
   SymbolTable.h
   SymbolTablePrinter.cpp
   SymbolTablePrinter.h
+  TypeConversion.cpp
+  TypeConversion.h
   Any.h
   RelationData.h)
 
@@ -17,7 +19,7 @@ add_library(error_listener SubstraitErrorListener.cpp SubstraitErrorListener.h)
 
 add_library(parse_result ParseResult.cpp ParseResult.h)
 
-add_dependencies(symbol_table substrait_proto substrait_common
+add_dependencies(symbol_table substrait_proto substrait_common substrait_type
                  fmt::fmt-header-only)
 
 target_link_libraries(symbol_table fmt::fmt-header-only)

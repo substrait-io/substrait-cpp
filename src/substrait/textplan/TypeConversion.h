@@ -4,13 +4,10 @@
 
 #include <string>
 
-#include "substrait/textplan/SymbolTable.h"
+#include "substrait/proto/type.pb.h"
 
 namespace io::substrait::textplan {
 
-class SymbolTablePrinter {
- public:
-  static std::string outputToText(const SymbolTable& symbolTable);
-};
+std::string typeToText(const ::substrait::proto::Type& type);
 
 } // namespace io::substrait::textplan
