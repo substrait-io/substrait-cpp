@@ -65,7 +65,8 @@ class SubstraitPlanVisitor : public SubstraitPlanParserVisitor {
       SubstraitPlanParser::Column_nameContext* ctx) override;
   std::any visitSource_reference(
       SubstraitPlanParser::Source_referenceContext* ctx) override;
-  std::any visitExpression(SubstraitPlanParser::ExpressionContext* ctx) override;
+  std::any visitExpression(
+      SubstraitPlanParser::ExpressionContext* ctx) override;
   std::any visitRelationCommon(
       SubstraitPlanParser::RelationCommonContext* ctx) override;
   std::any visitRelationUsesSchema(
