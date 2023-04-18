@@ -253,8 +253,8 @@ std::any SubstraitPlanVisitor::visitSource_reference(
   return visitChildren(ctx);
 }
 
-std::any SubstraitPlanVisitor::visitOperation(
-    SubstraitPlanParser::OperationContext* ctx) {
+std::any SubstraitPlanVisitor::visitExpression(
+    SubstraitPlanParser::ExpressionContext* ctx) {
   // TODO -- Implement this in a second visitor as described below.
   // Problem:  We don't know the function ids yet, so we can't complete a proto
   // on the first pass. We also can't validate the number of arguments until we
@@ -287,8 +287,8 @@ std::any SubstraitPlanVisitor::visitRelationExpression(
     SubstraitPlanParser::RelationExpressionContext* ctx) {
   auto symbol = symbolTable_->getUniqueName("internal-expression");
   std::any result = defaultResult();
-  if (ctx->operation()) {
-    result = visitOperation(ctx->operation());
+  if (ctx->expression()) {
+    result = visitExpression(ctx->expression());
   }
   symbolTable_->defineSymbol(
       symbol,

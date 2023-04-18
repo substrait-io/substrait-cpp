@@ -53,9 +53,9 @@ relation_ref
 relation_detail
    : COMMON SEMICOLON                # relationCommon
    | BASE_SCHEMA id SEMICOLON        # relationUsesSchema
-   | FILTER operation SEMICOLON      # relationFilter
+   | FILTER expression SEMICOLON      # relationFilter
    | PROJECTION SEMICOLON            # relationProjection
-   | EXPRESSION operation SEMICOLON  # relationExpression
+   | EXPRESSION expression SEMICOLON  # relationExpression
    | ADVANCED_EXTENSION SEMICOLON    # relationAdvancedExtension
    | source_reference SEMICOLON      # relationSourceReference
    ;
@@ -100,8 +100,8 @@ column_name
    : id
    ;
 
-operation
-   : id LEFTPAREN operation (COMMA operation)? COMMA? RIGHTPAREN
+expression
+   : id LEFTPAREN expression (COMMA expression)? COMMA? RIGHTPAREN
    | constant
    | column_name
    ;
