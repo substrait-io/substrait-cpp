@@ -184,10 +184,9 @@ ParameterizedTypePtr ParameterizedType::decode(
 
   const auto& questionMaskPos = matchingType.find_last_of('?');
 
-  bool nullable = questionMaskPos != std::string::npos;
-
   const auto& leftAngleBracketPos = matchingType.find('<');
   if (leftAngleBracketPos == std::string::npos) {
+    bool nullable = matchingType.back() == '?';
     // deal with type and with a question mask like "i32?".
     const auto& baseType = nullable
         ? matchingType = matchingType.substr(0, questionMaskPos)
@@ -232,7 +231,9 @@ ParameterizedTypePtr ParameterizedType::decode(
           rawType, wildcard, placeholder);
     }
   } else {
-    const auto& rightAngleBracketPos = rawType.rfind('>');
+    bool nullable =
+        leftAngleBracketPos > 1 && matchingType[leftAngleBracketPos - 1] == '?';
+    const auto& rightAngleBracketPos = matchingType.rfind('>');
     const auto& baseTypePos = nullable
         ? std::min(leftAngleBracketPos, questionMaskPos)
         : leftAngleBracketPos;
