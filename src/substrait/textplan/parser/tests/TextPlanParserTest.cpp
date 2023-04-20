@@ -185,6 +185,7 @@ std::vector<TestCase> getTestCases() {
             expression {42 : "life", 32 : "everything"}_map<int, string>;
             expression {}_list<string>;
             expression {}_list<string?>;
+            expression {}_list?<string?>;
             expression {}_map<int, string>;
           })",
           ParsesOk(),
@@ -195,6 +196,7 @@ std::vector<TestCase> getTestCases() {
             expression 1;
             expression 1.5;
             expression "data"_potato;
+            expression {}_list<string?>?;
           })",
           ParsesOk(),
       },

@@ -70,9 +70,9 @@ literal_basic_type
 
 literal_complex_type
    : literal_basic_type
-   | LIST LEFTANGLEBRACKET literal_complex_type RIGHTANGLEBRACKET QUESTIONMARK?
-   | MAP LEFTANGLEBRACKET literal_basic_type COMMA literal_complex_type RIGHTANGLEBRACKET QUESTIONMARK?
-   | STRUCT LEFTANGLEBRACKET literal_complex_type (COMMA literal_complex_type)* RIGHTANGLEBRACKET QUESTIONMARK?
+   | LIST QUESTIONMARK? LEFTANGLEBRACKET literal_complex_type RIGHTANGLEBRACKET
+   | MAP QUESTIONMARK? LEFTANGLEBRACKET literal_basic_type COMMA literal_complex_type RIGHTANGLEBRACKET
+   | STRUCT QUESTIONMARK? LEFTANGLEBRACKET literal_complex_type (COMMA literal_complex_type)* RIGHTANGLEBRACKET
    ;
 
 map_literal_value
