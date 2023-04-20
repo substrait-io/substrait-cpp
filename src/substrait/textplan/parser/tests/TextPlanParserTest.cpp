@@ -196,9 +196,15 @@ std::vector<TestCase> getTestCases() {
             expression 1;
             expression 1.5;
             expression "data"_potato;
-            expression {}_list<string?>?;
           })",
           ParsesOk(),
+      },
+      {
+          "test6.6-invalid-literals",
+          R"(project relation literalexamples {
+            expression {}_list<string?>?;
+          })",
+          HasErrors({"2:39 → extraneous input '?' expecting ';'"}),
       },
       {
           "test7-relation-without-type",
