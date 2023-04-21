@@ -233,7 +233,7 @@ ParameterizedTypePtr ParameterizedType::decode(
   } else {
     bool nullable =
         leftAngleBracketPos > 1 && matchingType[leftAngleBracketPos - 1] == '?';
-    const auto& rightAngleBracketPos = matchingType.rfind('>');
+    const auto& rightAngleBracketPos = rawType.rfind('>');
     const auto& baseTypePos = nullable
         ? std::min(leftAngleBracketPos, questionMaskPos)
         : leftAngleBracketPos;
