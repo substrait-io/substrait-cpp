@@ -206,6 +206,14 @@ TEST_F(TypeTest, decodeTest) {
         ASSERT_TRUE(typePtr->elementType()->isPlaceholder());
       });
 
+  testDecode<ParameterizedList>(
+      "list<string?>",
+      [](const std::shared_ptr<const ParameterizedList>& typePtr) {
+        ASSERT_FALSE(typePtr->nullable());
+        ASSERT_TRUE(typePtr->elementType()->nullable());
+        ASSERT_EQ(typePtr->signature(), "list<str>");
+      });
+
   testDecode<ParameterizedMap>(
       "map<string,i32>",
       [](const std::shared_ptr<const ParameterizedMap>& typePtr) {
