@@ -14,6 +14,8 @@
 #include "substrait/textplan/SymbolTable.h"
 #include "substrait/textplan/SymbolTablePrinter.h"
 
+// NOLINTBEGIN(readability-identifier-naming)
+
 namespace io::substrait::textplan {
 namespace {
 
@@ -109,17 +111,17 @@ class ParsesOkMatcher {
  public:
   using is_gtest_matcher = void;
 
-  static bool MatchAndExplain( // NOLINT
+  static bool MatchAndExplain(
       const ParseResult& result,
       std::ostream* /* listener */) {
     return result.successful();
   }
 
-  static void DescribeTo(std::ostream* os) { // NOLINT
+  static void DescribeTo(std::ostream* os) {
     *os << "parses successfully";
   }
 
-  static void DescribeNegationTo(std::ostream* os) { // NOLINT
+  static void DescribeNegationTo(std::ostream* os) {
     *os << "does not parse successfully";
   }
 };
@@ -135,9 +137,8 @@ class HasSymbolsMatcher {
   explicit HasSymbolsMatcher(std::vector<std::string> expectedSymbols)
       : expectedSymbols_(std::move(expectedSymbols)) {}
 
-  bool MatchAndExplain( // NOLINT
-      const ParseResult& result,
-      std::ostream* listener) const {
+  bool MatchAndExplain(const ParseResult& result, std::ostream* listener)
+      const {
     auto actualSymbols = symbolNames(result.getSymbolTable().getSymbols());
     if (listener != nullptr) {
       std::vector<std::string> extraSymbols(actualSymbols.size());
@@ -177,12 +178,12 @@ class HasSymbolsMatcher {
     return actualSymbols == expectedSymbols_;
   }
 
-  void DescribeTo(std::ostream* os) const { // NOLINT
+  void DescribeTo(std::ostream* os) const {
     *os << "has exactly these symbols: "
         << ::testing::PrintToString(expectedSymbols_);
   }
 
-  void DescribeNegationTo(std::ostream* os) const { // NOLINT
+  void DescribeNegationTo(std::ostream* os) const {
     *os << "does not have exactly these symbols: "
         << ::testing::PrintToString(expectedSymbols_);
   }
@@ -191,7 +192,7 @@ class HasSymbolsMatcher {
   const std::vector<std::string> expectedSymbols_;
 };
 
-::testing::Matcher<const ParseResult&> HasSymbols( // NOLINT
+::testing::Matcher<const ParseResult&> HasSymbols(
     std::vector<std::string> expectedSymbols) {
   return HasSymbolsMatcher(std::move(expectedSymbols));
 }
@@ -204,7 +205,7 @@ class WhenSerializedMatcher {
       ::testing::Matcher<const std::string&> stringMatcher)
       : stringMatcher_(std::move(stringMatcher)) {}
 
-  bool MatchAndExplain( // NOLINT
+  bool MatchAndExplain(
       const ParseResult& result,
       ::testing::MatchResultListener* listener) const {
     std::string outputText =
@@ -212,12 +213,12 @@ class WhenSerializedMatcher {
     return MatchPrintAndExplain(outputText, stringMatcher_, listener);
   }
 
-  void DescribeTo(::std::ostream* os) const { // NOLINT
+  void DescribeTo(::std::ostream* os) const {
     *os << "matches after serializing ";
     stringMatcher_.DescribeTo(os);
   }
 
-  void DescribeNegationTo(::std::ostream* os) const { // NOLINT
+  void DescribeNegationTo(::std::ostream* os) const {
     *os << "does not match after serializing ";
     stringMatcher_.DescribeTo(os);
   }
@@ -226,7 +227,7 @@ class WhenSerializedMatcher {
   ::testing::Matcher<const std::string&> stringMatcher_;
 };
 
-::testing::Matcher<const ParseResult&> WhenSerialized( // NOLINT
+::testing::Matcher<const ParseResult&> WhenSerialized(
     ::testing::Matcher<const std::string&> stringMatcher) {
   return WhenSerializedMatcher(std::move(stringMatcher));
 }
@@ -243,7 +244,7 @@ class HasSymbolsWithTypesMatcher {
         interesting_types.begin(), interesting_types.end());
   }
 
-  void DescribeTypes(std::ostream* os) const { // NOLINT
+  void DescribeTypes(std::ostream* os) const {
     *os << " of types ";
     bool hasPreviousOutput = false;
     for (const auto& type : interestingTypes_) {
@@ -255,9 +256,8 @@ class HasSymbolsWithTypesMatcher {
     }
   }
 
-  bool MatchAndExplain( // NOLINT
-      const ParseResult& result,
-      std::ostream* listener) const {
+  bool MatchAndExplain(const ParseResult& result, std::ostream* listener)
+      const {
     auto actualSymbols = symbolNamesWithTypes(
         result.getSymbolTable().getSymbols(), interestingTypes_);
     if (listener != nullptr) {
@@ -292,13 +292,13 @@ class HasSymbolsWithTypesMatcher {
     return actualSymbols == expectedSymbols_;
   }
 
-  void DescribeTo(std::ostream* os) const { // NOLINT
+  void DescribeTo(std::ostream* os) const {
     *os << "has exactly these symbols";
     DescribeTypes(os);
     *os << ": " << ::testing::PrintToString(expectedSymbols_);
   }
 
-  void DescribeNegationTo(std::ostream* os) const { // NOLINT
+  void DescribeNegationTo(std::ostream* os) const {
     *os << "does not have exactly these symbols";
     DescribeTypes(os);
     *os << ": " << ::testing::PrintToString(expectedSymbols_);
@@ -323,18 +323,17 @@ class HasErrorsMatcher {
   explicit HasErrorsMatcher(std::vector<std::string> expectedErrors)
       : expectedErrors_(std::move(expectedErrors)) {}
 
-  bool MatchAndExplain( // NOLINT
-      const ParseResult& result,
-      std::ostream* /* listener */) const {
+  bool MatchAndExplain(const ParseResult& result, std::ostream* /* listener */)
+      const {
     return result.getAllErrors() == expectedErrors_;
   }
 
-  void DescribeTo(std::ostream* os) const { // NOLINT
+  void DescribeTo(std::ostream* os) const {
     *os << "has exactly these symbols: "
         << ::testing::PrintToString(expectedErrors_);
   }
 
-  void DescribeNegationTo(std::ostream* os) const { // NOLINT
+  void DescribeNegationTo(std::ostream* os) const {
     *os << "does not have exactly these symbols: "
         << ::testing::PrintToString(expectedErrors_);
   }
@@ -343,7 +342,7 @@ class HasErrorsMatcher {
   const std::vector<std::string> expectedErrors_;
 };
 
-::testing::Matcher<const ParseResult&> HasErrors( // NOLINT
+::testing::Matcher<const ParseResult&> HasErrors(
     std::vector<std::string> expectedErrors) {
   return HasErrorsMatcher(std::move(expectedErrors));
 }
@@ -355,18 +354,17 @@ class EqSquashingWhitespaceMatcher {
   explicit EqSquashingWhitespaceMatcher(std::string expectedString)
       : expectedString_(std::move(expectedString)) {}
 
-  bool MatchAndExplain( // NOLINT
-      const std::string& str,
-      std::ostream* /* listener */) const {
+  bool MatchAndExplain(const std::string& str, std::ostream* /* listener */)
+      const {
     return stringEqSquashingWhitespace(str, expectedString_);
   }
 
-  void DescribeTo(std::ostream* os) const { // NOLINT
+  void DescribeTo(std::ostream* os) const {
     *os << "equals squashing whitespace "
         << ::testing::PrintToString(expectedString_);
   }
 
-  void DescribeNegationTo(std::ostream* os) const { // NOLINT
+  void DescribeNegationTo(std::ostream* os) const {
     *os << "does not equal squashing whitespace "
         << ::testing::PrintToString(expectedString_);
   }
@@ -375,9 +373,11 @@ class EqSquashingWhitespaceMatcher {
   std::string expectedString_;
 };
 
-::testing::Matcher<const std::string&> EqSquashingWhitespace( // NOLINT
+::testing::Matcher<const std::string&> EqSquashingWhitespace(
     std::string expectedString) {
   return EqSquashingWhitespaceMatcher(std::move(expectedString));
 }
+
+// NOLINTEND(readability-identifier-naming)
 
 } // namespace io::substrait::textplan

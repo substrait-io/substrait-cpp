@@ -1,0 +1,35 @@
+pipelines {
+  read -> project -> root;
+}
+
+project relation project {
+  expression r_regionkey;
+  expression r_name;
+  expression r_comment;
+  expression add(r_regionkey, 1);
+  expression subtract(r_regionkey, 1);
+  expression concat(r_name, r_name);
+}
+
+read relation read {
+  base_schema schema;
+  source named;
+}
+
+schema schema {
+  r_regionkey UNKNOWN;
+  r_name UNKNOWN;
+  r_comment UNKNOWN;
+}
+
+source named_table named {
+  names = [
+    "#2",
+  ]
+}
+
+extension_space https://place.com/boolean.yaml {
+  function add:opt_i32_i32 as add;
+  function subtract:opt_i32_i32 as subtract;
+  function concat:str as concat;
+}

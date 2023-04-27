@@ -9,8 +9,9 @@
 #include "substrait/expression/DecimalLiteral.h"
 #include "substrait/proto/ProtoUtils.h"
 #include "substrait/proto/algebra.pb.h"
+#include "substrait/proto/plan.pb.h"
 #include "substrait/textplan/Any.h"
-#include "substrait/textplan/RelationData.h"
+#include "substrait/textplan/StructuredSymbolData.h"
 
 // The visitor should try and be tolerant of older plans.  This
 // requires calling deprecated APIs.
@@ -93,6 +94,12 @@ std::string PlanPrinterVisitor::lookupFunctionReference(
     uint32_t function_reference) {
   for (const auto& symbol : symbolTable_->getSymbols()) {
     if (symbol->type != SymbolType::kFunction) {
+      continue;
+    }
+    if (symbol->blob.type() !=
+        typeid(const ::substrait::proto::extensions::
+                   SimpleExtensionDeclaration_ExtensionFunction*)) {
+      // TODO -- Implement function references for text plans.
       continue;
     }
     auto function = ANY_CAST(
@@ -354,6 +361,13 @@ std::any PlanPrinterVisitor::visitFieldReference(
   return "FIELD_REF_TYPE_NOT_SUPPORTED";
 }
 
+// The visitor should be tolerant of older plans.  This requires calling
+// deprecated APIs.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecatted-declarations"
+#pragma gcc diagnostic push
+#pragma gcc diagnostic ignored "-Wdeprecatted-declarations"
+
 std::any PlanPrinterVisitor::visitScalarFunction(
     const ::substrait::proto::Expression::ScalarFunction& function) {
   std::stringstream text;
@@ -410,6 +424,9 @@ std::any PlanPrinterVisitor::visitScalarFunction(
   text << ")";
   return text.str();
 }
+
+#pragma clang diagnostic pop
+#pragma gcc diagnostic pop
 
 std::any PlanPrinterVisitor::visitWindowFunction(
     const ::substrait::proto::Expression::WindowFunction& function) {

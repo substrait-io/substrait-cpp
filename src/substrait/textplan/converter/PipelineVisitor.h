@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "substrait/textplan/RelationData.h"
+#include "substrait/textplan/StructuredSymbolData.h"
 #include "substrait/textplan/SymbolTable.h"
 #include "substrait/textplan/converter/BasePlanProtoVisitor.h"
 
