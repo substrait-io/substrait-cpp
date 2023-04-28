@@ -30,7 +30,8 @@ std::vector<std::string> symbolNames(
 
 bool stringEqSquashingWhitespace(
     const std::string& have,
-    const std::string& expected) {
+    const std::string& expected,
+    std::ostream* listener) {
   auto atHave = have.begin();
   auto atExpected = expected.begin();
   while (atHave != have.end() && atExpected != expected.end()) {
@@ -48,6 +49,14 @@ bool stringEqSquashingWhitespace(
       continue;
     }
     if (*atHave != *atExpected) {
+      if (listener) {
+        *listener << "first mismatch at character #"
+                  << std::to_string(atHave - have.begin()) << " |"
+                  << have.substr(atHave - have.begin(), 20) << "|"
+                  << " should be |"
+                  << expected.substr(atExpected - expected.begin(), 20) << "|"
+                  << std::endl;
+      }
       return false;
     }
     atHave++;
@@ -134,7 +143,7 @@ class HasSymbolsMatcher {
  public:
   using is_gtest_matcher = void;
 
-  explicit HasSymbolsMatcher(std::vector<std::string> expectedSymbols)
+  explicit HasSymbolsMatcher(const std::vector<std::string>& expectedSymbols)
       : expectedSymbols_(std::move(expectedSymbols)) {}
 
   bool MatchAndExplain(const ParseResult& result, std::ostream* listener)
@@ -193,7 +202,7 @@ class HasSymbolsMatcher {
 };
 
 ::testing::Matcher<const ParseResult&> HasSymbols(
-    std::vector<std::string> expectedSymbols) {
+    const std::vector<std::string>& expectedSymbols) {
   return HasSymbolsMatcher(std::move(expectedSymbols));
 }
 
@@ -237,8 +246,8 @@ class HasSymbolsWithTypesMatcher {
   using is_gtest_matcher = void;
 
   HasSymbolsWithTypesMatcher(
-      std::vector<std::string> expected_symbols,
-      std::vector<SymbolType> interesting_types)
+      const std::vector<std::string>& expected_symbols,
+      const std::vector<SymbolType>& interesting_types)
       : expectedSymbols_(std::move(expected_symbols)) {
     interestingTypes_.insert(
         interesting_types.begin(), interesting_types.end());
@@ -310,8 +319,8 @@ class HasSymbolsWithTypesMatcher {
 };
 
 ::testing::Matcher<const ParseResult&> HasSymbolsWithTypes(
-    std::vector<std::string> expected_symbols,
-    std::vector<SymbolType> interesting_types) {
+    const std::vector<std::string>& expected_symbols,
+    const std::vector<SymbolType>& interesting_types) {
   return HasSymbolsWithTypesMatcher(
       std::move(expected_symbols), std::move(interesting_types));
 }
@@ -320,7 +329,7 @@ class HasErrorsMatcher {
  public:
   using is_gtest_matcher = void;
 
-  explicit HasErrorsMatcher(std::vector<std::string> expectedErrors)
+  explicit HasErrorsMatcher(const std::vector<std::string>& expectedErrors)
       : expectedErrors_(std::move(expectedErrors)) {}
 
   bool MatchAndExplain(const ParseResult& result, std::ostream* /* listener */)
@@ -329,12 +338,12 @@ class HasErrorsMatcher {
   }
 
   void DescribeTo(std::ostream* os) const {
-    *os << "has exactly these symbols: "
+    *os << "has exactly these errors: "
         << ::testing::PrintToString(expectedErrors_);
   }
 
   void DescribeNegationTo(std::ostream* os) const {
-    *os << "does not have exactly these symbols: "
+    *os << "does not have exactly these errors: "
         << ::testing::PrintToString(expectedErrors_);
   }
 
@@ -343,7 +352,7 @@ class HasErrorsMatcher {
 };
 
 ::testing::Matcher<const ParseResult&> HasErrors(
-    std::vector<std::string> expectedErrors) {
+    const std::vector<std::string>& expectedErrors) {
   return HasErrorsMatcher(std::move(expectedErrors));
 }
 
@@ -351,12 +360,11 @@ class EqSquashingWhitespaceMatcher {
  public:
   using is_gtest_matcher = void;
 
-  explicit EqSquashingWhitespaceMatcher(std::string expectedString)
+  explicit EqSquashingWhitespaceMatcher(const std::string& expectedString)
       : expectedString_(std::move(expectedString)) {}
 
-  bool MatchAndExplain(const std::string& str, std::ostream* /* listener */)
-      const {
-    return stringEqSquashingWhitespace(str, expectedString_);
+  bool MatchAndExplain(const std::string& str, std::ostream* listener) const {
+    return stringEqSquashingWhitespace(str, expectedString_, listener);
   }
 
   void DescribeTo(std::ostream* os) const {
@@ -374,7 +382,7 @@ class EqSquashingWhitespaceMatcher {
 };
 
 ::testing::Matcher<const std::string&> EqSquashingWhitespace(
-    std::string expectedString) {
+    const std::string& expectedString) {
   return EqSquashingWhitespaceMatcher(std::move(expectedString));
 }
 

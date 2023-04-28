@@ -364,9 +364,9 @@ std::any PlanPrinterVisitor::visitFieldReference(
 // The visitor should be tolerant of older plans.  This requires calling
 // deprecated APIs.
 #pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecatted-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma gcc diagnostic push
-#pragma gcc diagnostic ignored "-Wdeprecatted-declarations"
+#pragma gcc diagnostic ignored "-Wdeprecated-declarations"
 
 std::any PlanPrinterVisitor::visitScalarFunction(
     const ::substrait::proto::Expression::ScalarFunction& function) {
