@@ -15,12 +15,12 @@ namespace io::substrait::textplan {
 void SubstraitPlanPipelineVisitor::updateRelationSymbol(
     SubstraitPlanParser::PipelineContext* ctx,
     const std::string& relationName) {
-  const auto& symbol = symbol_table_->lookupSymbolByName(relationName);
+  const auto& symbol = symbolTable_->lookupSymbolByName(relationName);
   if (symbol == SymbolInfo::kUnknown) {
     // This is a reference to a missing relation so we create a stub for it.
     auto relationData = std::make_shared<RelationData>(
         Location(ctx), PARSER_LOCATION(ctx->parent));
-    symbol_table_->defineSymbol(
+    symbolTable_->defineSymbol(
         relationName,
         Location(ctx),
         SymbolType::kRelation,
@@ -28,7 +28,7 @@ void SubstraitPlanPipelineVisitor::updateRelationSymbol(
         relationData);
   } else {
     // Add our location to this symbol so we can find it either way.
-    symbol_table_->addLocation(symbol, Location(ctx));
+    symbolTable_->addLocation(symbol, Location(ctx));
   }
 }
 
@@ -56,11 +56,11 @@ std::any SubstraitPlanPipelineVisitor::visitPipeline(
   }
 
   // Refetch our symbol table entry to make sure we have the latest version.
-  auto& symbol = symbol_table_->lookupSymbolByName(relationName);
+  auto& symbol = symbolTable_->lookupSymbolByName(relationName);
   auto relationData = ANY_CAST(std::shared_ptr<RelationData>, symbol.blob);
 
   if (relationData->continuingPipeline != nullptr) {
-    error_listener_->addError(
+    errorListener_->addError(
         ctx->relation_ref()->getStart(),
         "Relation " + relationName +
             " is already a non-terminating participant in a pipeline.");
@@ -74,7 +74,7 @@ std::any SubstraitPlanPipelineVisitor::visitPipeline(
   } else {
     // Look at the node to the left of us to see what the start is.
     const auto& leftSymbol =
-        symbol_table_->lookupSymbolByLocation(PARSER_LOCATION(ctx->pipeline()));
+        symbolTable_->lookupSymbolByLocation(PARSER_LOCATION(ctx->pipeline()));
     if (leftSymbol != SymbolInfo::kUnknown) {
       auto leftRelationData =
           ANY_CAST(std::shared_ptr<RelationData>, leftSymbol.blob);
@@ -87,13 +87,13 @@ std::any SubstraitPlanPipelineVisitor::visitPipeline(
       SubstraitPlanParser::RulePipeline) {
     // We are not the last in the chain.
     const auto& parentSymbol =
-        symbol_table_->lookupSymbolByLocation(PARSER_LOCATION(ctx->parent));
+        symbolTable_->lookupSymbolByLocation(PARSER_LOCATION(ctx->parent));
 
     if (ctx->pipeline() == nullptr) {
       relationData->newPipelines.push_back(&parentSymbol);
     } else {
       if (!relationData->newPipelines.empty()) {
-        error_listener_->addError(
+        errorListener_->addError(
             ctx->relation_ref()->getStart(),
             "Relation " + relationName + " cannot be in the middle of a " +
                 "pipeline when it is already starting pipelines.");
@@ -109,7 +109,7 @@ std::any SubstraitPlanPipelineVisitor::visitPipeline(
   // We are not the first node in the pipeline, make sure we don't duplicate.
   if (ctx->pipeline() != nullptr && relationData->pipelineStart != nullptr &&
       relationData->pipelineStart->name == relationName) {
-    error_listener_->addError(
+    errorListener_->addError(
         ctx->relation_ref()->getStart(),
         "Relation " + relationName +
             " cannot start and end the same pipeline.");

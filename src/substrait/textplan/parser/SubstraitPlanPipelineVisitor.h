@@ -14,17 +14,17 @@ class SubstraitPlanPipelineVisitor : public SubstraitPlanParserBaseVisitor {
   SubstraitPlanPipelineVisitor(
       const SymbolTable& symbolTable,
       std::shared_ptr<SubstraitParserErrorListener> errorListener) {
-    symbol_table_ = std::make_shared<SymbolTable>(symbolTable);
-    error_listener_ = std::move(errorListener);
+    symbolTable_ = std::make_shared<SymbolTable>(symbolTable);
+    errorListener_ = std::move(errorListener);
   }
 
   [[nodiscard]] std::shared_ptr<const SymbolTable> getSymbolTable() const {
-    return symbol_table_;
+    return symbolTable_;
   };
 
   [[nodiscard]] std::shared_ptr<SubstraitParserErrorListener> getErrorListener()
       const {
-    return error_listener_;
+    return errorListener_;
   };
 
   std::any visitPipelines(SubstraitPlanParser::PipelinesContext* ctx) override;
@@ -37,8 +37,8 @@ class SubstraitPlanPipelineVisitor : public SubstraitPlanParserBaseVisitor {
       SubstraitPlanParser::PipelineContext* ctx,
       const std::string& relationName);
 
-  std::shared_ptr<SymbolTable> symbol_table_;
-  std::shared_ptr<SubstraitParserErrorListener> error_listener_;
+  std::shared_ptr<SymbolTable> symbolTable_;
+  std::shared_ptr<SubstraitParserErrorListener> errorListener_;
 };
 
 } // namespace io::substrait::textplan

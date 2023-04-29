@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <functional>
 #include <variant>
 #include <vector>
 
