@@ -61,9 +61,6 @@ std::any SubstraitPlanVisitor::visitPipeline(
   }
 
   auto rel = ANY_CAST(std::string, visitRelation_ref(ctx->relation_ref()));
-  symbolTable_->defineSymbol(
-      rel, Location(ctx), SymbolType::kRelation, defaultResult(), parentCtx);
-
   return rel;
 }
 
@@ -165,12 +162,24 @@ std::any SubstraitPlanVisitor::visitRelation(
   if (ctx->relation_ref() == nullptr) {
     return nullptr;
   }
+
+  std::string relationName = ctx->relation_ref()->id(0)->getText();
+  auto symbol = symbolTable_->lookupSymbolByName(relationName);
+  if (symbol != SymbolInfo::kUnknown) {
+    errorListener_->addError(
+        ctx->getStart(),
+        "Relation named " + relationName + " already defined.");
+  }
+
+  auto relationData = std::make_shared<RelationData>(
+      Location(ctx),
+      Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)));
   symbolTable_->defineSymbol(
-      ctx->relation_ref()->id(0)->getText(),
+      relationName,
       Location(ctx),
       SymbolType::kRelation,
       relType,
-      ctx);
+      relationData);
   visitRelation_ref(ctx->relation_ref());
   for (const auto detail : ctx->relation_detail()) {
     visit(detail);

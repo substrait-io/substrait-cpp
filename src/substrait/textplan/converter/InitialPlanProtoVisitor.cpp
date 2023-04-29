@@ -27,6 +27,23 @@ std::string shortName(std::string str) {
   return str;
 }
 
+template <typename F>
+struct FinalAction {
+  explicit FinalAction(F f) : clean_{f} {}
+
+  ~FinalAction() {
+    clean_();
+  }
+
+ private:
+  F clean_;
+};
+
+template <typename F>
+FinalAction<F> finally(F f) {
+  return FinalAction<F>(f);
+}
+
 } // namespace
 
 std::any InitialPlanProtoVisitor::visitExtension(
@@ -71,7 +88,8 @@ std::any InitialPlanProtoVisitor::visitPlanRelation(
       ::substrait::proto::planRelTypeCaseName(relation.rel_type_case());
   auto uniqueName = symbolTable_->getUniqueName(name);
   auto relationData = std::make_shared<RelationData>(
-      (const ::substrait::proto::Rel*)(&relation), nullptr);
+      Location((const ::substrait::proto::Rel*)(&relation)),
+      Location((const ::substrait::proto::Rel*)nullptr));
   symbolTable_->defineSymbol(
       uniqueName,
       PROTO_LOCATION(relation),
@@ -85,17 +103,34 @@ std::any InitialPlanProtoVisitor::visitRelation(
     const ::substrait::proto::Rel& relation) {
   std::string name =
       ::substrait::proto::relTypeCaseName(relation.rel_type_case());
+
+  auto previousRelationScope = currentRelationScope_;
+  currentRelationScope_ = &relation;
+  auto resetRelationScope = finally([this, &previousRelationScope]() {
+    currentRelationScope_ = previousRelationScope;
+  });
+
   BasePlanProtoVisitor::visitRelation(relation);
+
   auto uniqueName = symbolTable_->getUniqueName(name);
   auto relationData = std::make_shared<RelationData>(
-      (const ::substrait::proto::Rel*)(&relation), nullptr);
+      PROTO_LOCATION(relation),
+      Location((const ::substrait::proto::Rel*)nullptr));
+  relationData->relation = relation;
   updateLocalSchema(relationData, relation);
-  symbolTable_->defineSymbol(
+  if (readRelationSources_.find(&relation) != readRelationSources_.end()) {
+    relationData->source = readRelationSources_[&relation];
+  }
+  if (readRelationSchemas_.find(&relation) != readRelationSchemas_.end()) {
+    relationData->schema = readRelationSchemas_[&relation];
+  }
+  auto symbol = symbolTable_->defineSymbol(
       uniqueName,
       PROTO_LOCATION(relation),
       SymbolType::kRelation,
       relation.rel_type_case(),
       relationData);
+  symbolTable_->addLocation(*symbol, PROTO_LOCATION(relationData->relation));
   return std::nullopt;
 }
 
@@ -109,12 +144,13 @@ std::any InitialPlanProtoVisitor::visitReadRelation(
     const ::substrait::proto::ReadRel& relation) {
   if (relation.has_base_schema()) {
     const std::string& name = symbolTable_->getUniqueName("schema");
-    symbolTable_->defineSymbol(
+    auto symbol = symbolTable_->defineSymbol(
         name,
         PROTO_LOCATION(relation.base_schema()),
         SymbolType::kSchema,
         std::nullopt,
         &relation.base_schema());
+    readRelationSchemas_[currentRelationScope_] = symbol;
     visitNamedStruct(relation.base_schema());
   }
 
@@ -124,36 +160,39 @@ std::any InitialPlanProtoVisitor::visitReadRelation(
 std::any InitialPlanProtoVisitor::visitVirtualTable(
     const ::substrait::proto::ReadRel_VirtualTable& table) {
   const auto& uniqueName = symbolTable_->getUniqueName("virtual");
-  symbolTable_->defineSymbol(
+  auto symbol = symbolTable_->defineSymbol(
       uniqueName,
       PROTO_LOCATION(table),
       SymbolType::kSource,
       SourceType::kVirtualTable,
       &table);
+  readRelationSources_[currentRelationScope_] = symbol;
   return BasePlanProtoVisitor::visitVirtualTable(table);
 }
 
 std::any InitialPlanProtoVisitor::visitLocalFiles(
     const ::substrait::proto::ReadRel_LocalFiles& local) {
   const auto& uniqueName = symbolTable_->getUniqueName("local");
-  symbolTable_->defineSymbol(
+  auto symbol = symbolTable_->defineSymbol(
       uniqueName,
       PROTO_LOCATION(local),
       SymbolType::kSource,
       SourceType::kLocalFiles,
       &local);
+  readRelationSources_[currentRelationScope_] = symbol;
   return BasePlanProtoVisitor::visitLocalFiles(local);
 }
 
 std::any InitialPlanProtoVisitor::visitNamedTable(
     const ::substrait::proto::ReadRel_NamedTable& table) {
   const auto& uniqueName = symbolTable_->getUniqueName("named");
-  symbolTable_->defineSymbol(
+  auto symbol = symbolTable_->defineSymbol(
       uniqueName,
       PROTO_LOCATION(table),
       SymbolType::kSource,
       SourceType::kNamedTable,
       &table);
+  readRelationSources_[currentRelationScope_] = symbol;
   for (const auto& name : table.names()) {
     symbolTable_->defineSymbol(
         name,
@@ -168,12 +207,13 @@ std::any InitialPlanProtoVisitor::visitNamedTable(
 std::any InitialPlanProtoVisitor::visitExtensionTable(
     const ::substrait::proto::ReadRel_ExtensionTable& table) {
   const auto& uniqueName = symbolTable_->getUniqueName("extensiontable");
-  symbolTable_->defineSymbol(
+  auto symbol = symbolTable_->defineSymbol(
       uniqueName,
       PROTO_LOCATION(table),
       SymbolType::kSource,
       SourceType::kExtensionTable,
       &table);
+  readRelationSources_[currentRelationScope_] = symbol;
   return BasePlanProtoVisitor::visitExtensionTable(table);
 }
 

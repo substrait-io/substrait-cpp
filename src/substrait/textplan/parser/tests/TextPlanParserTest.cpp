@@ -52,19 +52,70 @@ std::vector<TestCase> getTestCases() {
           HasErrors({"1:25 → mismatched input '<EOF>' expecting '{'"}),
       },
       {
-          "test2-pipelines",
+          "test2-pipelines-no-relations",
           R"(pipelines {
             root -> project -> read;
           })",
-          AllOf(HasSymbols({"root", "project", "read"}), ParsesOk()),
+          AllOf(
+              HasSymbols({"read", "project", "root"}),
+              ParsesOk(),
+              WhenSerialized(testing::HasSubstr("pipelines {\n"
+                                                "  read -> project -> root;\n"
+                                                "}\n"))),
       },
       {
-          "test2-duplicate-within-pipeline",
+          "test2-duplicate-within-pipeline-no-relation",
           R"(pipelines {
             myself -> myself;
           })",
-          // TODO -- Add detection for duplicates.
-          AllOf(HasSymbols({"myself", "myself"})),
+          HasErrors({"2:22 → Relation myself cannot start and end the same "
+                     "pipeline."}),
+      },
+      {
+          "test2-duplicate-within-pipeline-with-relation",
+          R"(pipelines {
+            myself -> myself;
+          }
+
+          read relation myself {
+            base_schema schemaone;
+            source mynamedtable;
+          })",
+          HasErrors({"2:22 → Relation myself cannot start and end the same "
+                     "pipeline."}),
+      },
+      {
+          "test2-duplicate-within-pipeline-with-intervening-node",
+          R"(pipelines {
+            myself -> other -> myself -> other2;
+          })",
+          HasErrors(
+              {"2:31 → Relation myself cannot be in the middle of a pipeline "
+               "when it is already starting pipelines."}),
+      },
+      {
+          "test2-duplicate-end-node-within-pipeline-with-intervening-node",
+          R"(pipelines {
+            myself -> other -> myself;
+          })",
+          HasErrors({"2:31 → Relation myself cannot start and end the same "
+                     "pipeline."}),
+      },
+      {
+          "test2-duplicate-node-within-pipeline-with-intervening-nodes",
+          R"(pipelines {
+            starter -> myself -> other -> myself;
+          })",
+          HasErrors({"2:42 → Relation myself is already a non-terminating "
+                     "participant in a pipeline."}),
+      },
+      {
+          "test2-legal-two-pipeline-participant",
+          R"(pipelines {
+            myself -> a;
+            b -> myself;
+          })",
+          AllOf(HasSymbols({"a", "myself", "b"}), ParsesOk()),
       },
       {
           "test2-impossible-node-reuse-in-pipelines",
@@ -72,8 +123,8 @@ std::vector<TestCase> getTestCases() {
             root1 -> middle -> end1;
             root2 -> middle -> end2;
           })",
-          // TODO -- Detect this situation.
-          ParsesOk(),
+          HasErrors({"3:21 → Relation middle is already a non-terminating "
+                     "participant in a pipeline."}),
       },
       {
           "test3-schema",
@@ -125,10 +176,7 @@ std::vector<TestCase> getTestCases() {
             expression subtract(r_regionkey, 1);
             expression concat(r_name, r_name);
           })",
-          AllOf(
-              HasSymbolsWithTypes({"myproject"}, {SymbolType::kRelation}),
-              WhenSerialized(
-                  ::testing::Eq("not-yet-implemented\nnot-yet-implemented"))),
+          HasSymbolsWithTypes({"myproject"}, {SymbolType::kRelation}),
       },
       {
           "test6-read-relation",
@@ -225,6 +273,25 @@ std::vector<TestCase> getTestCases() {
           })",
           HasErrors({"1:0 → Unrecognized relation type: weird"}),
       },
+      {
+          "test9-pipelines-with-relations",
+          R"(pipelines {
+            root -> project -> read;
+          }
+
+          read relation read {
+            base_schema schemaone;
+            source mynamedtable;
+          }
+
+          project relation project {
+            expression r_regionkey;
+          })",
+          AllOf(
+              HasSymbolsWithTypes(
+                  {"read", "project", "root"}, {SymbolType::kRelation}),
+              ParsesOk()),
+      },
   };
   return cases;
 }
@@ -233,7 +300,7 @@ TEST(TextPlanParser, LoadFromFile) {
   auto stream = loadTextFile("data/provided_sample1.splan");
   ASSERT_TRUE(stream.has_value()) << "Test input file missing.";
   auto result = parseStream(*stream);
-  ASSERT_TRUE(result.successful());
+  ASSERT_THAT(result, ParsesOk());
 }
 
 TEST_P(TextPlanParserTestFixture, Parse) {

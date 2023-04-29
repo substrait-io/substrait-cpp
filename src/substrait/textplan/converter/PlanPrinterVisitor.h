@@ -30,7 +30,7 @@ class PlanPrinterVisitor : public BasePlanProtoVisitor {
     return errorListener_;
   };
 
-  std::string printRelation(const ::substrait::proto::Rel* relation);
+  std::string printRelation(const SymbolInfo& symbol);
 
  private:
   std::string lookupFieldReference(uint32_t field_reference);
@@ -88,6 +88,8 @@ class PlanPrinterVisitor : public BasePlanProtoVisitor {
 
   std::any visitAggregateFunction(
       const ::substrait::proto::AggregateFunction& function) override;
+  std::any visitExpression(
+      const ::substrait::proto::Expression& expression) override;
   std::any visitMaskExpression(
       const ::substrait::proto::Expression::MaskExpression& expression)
       override;

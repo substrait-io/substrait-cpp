@@ -4,7 +4,12 @@ add_subdirectory(grammar)
 
 add_library(
   substrait_textplan_loader
-  SubstraitPlanVisitor.cpp SubstraitPlanVisitor.h ParseText.cpp ParseText.h
+  SubstraitPlanVisitor.cpp
+  SubstraitPlanVisitor.h
+  SubstraitPlanPipelineVisitor.cpp
+  SubstraitPlanPipelineVisitor.h
+  ParseText.cpp
+  ParseText.h
   SubstraitParserErrorListener.cpp)
 
 target_link_libraries(substrait_textplan_loader symbol_table error_listener

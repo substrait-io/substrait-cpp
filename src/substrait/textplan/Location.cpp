@@ -7,7 +7,7 @@
 namespace io::substrait::textplan {
 
 constexpr Location Location::kUnknownLocation(
-    static_cast<google::protobuf::Message*>(nullptr));
+    static_cast<const google::protobuf::Message*>(nullptr));
 
 bool operator==(const Location& c1, const Location& c2) {
   // Test only one side since we only store one kind of content per table.

@@ -158,31 +158,25 @@ std::string relationToText(
     return "not-yet-implemented";
   }
   auto relationData = ANY_CAST(std::shared_ptr<RelationData>, info.blob);
-  if (relationData->protoAddr == nullptr) {
-    // Not yet ready to process these on the parser side.
-    return "";
-  }
-  if (relationData->protoAddr->rel_type_case() ==
+  if (relationData->relation.rel_type_case() ==
       ::substrait::proto::Rel::REL_TYPE_NOT_SET) {
     // The relation isn't defined, so we don't have anything to print.
     return "";
   }
 
   PlanPrinterVisitor printer(symbolTable);
-  return printer.printRelation(relationData->protoAddr);
+  return printer.printRelation(info);
 }
 
 std::vector<std::string> pipelineToPath(
     const SymbolTable& symbolTable,
-    const ::substrait::proto::Rel* relation) {
+    const SymbolInfo* info) {
   std::vector<std::string> pipeline;
-  auto info = symbolTable.lookupSymbolByLocation(
-      Location(static_cast<const google::protobuf::Message*>(relation)));
-  if (info == SymbolInfo::kUnknown) {
+  if (*info == SymbolInfo::kUnknown) {
     return pipeline;
   }
-  auto relationData = ANY_CAST(std::shared_ptr<RelationData>, info.blob);
-  pipeline.push_back(info.name);
+  auto relationData = ANY_CAST(std::shared_ptr<RelationData>, info->blob);
+  pipeline.push_back(info->name);
   if (relationData->continuingPipeline != nullptr) {
     auto tailPipe =
         pipelineToPath(symbolTable, relationData->continuingPipeline);

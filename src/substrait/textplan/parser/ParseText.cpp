@@ -12,6 +12,7 @@
 #include "substrait/textplan/Any.h"
 #include "substrait/textplan/StructuredSymbolData.h"
 #include "substrait/textplan/parser/SubstraitParserErrorListener.h"
+#include "substrait/textplan/parser/SubstraitPlanPipelineVisitor.h"
 #include "substrait/textplan/parser/SubstraitPlanVisitor.h"
 
 namespace io::substrait::textplan {
@@ -60,11 +61,25 @@ ParseResult parseStream(antlr4::ANTLRInputStream stream) {
         std::current_exception());
   }
 
-  SymbolTable symbolTable = *visitor->getSymbolTable();
+  auto pipelineVisitor = std::make_shared<SubstraitPlanPipelineVisitor>(
+      *visitor->getSymbolTable(), visitor->getErrorListener());
+  try {
+    pipelineVisitor->visitPlan(tree);
+  } catch (...) {
+    parserErrorListener.syntaxError(
+        &parser,
+        nullptr,
+        1,
+        1,
+        "uncaught parser exception encountered",
+        std::current_exception());
+  }
+
+  auto finalSymbolTable = pipelineVisitor->getSymbolTable();
   return {
-      symbolTable,
+      *finalSymbolTable,
       parserErrorListener.getErrorMessages(),
-      visitor->getErrorListener()->getErrorMessages()};
+      pipelineVisitor->getErrorListener()->getErrorMessages()};
 }
 
 } // namespace io::substrait::textplan

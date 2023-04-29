@@ -135,11 +135,17 @@ class SymbolTable {
       const std::any& subtype,
       const std::any& blob);
 
-  const SymbolInfo* lookupSymbolByName(const std::string& name) const;
+  // Adds a location to an existing symbol.
+  void addLocation(const SymbolInfo& symbol, const Location& location);
 
-  const SymbolInfo& lookupSymbolByLocation(const Location& location) const;
+  [[nodiscard]] const SymbolInfo* lookupSymbolByName(
+      const std::string& name) const;
 
-  const SymbolInfo& nthSymbolByType(uint32_t n, SymbolType type) const;
+  [[nodiscard]] const SymbolInfo& lookupSymbolByLocation(
+      const Location& location) const;
+
+  [[nodiscard]] const SymbolInfo& nthSymbolByType(uint32_t n, SymbolType type)
+      const;
 
   [[nodiscard]] SymbolTableIterator begin() const;
 
@@ -166,6 +172,9 @@ class SymbolTable {
   }
 
  private:
+  // Returns the table size if the symbol is not found.
+  size_t findSymbolIndex(const SymbolInfo& symbol);
+
   friend SymbolTableIterator;
 
   std::unordered_map<std::string, int32_t> names_;

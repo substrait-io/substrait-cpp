@@ -102,6 +102,25 @@ SymbolInfo* SymbolTable::defineUniqueSymbol(
   return defineSymbol(uniqueName, location, type, subtype, blob);
 }
 
+size_t SymbolTable::findSymbolIndex(const SymbolInfo& symbol) {
+  if (symbols_.empty()) {
+    return symbols_.size();
+  }
+  for (int index = 0; index < symbols_.size(); ++index) {
+    if (*symbols_[index] == symbol) {
+      return index;
+    }
+  }
+  return symbols_.size();
+}
+
+void SymbolTable::addLocation(
+    const SymbolInfo& symbol,
+    const Location& location) {
+  auto index = findSymbolIndex(symbol);
+  symbolsByLocation_.insert(std::make_pair(location, index));
+}
+
 const SymbolInfo* SymbolTable::lookupSymbolByName(
     const std::string& name) const {
   auto itr = symbolsByName_.find(name);
