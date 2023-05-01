@@ -636,19 +636,19 @@ std::any PlanPrinterVisitor::visitReadRelation(
     const ::substrait::proto::ReadRel& relation) {
   std::stringstream text;
 
-  ::google::protobuf::Message* msg;
+  const google::protobuf::Message* msg;
   switch (relation.read_type_case()) {
     case ::substrait::proto::ReadRel::ReadTypeCase::kVirtualTable:
-      msg = (google::protobuf::Message*)&relation.virtual_table();
+      msg = (const google::protobuf::Message*)&relation.virtual_table();
       break;
     case ::substrait::proto::ReadRel::ReadTypeCase::kLocalFiles:
-      msg = (::google::protobuf::Message*)&relation.local_files();
+      msg = (const google::protobuf::Message*)&relation.local_files();
       break;
     case ::substrait::proto::ReadRel::ReadTypeCase::kNamedTable:
-      msg = (::google::protobuf::Message*)&relation.named_table();
+      msg = (const google::protobuf::Message*)&relation.named_table();
       break;
     case ::substrait::proto::ReadRel::ReadTypeCase::kExtensionTable:
-      msg = (::google::protobuf::Message*)&relation.extension_table();
+      msg = (const google::protobuf::Message*)&relation.extension_table();
       break;
     case ::substrait::proto::ReadRel::READ_TYPE_NOT_SET:
       return "";

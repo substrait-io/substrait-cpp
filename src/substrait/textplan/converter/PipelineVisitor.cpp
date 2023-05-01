@@ -9,7 +9,7 @@ namespace io::substrait::textplan {
 
 std::shared_ptr<RelationData> PipelineVisitor::getRelationData(
     const google::protobuf::Message& relation) {
-  auto symbol = symbolTable_->lookupSymbolByLocation(Location(&relation));
+  auto symbol = symbolTable_->lookupSymbolByLocation(PROTO_LOCATION(relation));
   if (symbol == SymbolInfo::kUnknown) {
     return nullptr;
   }
@@ -122,8 +122,7 @@ std::any PipelineVisitor::visitRelation(
 
 std::any PipelineVisitor::visitPlanRelation(
     const ::substrait::proto::PlanRel& relation) {
-  auto symbol = symbolTable_->lookupSymbolByLocation(
-      Location((const google::protobuf::Message*)&relation));
+  auto symbol = symbolTable_->lookupSymbolByLocation(PROTO_LOCATION(relation));
   auto relationData = ANY_CAST(std::shared_ptr<RelationData>, symbol.blob);
   switch (relation.rel_type_case()) {
     case ::substrait::proto::PlanRel::kRel: {
