@@ -88,8 +88,7 @@ std::any InitialPlanProtoVisitor::visitPlanRelation(
       ::substrait::proto::planRelTypeCaseName(relation.rel_type_case());
   auto uniqueName = symbolTable_->getUniqueName(name);
   auto relationData = std::make_shared<RelationData>(
-      Location((const ::substrait::proto::Rel*)(&relation)),
-      Location((const ::substrait::proto::Rel*)nullptr));
+      Location((const ::substrait::proto::Rel*)(&relation)));
   symbolTable_->defineSymbol(
       uniqueName,
       PROTO_LOCATION(relation),
@@ -113,9 +112,7 @@ std::any InitialPlanProtoVisitor::visitRelation(
   BasePlanProtoVisitor::visitRelation(relation);
 
   auto uniqueName = symbolTable_->getUniqueName(name);
-  auto relationData = std::make_shared<RelationData>(
-      PROTO_LOCATION(relation),
-      Location((const ::substrait::proto::Rel*)nullptr));
+  auto relationData = std::make_shared<RelationData>(PROTO_LOCATION(relation));
   relationData->relation = relation;
   updateLocalSchema(relationData, relation);
   if (readRelationSources_.find(&relation) != readRelationSources_.end()) {

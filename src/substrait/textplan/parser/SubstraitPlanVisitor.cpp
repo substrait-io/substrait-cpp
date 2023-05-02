@@ -171,9 +171,7 @@ std::any SubstraitPlanVisitor::visitRelation(
         "Relation named " + relationName + " already defined.");
   }
 
-  auto relationData = std::make_shared<RelationData>(
-      Location(ctx),
-      Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)));
+  auto relationData = std::make_shared<RelationData>(Location(ctx));
   symbolTable_->defineSymbol(
       relationName,
       Location(ctx),

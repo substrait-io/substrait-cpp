@@ -14,17 +14,14 @@ class SymbolInfo;
 
 // Used by the PlanRelation and Relation to track connectivity.
 struct RelationData {
-  RelationData(const Location location, const Location originLocation)
-      : symbolLocation(location), originLocation(originLocation) {
-    continuingPipeline = nullptr;
-    pipelineStart = nullptr;
-
-    source = nullptr;
-    schema = nullptr;
-  };
+  explicit RelationData(const Location location)
+      : symbolLocation(location),
+        pipelineStart(nullptr),
+        continuingPipeline(nullptr),
+        source(nullptr),
+        schema(nullptr){};
 
   const Location symbolLocation;
-  const Location originLocation;
 
   // For relations not starting a pipeline, this is the relation that begins the
   // pipeline that this relation is part of.
