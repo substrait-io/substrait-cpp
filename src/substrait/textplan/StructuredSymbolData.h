@@ -18,6 +18,9 @@ struct RelationData {
       : symbolLocation(location), originLocation(originLocation) {
     continuingPipeline = nullptr;
     pipelineStart = nullptr;
+
+    source = nullptr;
+    schema = nullptr;
   };
 
   const Location symbolLocation;
