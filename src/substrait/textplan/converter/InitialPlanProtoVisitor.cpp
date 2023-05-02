@@ -87,8 +87,7 @@ std::any InitialPlanProtoVisitor::visitPlanRelation(
   std::string name =
       ::substrait::proto::planRelTypeCaseName(relation.rel_type_case());
   auto uniqueName = symbolTable_->getUniqueName(name);
-  auto relationData = std::make_shared<RelationData>(
-      Location((const ::substrait::proto::Rel*)(&relation)));
+  auto relationData = std::make_shared<RelationData>(PROTO_LOCATION(relation));
   symbolTable_->defineSymbol(
       uniqueName,
       PROTO_LOCATION(relation),
