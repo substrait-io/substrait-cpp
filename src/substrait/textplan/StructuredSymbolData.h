@@ -14,28 +14,23 @@ class SymbolInfo;
 
 // Used by the PlanRelation and Relation to track connectivity.
 struct RelationData {
-  explicit RelationData(const Location location)
-      : symbolLocation(location),
-        pipelineStart(nullptr),
-        continuingPipeline(nullptr),
-        source(nullptr),
-        schema(nullptr){};
+  explicit RelationData(const Location location) : symbolLocation(location){};
 
   const Location symbolLocation;
 
   // For relations not starting a pipeline, this is the relation that begins the
   // pipeline that this relation is part of.
-  const SymbolInfo* pipelineStart;
+  const SymbolInfo* pipelineStart{nullptr};
 
-  const SymbolInfo* continuingPipeline;
+  const SymbolInfo* continuingPipeline{nullptr};
   std::vector<const SymbolInfo*> newPipelines;
 
   // The information corresponding to the relation without any references to
   // other relations or inputs.
   ::substrait::proto::Rel relation;
 
-  const SymbolInfo* source;
-  const SymbolInfo* schema;
+  const SymbolInfo* source{nullptr};
+  const SymbolInfo* schema{nullptr};
 
   // Column name for each field known to this relation (in field order).  Used
   // to determine what fields are coming in as well and fields are going out.
