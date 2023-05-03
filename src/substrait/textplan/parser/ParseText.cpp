@@ -55,8 +55,8 @@ ParseResult parseStream(antlr4::ANTLRInputStream stream) {
     parserErrorListener.syntaxError(
         &parser,
         nullptr,
-        1,
-        1,
+        /*line=*/1,
+        /*charPositionInLine=*/1,
         "uncaught parser exception encountered",
         std::current_exception());
   }
@@ -69,8 +69,8 @@ ParseResult parseStream(antlr4::ANTLRInputStream stream) {
     parserErrorListener.syntaxError(
         &parser,
         nullptr,
-        1,
-        1,
+        /*line=*/1,
+        /*charPositionInLine=*/1,
         "uncaught parser exception encountered",
         std::current_exception());
   }

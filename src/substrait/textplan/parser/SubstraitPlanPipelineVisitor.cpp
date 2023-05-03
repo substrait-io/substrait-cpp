@@ -18,7 +18,7 @@ void SubstraitPlanPipelineVisitor::updateRelationSymbol(
   const auto& symbol = symbolTable_->lookupSymbolByName(relationName);
   if (symbol == SymbolInfo::kUnknown) {
     // This is a reference to a missing relation so we create a stub for it.
-    auto relationData = std::make_shared<RelationData>(Location(ctx));
+    auto relationData = std::make_shared<RelationData>();
     symbolTable_->defineSymbol(
         relationName,
         Location(ctx),
@@ -27,7 +27,7 @@ void SubstraitPlanPipelineVisitor::updateRelationSymbol(
         relationData);
   } else {
     // Add our location to this symbol so we can find it either way.
-    symbolTable_->addLocation(symbol, Location(ctx));
+    symbolTable_->updateLocation(symbol, Location(ctx));
   }
 }
 

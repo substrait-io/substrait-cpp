@@ -115,7 +115,25 @@ std::vector<TestCase> getTestCases() {
             myself -> a;
             b -> myself;
           })",
-          AllOf(HasSymbols({"a", "myself", "b"}), ParsesOk()),
+          AllOf(
+              HasSymbols({"a", "myself", "b"}),
+              WhenSerialized(EqSquashingWhitespace(R"(pipelines {
+                myself -> a;
+                b -> myself;
+              })"))),
+      },
+      {
+          "test2-legal-two-pipeline-participant-alternate-order",
+          R"(pipelines {
+            b -> myself;
+            myself -> a;
+          })",
+          AllOf(
+              HasSymbols({"myself", "b", "a"}),
+              WhenSerialized(EqSquashingWhitespace(R"(pipelines {
+                myself -> a;
+                b -> myself;
+              })"))),
       },
       {
           "test2-impossible-node-reuse-in-pipelines",

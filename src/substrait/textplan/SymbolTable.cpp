@@ -114,7 +114,7 @@ size_t SymbolTable::findSymbolIndex(const SymbolInfo& symbol) {
   return symbols_.size();
 }
 
-void SymbolTable::addLocation(
+void SymbolTable::updateLocation(
     const SymbolInfo& symbol,
     const Location& location) {
   auto index = findSymbolIndex(symbol);

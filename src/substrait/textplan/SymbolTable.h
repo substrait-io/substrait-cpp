@@ -135,8 +135,8 @@ class SymbolTable {
       const std::any& subtype,
       const std::any& blob);
 
-  // Adds a location to an existing symbol.
-  void addLocation(const SymbolInfo& symbol, const Location& location);
+  // Changes the location for a specified existing symbol.
+  void updateLocation(const SymbolInfo& symbol, const Location& location);
 
   [[nodiscard]] const SymbolInfo* lookupSymbolByName(
       const std::string& name) const;

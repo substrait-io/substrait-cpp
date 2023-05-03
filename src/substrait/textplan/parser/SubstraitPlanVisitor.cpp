@@ -171,7 +171,7 @@ std::any SubstraitPlanVisitor::visitRelation(
         "Relation named " + relationName + " already defined.");
   }
 
-  auto relationData = std::make_shared<RelationData>(Location(ctx));
+  auto relationData = std::make_shared<RelationData>();
   symbolTable_->defineSymbol(
       relationName,
       Location(ctx),
