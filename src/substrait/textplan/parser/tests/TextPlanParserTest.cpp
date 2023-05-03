@@ -60,7 +60,7 @@ std::vector<TestCase> getTestCases() {
               HasSymbols({"read", "project", "root"}),
               ParsesOk(),
               WhenSerialized(testing::HasSubstr("pipelines {\n"
-                                                "  read -> project -> root;\n"
+                                                "  root -> project -> read;\n"
                                                 "}\n"))),
       },
       {
@@ -68,8 +68,7 @@ std::vector<TestCase> getTestCases() {
           R"(pipelines {
             myself -> myself;
           })",
-          HasErrors({"2:22 → Relation myself cannot start and end the same "
-                     "pipeline."}),
+          HasErrors({"2:12 → Relation myself is already in this pipeline."}),
       },
       {
           "test2-duplicate-within-pipeline-with-relation",
@@ -81,33 +80,28 @@ std::vector<TestCase> getTestCases() {
             base_schema schemaone;
             source mynamedtable;
           })",
-          HasErrors({"2:22 → Relation myself cannot start and end the same "
-                     "pipeline."}),
+          HasErrors({"2:12 → Relation myself is already in this pipeline."}),
       },
       {
           "test2-duplicate-within-pipeline-with-intervening-node",
           R"(pipelines {
             myself -> other -> myself -> other2;
           })",
-          HasErrors(
-              {"2:31 → Relation myself cannot be in the middle of a pipeline "
-               "when it is already starting pipelines."}),
+          HasErrors({"2:12 → Relation myself is already in this pipeline."}),
       },
       {
           "test2-duplicate-end-node-within-pipeline-with-intervening-node",
           R"(pipelines {
             myself -> other -> myself;
           })",
-          HasErrors({"2:31 → Relation myself cannot start and end the same "
-                     "pipeline."}),
+          HasErrors({"2:12 → Relation myself is already in this pipeline."}),
       },
       {
           "test2-duplicate-node-within-pipeline-with-intervening-nodes",
           R"(pipelines {
             starter -> myself -> other -> myself;
           })",
-          HasErrors({"2:42 → Relation myself is already a non-terminating "
-                     "participant in a pipeline."}),
+          HasErrors({"2:23 → Relation myself is already in this pipeline."}),
       },
       {
           "test2-legal-two-pipeline-participant",
@@ -131,8 +125,8 @@ std::vector<TestCase> getTestCases() {
           AllOf(
               HasSymbols({"myself", "b", "a"}),
               WhenSerialized(EqSquashingWhitespace(R"(pipelines {
-                myself -> a;
                 b -> myself;
+                myself -> a;
               })"))),
       },
       {

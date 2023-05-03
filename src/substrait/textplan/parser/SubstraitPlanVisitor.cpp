@@ -43,25 +43,9 @@ std::any SubstraitPlanVisitor::visitPipelines(
   return visitChildren(ctx);
 }
 
-/*
- * Creates symbols in order of discovery, since the first symbol encountered is
- * the bottom of the chain, create children nodes first, then create the symbol.
- * Visits children to accomplish that.
- * Children know their parents allowing them to document the relationship.
- */
 std::any SubstraitPlanVisitor::visitPipeline(
     SubstraitPlanParser::PipelineContext* ctx) {
-  if (ctx->pipeline() != nullptr) {
-    visitPipeline(ctx->pipeline());
-  }
-
-  auto parentCtx = (antlr4::ParserRuleContext*)ctx->parent;
-  if (dynamic_cast<SubstraitPlanParser::PipelinesContext*>(parentCtx)) {
-    parentCtx = nullptr;
-  }
-
-  auto rel = ANY_CAST(std::string, visitRelation_ref(ctx->relation_ref()));
-  return rel;
+  return visitChildren(ctx);
 }
 
 std::any SubstraitPlanVisitor::visitExtensionspace(

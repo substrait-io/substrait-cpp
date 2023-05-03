@@ -27,6 +27,57 @@ std::string shortName(std::string str) {
   return str;
 }
 
+void eraseInputs(::substrait::proto::Rel* relation) {
+  switch (relation->rel_type_case()) {
+    case ::substrait::proto::Rel::kRead:
+      break;
+    case ::substrait::proto::Rel::kFilter:
+      relation->mutable_filter()->clear_input();
+      break;
+    case ::substrait::proto::Rel::kFetch:
+      relation->mutable_fetch()->clear_input();
+      break;
+    case ::substrait::proto::Rel::kAggregate:
+      relation->mutable_aggregate()->clear_input();
+      break;
+    case ::substrait::proto::Rel::kSort:
+      relation->mutable_sort()->clear_input();
+      break;
+    case ::substrait::proto::Rel::kJoin:
+      relation->mutable_join()->clear_left();
+      relation->mutable_join()->clear_right();
+      break;
+    case ::substrait::proto::Rel::kProject:
+      relation->mutable_project()->clear_input();
+      break;
+    case ::substrait::proto::Rel::kSet:
+      relation->mutable_set()->clear_inputs();
+      break;
+    case ::substrait::proto::Rel::kExtensionSingle:
+      relation->mutable_extension_single()->clear_input();
+      break;
+    case ::substrait::proto::Rel::kExtensionMulti:
+      relation->mutable_extension_multi()->clear_inputs();
+      break;
+    case ::substrait::proto::Rel::kExtensionLeaf:
+      break;
+    case ::substrait::proto::Rel::kCross:
+      relation->mutable_cross()->clear_left();
+      relation->mutable_cross()->clear_right();
+      break;
+    case ::substrait::proto::Rel::kHashJoin:
+      relation->mutable_hash_join()->clear_left();
+      relation->mutable_hash_join()->clear_right();
+      break;
+    case ::substrait::proto::Rel::kMergeJoin:
+      relation->mutable_merge_join()->clear_left();
+      relation->mutable_merge_join()->clear_right();
+      break;
+    case ::substrait::proto::Rel::REL_TYPE_NOT_SET:
+      break;
+  }
+}
+
 template <typename F>
 struct FinalAction {
   explicit FinalAction(F f) : clean_{f} {}
@@ -113,6 +164,7 @@ std::any InitialPlanProtoVisitor::visitRelation(
   auto uniqueName = symbolTable_->getUniqueName(name);
   auto relationData = std::make_shared<RelationData>();
   relationData->relation = relation;
+  eraseInputs(&relationData->relation);
   updateLocalSchema(relationData, relation);
   if (readRelationSources_.find(&relation) != readRelationSources_.end()) {
     relationData->source = readRelationSources_[&relation];

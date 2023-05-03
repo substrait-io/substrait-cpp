@@ -9,8 +9,28 @@
 #include "substrait/textplan/Any.h"
 #include "substrait/textplan/Location.h"
 #include "substrait/textplan/StructuredSymbolData.h"
+#include "substrait/textplan/SymbolTable.h"
 
 namespace io::substrait::textplan {
+
+namespace {
+
+bool continuingPipelineContains(
+    SubstraitPlanParser::PipelineContext* ctx,
+    const std::string& relationName) {
+  if (ctx->relation_ref()->getText() == relationName) {
+    return true;
+  }
+  if (dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)->getRuleIndex() !=
+      SubstraitPlanParser::RulePipeline) {
+    return false;
+  }
+  return continuingPipelineContains(
+      dynamic_cast<SubstraitPlanParser::PipelineContext*>(ctx->parent),
+      relationName);
+}
+
+} // namespace
 
 void SubstraitPlanPipelineVisitor::updateRelationSymbol(
     SubstraitPlanParser::PipelineContext* ctx,
@@ -37,10 +57,10 @@ std::any SubstraitPlanPipelineVisitor::visitPipelines(
 }
 
 /*
- * Creates symbols in order of discovery, since the first symbol encountered is
- * the bottom of the chain, create children nodes first, then create the symbol.
- * Visits children to accomplish that.
- * Children know their parents allowing them to document the relationship.
+ * Creates symbols in order of discovery, since the first symbol encountered
+ * is the bottom of the chain, create children nodes first, then create the
+ * symbol. Visits children to accomplish that. Children know their parents
+ * allowing them to document the relationship.
  */
 std::any SubstraitPlanPipelineVisitor::visitPipeline(
     SubstraitPlanParser::PipelineContext* ctx) {
@@ -48,7 +68,8 @@ std::any SubstraitPlanPipelineVisitor::visitPipeline(
   std::string relationName = ctx->relation_ref()->id(0)->getText();
   updateRelationSymbol(ctx, relationName);
 
-  // Process the rest of the pipeline first in order to evaluate left to right.
+  // Process the rest of the pipeline first in order to evaluate left to
+  // right.
   std::any result;
   if (ctx->pipeline() != nullptr) {
     result = visitPipeline(ctx->pipeline());
@@ -58,6 +79,7 @@ std::any SubstraitPlanPipelineVisitor::visitPipeline(
   auto& symbol = symbolTable_->lookupSymbolByName(relationName);
   auto relationData = ANY_CAST(std::shared_ptr<RelationData>, symbol.blob);
 
+  // Check for accidental cross-pipeline use.
   if (relationData->continuingPipeline != nullptr) {
     errorListener_->addError(
         ctx->relation_ref()->getStart(),
@@ -66,53 +88,49 @@ std::any SubstraitPlanPipelineVisitor::visitPipeline(
     return result;
   }
 
-  // Keep track of the front of the pipeline.
-  if (ctx->pipeline() == nullptr) {
-    // This is the leftmost node in the pipeline so mark it as start.
-    relationData->pipelineStart = &symbol;
-  } else {
-    // Look at the node to the left of us to see what the start is.
-    const auto& leftSymbol =
-        symbolTable_->lookupSymbolByLocation(PARSER_LOCATION(ctx->pipeline()));
-    if (leftSymbol != SymbolInfo::kUnknown) {
-      auto leftRelationData =
-          ANY_CAST(std::shared_ptr<RelationData>, leftSymbol.blob);
-      relationData->pipelineStart = leftRelationData->pipelineStart;
-    }
+  // Directions are calculated when viewing the pipeline as text:
+  //    a -> b -> c -> d
+  const SymbolInfo* leftSymbol = &SymbolInfo::kUnknown;
+  if (ctx->pipeline() != nullptr) {
+    leftSymbol =
+        &symbolTable_->lookupSymbolByLocation(PARSER_LOCATION(ctx->pipeline()));
   }
-
-  // Connect us up to the next link in the chain to the right.
+  const SymbolInfo* rightSymbol = &SymbolInfo::kUnknown;
   if (dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)->getRuleIndex() ==
       SubstraitPlanParser::RulePipeline) {
-    // We are not the last in the chain.
-    const auto& parentSymbol =
-        symbolTable_->lookupSymbolByLocation(PARSER_LOCATION(ctx->parent));
+    rightSymbol =
+        &symbolTable_->lookupSymbolByLocation(PARSER_LOCATION(ctx->parent));
+  }
+  const SymbolInfo* rightmostSymbol = rightSymbol;
+  if (*rightmostSymbol != SymbolInfo::kUnknown) {
+    auto rightRelationData =
+        ANY_CAST(std::shared_ptr<RelationData>, rightSymbol->blob);
+    rightmostSymbol = rightRelationData->pipelineStart;
+  }
 
-    if (ctx->pipeline() == nullptr) {
-      relationData->newPipelines.push_back(&parentSymbol);
-    } else {
-      if (!relationData->newPipelines.empty()) {
-        errorListener_->addError(
-            ctx->relation_ref()->getStart(),
-            "Relation " + relationName + " cannot be in the middle of a " +
-                "pipeline when it is already starting pipelines.");
-        return result;
-      }
-
-      relationData->continuingPipeline = &parentSymbol;
-      auto parentRelationData =
-          ANY_CAST(std::shared_ptr<RelationData>, parentSymbol.blob);
+  // Prevent loops within the pipeline.
+  if (dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)->getRuleIndex() ==
+      SubstraitPlanParser::RulePipeline) {
+    if (continuingPipelineContains(
+            dynamic_cast<SubstraitPlanParser::PipelineContext*>(ctx->parent),
+            relationName)) {
+      errorListener_->addError(
+          ctx->relation_ref()->getStart(),
+          "Relation " + relationName + " is already in this pipeline.");
+      return result;
     }
   }
 
-  // We are not the first node in the pipeline, make sure we don't duplicate.
-  if (ctx->pipeline() != nullptr && relationData->pipelineStart != nullptr &&
-      relationData->pipelineStart->name == relationName) {
-    errorListener_->addError(
-        ctx->relation_ref()->getStart(),
-        "Relation " + relationName +
-            " cannot start and end the same pipeline.");
-    return result;
+  // Keep track of the front of the pipeline.
+  relationData->pipelineStart = rightmostSymbol;
+
+  // Connect us up to the next link in the chain to the left.
+  if (*leftSymbol != SymbolInfo::kUnknown) {
+    if (*rightSymbol == SymbolInfo::kUnknown) {
+      relationData->newPipelines.push_back(leftSymbol);
+    } else {
+      relationData->continuingPipeline = leftSymbol;
+    }
   }
 
   return result;

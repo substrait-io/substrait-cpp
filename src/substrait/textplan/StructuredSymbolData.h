@@ -12,13 +12,12 @@ namespace io::substrait::textplan {
 
 class SymbolInfo;
 
-// Used by by the PlanRelation and Relation concepts to track connectivity.
+// Used by the PlanRelation and Relation concepts to track connectivity.
 struct RelationData {
-  // For relations not starting a pipeline, this is the relation that begins the
-  // pipeline that this relation is part of.  For relations starting a pipeline
-  // this value will either be set to the start of a pipeline that the node also
-  // participates in or it will be nullptr if it's the start of a pipeline and
-  // does not participate in any other pipelines.
+  // Keeps track of the first node in a pipeline.  For relations starting a
+  // pipeline this will not be a self-reference -- it will be the unknown
+  // symbol or if it is in another pipeline it will be the node that starts that
+  // pipeline.
   const SymbolInfo* pipelineStart{nullptr};
 
   // The next node in the pipeline that this node is part of.
