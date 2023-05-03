@@ -2,6 +2,7 @@
 
 #include "substrait/textplan/parser/SubstraitPlanPipelineVisitor.h"
 
+#include <ios>
 #include <memory>
 
 #include "SubstraitPlanLexer/SubstraitPlanLexer.h"
@@ -102,10 +103,12 @@ std::any SubstraitPlanPipelineVisitor::visitPipeline(
         &symbolTable_->lookupSymbolByLocation(PARSER_LOCATION(ctx->parent));
   }
   const SymbolInfo* rightmostSymbol = rightSymbol;
-  if (*rightmostSymbol != SymbolInfo::kUnknown) {
+  if (*rightSymbol != SymbolInfo::kUnknown) {
     auto rightRelationData =
         ANY_CAST(std::shared_ptr<RelationData>, rightSymbol->blob);
-    rightmostSymbol = rightRelationData->pipelineStart;
+    if (rightRelationData->pipelineStart != nullptr) {
+      rightmostSymbol = rightRelationData->pipelineStart;
+    }
   }
 
   // Prevent loops within the pipeline.
@@ -122,7 +125,9 @@ std::any SubstraitPlanPipelineVisitor::visitPipeline(
   }
 
   // Keep track of the front of the pipeline.
-  relationData->pipelineStart = rightmostSymbol;
+  if (rightmostSymbol != nullptr && *rightmostSymbol != SymbolInfo::kUnknown) {
+    relationData->pipelineStart = rightmostSymbol;
+  }
 
   // Connect us up to the next link in the chain to the left.
   if (*leftSymbol != SymbolInfo::kUnknown) {

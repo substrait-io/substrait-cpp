@@ -1,8 +1,10 @@
 /* SPDX-License-Identifier: Apache-2.0 */
-#include "SymbolTable.h"
+#include "substrait/textplan/SymbolTable.h"
 
 #include <any>
+#include <iomanip>
 #include <map>
+#include <sstream>
 #include <string>
 
 #include "substrait/common/Exceptions.h"
@@ -71,7 +73,7 @@ std::string SymbolTable::getUniqueName(const std::string& baseName) {
     names_.insert(std::make_pair(baseName, 1));
     return baseName;
   }
-  int32_t count = symbolSeenCount->second + 1;
+  const int32_t count = symbolSeenCount->second + 1;
   symbolSeenCount->second = count;
   return baseName + std::to_string(count);
 }
@@ -157,7 +159,7 @@ SymbolTableIterator SymbolTable::begin() const {
 }
 
 SymbolTableIterator SymbolTable::end() const {
-  return {this, symbolsByName_.size()};
+  return {this, symbols_.size()};
 }
 
 } // namespace io::substrait::textplan
