@@ -11,6 +11,7 @@
 #include "substrait/proto/algebra.pb.h"
 #include "substrait/proto/plan.pb.h"
 #include "substrait/textplan/Any.h"
+#include "substrait/textplan/Finally.h"
 #include "substrait/textplan/StructuredSymbolData.h"
 
 // The visitor should try and be tolerant of older plans.  This
@@ -34,23 +35,6 @@ std::string stringEscape(std::string_view str) {
     result << c;
   }
   return result.str();
-}
-
-template <typename F>
-struct FinalAction {
-  explicit FinalAction(F f) : clean_{f} {}
-
-  ~FinalAction() {
-    clean_();
-  }
-
- private:
-  F clean_;
-};
-
-template <typename F>
-FinalAction<F> finally(F f) {
-  return FinalAction<F>(f);
 }
 
 } // namespace
