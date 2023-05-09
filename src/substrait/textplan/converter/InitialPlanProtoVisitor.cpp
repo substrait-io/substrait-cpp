@@ -11,6 +11,7 @@
 #include "substrait/proto/algebra.pb.h"
 #include "substrait/proto/plan.pb.h"
 #include "substrait/textplan/Any.h"
+#include "substrait/textplan/Finally.h"
 #include "substrait/textplan/Location.h"
 #include "substrait/textplan/StructuredSymbolData.h"
 #include "substrait/textplan/SymbolTable.h"
@@ -76,23 +77,6 @@ void eraseInputs(::substrait::proto::Rel* relation) {
     case ::substrait::proto::Rel::REL_TYPE_NOT_SET:
       break;
   }
-}
-
-template <typename F>
-struct FinalAction {
-  explicit FinalAction(F f) : clean_{f} {}
-
-  ~FinalAction() {
-    clean_();
-  }
-
- private:
-  F clean_;
-};
-
-template <typename F>
-FinalAction<F> finally(F f) {
-  return FinalAction<F>(f);
 }
 
 } // namespace
