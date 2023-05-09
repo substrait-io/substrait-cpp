@@ -180,7 +180,7 @@ std::any InitialPlanProtoVisitor::visitExtensionTable(
 std::any InitialPlanProtoVisitor::visitNamedStruct(
     const ::substrait::proto::NamedStruct& named) {
   for (const auto& name : named.names()) {
-    if (symbolTable_->lookupSymbolByName(name) != SymbolInfo::kUnknown) {
+    if (symbolTable_->lookupSymbolByName(name) != nullptr) {
       continue;
     }
     symbolTable_->defineSymbol(
@@ -222,13 +222,16 @@ void InitialPlanProtoVisitor::updateLocalSchema(
     case ::substrait::proto::Rel::RelTypeCase::kRead:
       if (relation.read().has_base_schema()) {
         for (const auto& name : relation.read().base_schema().names()) {
-          auto symbol = symbolTable_->defineSymbol(
-              name,
-              PROTO_LOCATION(relation.read().base_schema()),
-              SymbolType::kField,
-              std::nullopt,
-              std::nullopt);
-          relationData->fieldReferences.emplace_back(symbol);
+          auto* symbol = symbolTable_->lookupSymbolByName(name);
+          if (symbol == nullptr) {
+            symbol = symbolTable_->defineSymbol(
+                name,
+                PROTO_LOCATION(relation.read().base_schema()),
+                SymbolType::kField,
+                std::nullopt,
+                std::nullopt);
+          }
+          relationData->fieldReferences.push_back(symbol);
         }
       }
       break;
@@ -282,8 +285,8 @@ void InitialPlanProtoVisitor::updateLocalSchema(
     case ::substrait::proto::Rel::REL_TYPE_NOT_SET:
       break;
   }
-  // TODO -- Utilize the data in relation.common().emit() to alter the order of
-  // the fields that leave this relation.
+  // TODO -- Utilize the data in relation.common().emit() to alter the order
+  // of the fields that leave this relation.
 }
 
 } // namespace io::substrait::textplan

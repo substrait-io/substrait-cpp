@@ -135,7 +135,7 @@ class SymbolTable {
       const std::any& subtype,
       const std::any& blob);
 
-  const SymbolInfo& lookupSymbolByName(const std::string& name) const;
+  const SymbolInfo* lookupSymbolByName(const std::string& name) const;
 
   const SymbolInfo& lookupSymbolByLocation(const Location& location) const;
 
