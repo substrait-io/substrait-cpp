@@ -2,8 +2,8 @@
 
 #pragma once
 
+#include <functional>
 #include <variant>
-#include <vector>
 
 namespace antlr4 {
 class ParserRuleContext;
