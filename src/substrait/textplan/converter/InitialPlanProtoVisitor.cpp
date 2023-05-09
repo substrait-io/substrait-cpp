@@ -222,7 +222,13 @@ void InitialPlanProtoVisitor::updateLocalSchema(
     case ::substrait::proto::Rel::RelTypeCase::kRead:
       if (relation.read().has_base_schema()) {
         for (const auto& name : relation.read().base_schema().names()) {
-          relationData->fieldReferences.emplace_back(name);
+          auto symbol = symbolTable_->defineSymbol(
+              name,
+              PROTO_LOCATION(relation.read().base_schema()),
+              SymbolType::kField,
+              std::nullopt,
+              std::nullopt);
+          relationData->fieldReferences.emplace_back(symbol);
         }
       }
       break;
