@@ -26,7 +26,8 @@ struct RelationData {
   const ::substrait::proto::Rel* continuingPipeline;
   std::vector<const ::substrait::proto::Rel*> newPipelines;
 
-  // Column name for each field known to this relation (in field order).
+  // Column name for each field known to this relation (in field order).  Used
+  // to determine what fields are coming in as well and fields are going out.
   std::vector<const SymbolInfo*> fieldReferences;
 };
 
