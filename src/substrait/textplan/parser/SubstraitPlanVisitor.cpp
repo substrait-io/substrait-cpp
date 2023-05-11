@@ -149,7 +149,7 @@ std::any SubstraitPlanVisitor::visitRelation(
 
   std::string relationName = ctx->relation_ref()->id(0)->getText();
   auto symbol = symbolTable_->lookupSymbolByName(relationName);
-  if (symbol != SymbolInfo::kUnknown) {
+  if (symbol != nullptr) {
     errorListener_->addError(
         ctx->getStart(),
         "Relation named " + relationName + " already defined.");
