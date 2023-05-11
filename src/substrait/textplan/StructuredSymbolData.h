@@ -9,6 +9,8 @@
 
 namespace io::substrait::textplan {
 
+class SymbolInfo;
+
 // Used by the PlanRelation and Relation to track connectivity.
 struct RelationData {
   RelationData(
@@ -24,9 +26,9 @@ struct RelationData {
   const ::substrait::proto::Rel* continuingPipeline;
   std::vector<const ::substrait::proto::Rel*> newPipelines;
 
-  // Column name for each field known to this relation (in field order).
-  // TODO -- Use symbols instead of column names here.
-  std::vector<std::string> fieldReferences;
+  // Column name for each field known to this relation (in field order).  Used
+  // to determine what fields are coming in as well and fields are going out.
+  std::vector<const SymbolInfo*> fieldReferences;
 };
 
 // Used by Schema symbols to keep track of assigned values.

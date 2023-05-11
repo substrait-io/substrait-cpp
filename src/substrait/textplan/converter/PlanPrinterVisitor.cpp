@@ -65,7 +65,7 @@ std::string PlanPrinterVisitor::lookupFieldReference(uint32_t field_reference) {
     auto relationData =
         ANY_CAST(std::shared_ptr<RelationData>, currentScope_->blob);
     if (field_reference < relationData->fieldReferences.size()) {
-      return relationData->fieldReferences[field_reference];
+      return relationData->fieldReferences[field_reference]->name;
     }
   }
   errorListener_->addError(

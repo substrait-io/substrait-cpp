@@ -89,7 +89,7 @@ SymbolInfo* SymbolTable::defineSymbol(
   symbolsByName_.insert(std::make_pair(name, symbols_.size() - 1));
   symbolsByLocation_.insert(std::make_pair(location, symbols_.size() - 1));
 
-  return info.get();
+  return symbols_.back().get();
 }
 
 SymbolInfo* SymbolTable::defineUniqueSymbol(
@@ -102,13 +102,13 @@ SymbolInfo* SymbolTable::defineUniqueSymbol(
   return defineSymbol(uniqueName, location, type, subtype, blob);
 }
 
-const SymbolInfo& SymbolTable::lookupSymbolByName(
+const SymbolInfo* SymbolTable::lookupSymbolByName(
     const std::string& name) const {
   auto itr = symbolsByName_.find(name);
   if (itr == symbolsByName_.end()) {
-    return SymbolInfo::kUnknown;
+    return nullptr;
   }
-  return *symbols_[itr->second];
+  return symbols_[itr->second].get();
 }
 
 const SymbolInfo& SymbolTable::lookupSymbolByLocation(
