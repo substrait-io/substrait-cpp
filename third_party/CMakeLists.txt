@@ -3,8 +3,12 @@
 set(ABSL_PROPAGATE_CXX_STD ON)
 add_subdirectory(abseil-cpp)
 
+include_directories(datetime)
+add_subdirectory(datetime)
+
 add_subdirectory(fmt)
 add_subdirectory(googletest)
+add_subdirectory(protobuf-matchers)
 
 set(YAML_CPP_BUILD_TESTS
     OFF

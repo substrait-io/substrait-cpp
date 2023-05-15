@@ -18,7 +18,7 @@ void SubstraitParserErrorListener::syntaxError(
 }
 
 void SubstraitParserErrorListener::addError(
-    antlr4::Token* offendingSymbol,
+    const antlr4::Token* offendingSymbol,
     const std::string& msg) {
   SubstraitErrorListener::addError(
       offendingSymbol->getLine(),

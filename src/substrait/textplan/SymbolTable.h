@@ -30,6 +30,7 @@ enum class SymbolType {
 };
 
 enum class RelationType {
+  // Logical plans
   kUnknown = 0,
   kRead = 1,
   kProject = 2,
@@ -40,13 +41,17 @@ enum class RelationType {
   kSort = 7,
   kFilter = 8,
   kSet = 9,
-  kExchange = 10,
-  kDdl = 11,
-  kWrite = 12,
-  kHashJoin = 13,
-  kMergeJoin = 14,
-  kReference = 15,
 
+  // Physical plans
+  kHashJoin = 31,
+  kMergeJoin = 32,
+
+  // Write relations, currently unreachable in Plan protos.
+  kExchange = 50,
+  kDdl = 51,
+  kWrite = 52,
+
+  // Extensions
   kExtensionLeaf = 100,
   kExtensionSingle = 101,
   kExtensionMulti = 102,

@@ -8,6 +8,7 @@
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 
+#include "substrait/proto/plan.pb.h"
 #include "substrait/textplan/ParseResult.h"
 
 // NOLINTBEGIN(readability-identifier-naming)
@@ -25,6 +26,9 @@ namespace io::substrait::textplan {
 
 [[maybe_unused]] ::testing::Matcher<const ParseResult&> WhenSerialized(
     ::testing::Matcher<const std::string&> stringMatcher);
+
+[[maybe_unused]] ::testing::Matcher<const ParseResult&> AsBinaryPlan(
+    ::testing::Matcher<const ::substrait::proto::Plan&> proto_matcher);
 
 [[maybe_unused]] ::testing::Matcher<const ParseResult&> HasErrors(
     const std::vector<std::string>& expectedErrors);

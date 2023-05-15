@@ -65,12 +65,18 @@ class SubstraitPlanVisitor : public SubstraitPlanParserVisitor {
       SubstraitPlanParser::Column_nameContext* ctx) override;
   std::any visitSource_reference(
       SubstraitPlanParser::Source_referenceContext* ctx) override;
-  std::any visitExpression(
-      SubstraitPlanParser::ExpressionContext* ctx) override;
+  std::any visitExpressionFunctionUse(
+      SubstraitPlanParser::ExpressionFunctionUseContext* ctx) override;
+  std::any visitExpressionConstant(
+      SubstraitPlanParser::ExpressionConstantContext* ctx) override;
+  std::any visitExpressionColumn(
+      SubstraitPlanParser::ExpressionColumnContext* ctx) override;
   std::any visitRelationCommon(
       SubstraitPlanParser::RelationCommonContext* ctx) override;
   std::any visitRelationUsesSchema(
       SubstraitPlanParser::RelationUsesSchemaContext* ctx) override;
+  std::any visitRelation_filter_behavior(
+      SubstraitPlanParser::Relation_filter_behaviorContext* ctx) override;
   std::any visitRelationFilter(
       SubstraitPlanParser::RelationFilterContext* ctx) override;
   std::any visitRelationProjection(

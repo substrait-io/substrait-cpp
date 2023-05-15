@@ -53,7 +53,9 @@ URI_FOLDER: 'URI_FOLDER';
 PARTITION_INDEX: 'PARTITION_INDEX';
 START: 'START';
 LENGTH: 'LENGTH';
-NULL: 'NULL';
+NULLVAL: 'NULL';
+TRUEVAL: 'TRUE';
+FALSEVAL: 'FALSE';
 
 LIST: 'LIST';
 MAP: 'MAP';
@@ -93,7 +95,7 @@ COLUMN_TYPE
     ;
 
 IDENTIFIER
-    : [A-Z][A-Z_0-9]*
+    : [A-Z][A-Z0-9]*
     ;
 
 NUMBER
@@ -101,10 +103,8 @@ NUMBER
     | MINUS? [0-9]+ ( PERIOD [0-9]+ )? 'E' ('+' | MINUS) [0-9]+
     ;
 
-STRING : '"' (ESC | ~["\\])* '"' ;
-fragment ESC : '\\' (["\\/bfnrt] | UNICODE | HEXESCAPE) ;
-fragment HEXESCAPE : 'x' HEX HEX ;
-fragment UNICODE : 'u' LEFTBRACE HEX HEX+ RIGHTBRACE ;
+STRING : '"' (ESCAPEDQUOTE | ~["])* '"' ;
+fragment ESCAPEDQUOTE : '\\' '"' ;
 fragment HEX : [0-9A-F] ;
 fragment DIGIT : [0-9] ;
 

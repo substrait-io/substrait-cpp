@@ -7,10 +7,13 @@
 
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
+#include <protobuf-matchers/protocol-buffer-matchers.h>
 
 #include "substrait/textplan/parser/ParseText.h"
 #include "substrait/textplan/tests/ParseResultMatchers.h"
 
+using ::protobuf_matchers::EqualsProto;
+using ::protobuf_matchers::Partially;
 using ::testing::AllOf;
 
 namespace io::substrait::textplan {
@@ -188,7 +191,17 @@ std::vector<TestCase> getTestCases() {
             expression subtract(r_regionkey, 1);
             expression concat(r_name, r_name);
           })",
-          HasSymbolsWithTypes({"myproject"}, {SymbolType::kRelation}),
+          AllOf(
+              HasSymbolsWithTypes({"myproject"}, {SymbolType::kRelation}),
+              WhenSerialized(EqSquashingWhitespace(
+                  R"(project relation myproject {
+                      expression EXPR-NOT-YET-IMPLEMENTED;
+                      expression EXPR-NOT-YET-IMPLEMENTED;
+                      expression EXPR-NOT-YET-IMPLEMENTED;
+                      expression EXPR-NOT-YET-IMPLEMENTED;
+                      expression EXPR-NOT-YET-IMPLEMENTED;
+                      expression EXPR-NOT-YET-IMPLEMENTED;
+                    })"))),
       },
       {
           "test6-read-relation",
@@ -207,64 +220,453 @@ std::vector<TestCase> getTestCases() {
           AllOf(HasSymbols({"myread"}), ParsesOk()),
       },
       {
-          "test6.5-literals",
+          "test10-literals-boolean",
           R"(project relation literalexamples {
             expression true;
+            expression true_bool?;
             expression false_bool;
+          })",
+          AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
+              R"(relations { rel { project {
+              expressions { literal { boolean: true } }
+              expressions { literal { boolean: true } }
+              expressions { literal { boolean: false } }
+              } } })"))),
+      },
+      {
+          "test10-literals-boolean-nulls",
+          R"(project relation literalexamples {
+            expression null_bool;
+            expression null_bool?;
+          })",
+          AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
+              R"(relations { rel { project {
+              expressions { literal { null: { bool {
+                nullability: NULLABILITY_NULLABLE } } } }
+              expressions { literal { null: { bool {
+                nullability: NULLABILITY_NULLABLE } } } }
+              } } })"))),
+      },
+      {
+          "test10-literals-integers",
+          R"(project relation literalexamples {
             expression 12_i8;
             expression -223_i16;
             expression 12345_i32;
-            expression 9999_i64;
+            expression 9999_i64?;
+          })",
+          AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
+              R"(relations { rel { project {
+              expressions { literal { i8: 12 } }
+              expressions { literal { i16: -223 } }
+              expressions { literal { i32: 12345 } }
+              expressions { literal { i64: 9999 nullable: true } }
+              } } })"))),
+      },
+      {
+          "test10-literals-integers-nulls",
+          R"(project relation literalexamples {
+            expression null_i8;
+            expression null_i16?;
+          })",
+          AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
+              R"(relations { rel { project {
+              expressions { literal { null: { i8 {
+                nullability: NULLABILITY_NULLABLE } } } }
+              expressions { literal { null: { i16 {
+                nullability: NULLABILITY_NULLABLE } } } }
+              } } })"))),
+      },
+      {
+          "test10-literals-floats",
+          R"(project relation literalexamples {
             expression 1.23_fp32;
-            expression 1.2345_fp64;
-            expression 1.2345E-2_fp64;
+            expression -1.2345_fp64;
+            expression 1.2345E-2_fp64?;
+          })",
+          AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
+              R"(relations { rel { project {
+              expressions { literal { fp32: 1.23 } }
+              expressions { literal { fp64: -1.2345 } }
+              expressions { literal { fp64: .012345 nullable: true } }
+              } } })"))),
+      },
+      {
+          "test10-literals-floats-nulls",
+          R"(project relation literalexamples {
+            expression null_fp32;
+            expression null_fp64?;
+          })",
+          AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
+              R"(relations { rel { project {
+              expressions { literal { null: { fp32 { nullability: NULLABILITY_NULLABLE } } } }
+              expressions { literal { null: { fp64 { nullability: NULLABILITY_NULLABLE } } } }
+              } } })"))),
+      },
+      {
+          "test10-literals-decimal",
+          R"(project relation literalexamples {
+            expression 42_decimal<5,4>;
+            expression 42_decimal<5,-4>;
+          })",
+          AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
+              R"(relations { rel { project {
+              expressions { literal { decimal: { value:
+                "B\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+                precision: 5 scale: 4 } } }
+              expressions { literal { decimal: { value:
+                "B\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+                precision: 5 scale: -4 } } }
+              } } })"))),
+      },
+      {
+          "test10-literals-decimal-nulls",
+          R"(project relation literalexamples {
+            expression null_decimal<3, 2>?;
+          })",
+          AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
+              R"(relations { rel { project {
+                expressions { literal { null: { decimal { scale: 2 precision: 3
+                  nullability: NULLABILITY_NULLABLE } } } }
+              } } })"))),
+      },
+      {
+          "test10-literals-strings",
+          R"(project relation literalexamples {
             expression "simple text";
             expression "123"_string;
+            expression "basic escapes: \\\'\"\b\f\n\r\t"_string;
             expression "embedded bytes: \xA9\x72";
+            expression "unicode char: \u{02}";
             expression "unicode char: \u{023B}";
+            expression "unicode char: \u{023B41}";
             expression `raw string with a Windows path: C:\file.txt`;
             expression ``string with a backtick (`) in it``;
+            expression "12345"_varchar<5>;
+            expression "two\nlines with \"escapes\""_varchar<80>;
+            expression "abcde"_fixedchar<5>;
+          })",
+          AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
+              R"(relations { rel { project {
+              expressions { literal { string: "simple text" } }
+              expressions { literal { string: "123" } }
+              expressions { literal {
+                string: "basic escapes: \\\'\"\b\f\n\r\t" } }
+              expressions { literal { string: "embedded bytes: \xA9\x72" } }
+              expressions { literal { string: "unicode char: \x02" } }
+              expressions { literal { string: "unicode char: \x02\x3B" } }
+              expressions { literal { string: "unicode char: \x02\x3B\x41" } }
+              expressions { literal {
+                string: "raw string with a Windows path: C:\\file.txt" } }
+              expressions { literal {
+                string: "string with a backtick (`) in it" } }
+              expressions { literal {
+                var_char: { value: "12345" length: 5 } } }
+              expressions { literal {
+                var_char: { value: "two\nlines with \"escapes\""
+                            length: 80 } } }
+              expressions { literal { fixed_char: "abcde" } }
+              } } })"))),
+      },
+      {
+          "test10-literals-strings-nulls",
+          R"(project relation literalexamples {
+            expression null_str;
+            expression null_string;
+            expression null_varchar<5>;
+            expression null_fixedchar<5>?;
+          })",
+          AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
+              R"(relations { rel { project {
+              expressions { literal { null: { string {
+                nullability: NULLABILITY_NULLABLE } } } }
+              expressions { literal { null: { string {
+                nullability: NULLABILITY_NULLABLE } } } }
+              expressions { literal { null: {
+                varchar { length: 5 nullability: NULLABILITY_NULLABLE } } } }
+              expressions { literal { null: {
+                fixed_char { length: 5 nullability: NULLABILITY_NULLABLE } } } }
+              } } })"))),
+      },
+      {
+          "test10-literals-binary",
+          R"(project relation literalexamples {
             expression "0123456789abcde"_binary;
-            expression "1000-01-01 00:00:00.000000"_timestamp;
+            expression "ddb287e8-7d4c-4fad-b2e7-07428be043e5"_uuid;
+            expression "ddb287e87d4c4fadb2e707428be043e5"_uuid;
+            expression "1234"_fixedbinary<2>;
+          })",
+          AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
+              R"(relations { rel { project {
+              expressions { literal { binary: "0123456789abcde" } }
+              expressions { literal { uuid: "ddb287e87d4c4fadb2e707428be043e5" } }
+              expressions { literal { uuid: "ddb287e87d4c4fadb2e707428be043e5" } }
+              expressions { literal { fixed_binary: "1234" } }
+              } } })"))),
+      },
+      {
+          "test10-literals-binary-nulls",
+          R"(project relation literalexamples {
+            expression null_binary;
+            expression null_uuid?;
+            expression null_fixedbinary<2>;
+          })",
+          AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
+              R"(relations { rel { project {
+              expressions { literal { null: { binary {
+                nullability: NULLABILITY_NULLABLE } } } }
+              expressions { literal { null: { uuid {
+                nullability: NULLABILITY_NULLABLE } } } }
+              expressions { literal { null: { fixed_binary {
+                nullability: NULLABILITY_NULLABLE } } } }
+              } } })"))),
+      },
+      {
+          "test10-literals-time",
+          R"(project relation literalexamples {
+            expression "2000-01-01 00:00:00"_timestamp;
+            expression "2000-01-01 00:00:00.000000"_timestamp;
             expression "2020-12-20"_date;
             expression "13:21"_time;
+            expression "13:21:03"_time;
             expression "13:21:12.012345"_time;
             expression {5_years, 1_month}_interval_year;
             expression {5_year, 1_months}_interval_year;
             expression {4_days, 1_second, 13_microseconds}_interval_day;
-            expression "1000-01-01 00:00:00.000000 UTC"_timestamp_tz;
-            expression "ddb287e8-7d4c-4fad-b2e7-07428be043e5"_uuid;
-            expression "12345"_varchar<5>;
-            expression "two\nlines with \"escapes\""_varchar<80>;
-            expression "abcde"_fixedchar<5>;
-            expression "1234"_fixedbinary<2>;
-            expression 42_decimal<5,-4>;
-            expression {"a", {"b", "c"}}_struct<string, struct<string, string>>;
+            expression "2000-01-01 00:00:00 US/Central"_timestamp_tz;
+            expression "2000-01-01 00:00:00.000000 UTC"_timestamp_tz;
+          })",
+          AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
+              R"(relations { rel { project {
+                expressions { literal { timestamp: 946684800 } }
+                expressions { literal { timestamp: 946684800 } }
+                expressions { literal { date: 18616 } }
+                expressions { literal { time: 48060000000 } }
+                expressions { literal { time: 48063000000 } }
+                expressions { literal { time: 48072012345 } }
+                expressions { literal {
+                  interval_year_to_month { years: 5 months: 1 } } }
+                expressions { literal {
+                  interval_year_to_month { years: 5 months: 1 } } }
+                expressions { literal {
+                  interval_day_to_second {
+                    days: 4 seconds: 1 microseconds: 13 } } }
+                expressions { literal { timestamp_tz: 946706400 } }
+                expressions { literal { timestamp_tz: 946684800 } }
+              } } })")),
+      },
+      {
+          "test10-literals-time-nulls",
+          R"(project relation literalexamples {
+            expression null_timestamp;
+            expression null_date;
+            expression null_time;
+            expression null_interval_year;
+            expression null_interval_day?;
+            expression null_timestamp_tz;
+          })",
+          AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
+              R"(relations { rel { project {
+                expressions { literal { null: {
+                  timestamp { nullability: NULLABILITY_NULLABLE } } } }
+                expressions { literal { null: { date {
+                  nullability: NULLABILITY_NULLABLE } } } }
+                expressions { literal { null: { time {
+                  nullability: NULLABILITY_NULLABLE } } } }
+                expressions { literal { null: { interval_year {
+                  nullability: NULLABILITY_NULLABLE } } } }
+                expressions { literal { null: { interval_day {
+                  nullability: NULLABILITY_NULLABLE } } } }
+                expressions { literal { null: { timestamp_tz {
+                  nullability: NULLABILITY_NULLABLE } } } }
+              } } })"))),
+      },
+      {
+          "test10-literals-lists",
+          R"(project relation literalexamples {
             expression {"a", "b", "c"}_list<string>;
             expression {null, "a", "b"}_list<string?>;
-            expression {42 : "life", 32 : "everything"}_map<int, string>;
             expression {}_list<string>;
             expression {}_list<string?>;
-            expression {}_list?<string?>;
-            expression {}_map<int, string>;
+            expression {}_list?<string>;
           })",
-          ParsesOk(),
+          AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
+              R"(relations { rel { project {
+              expressions { literal { list {
+                values { string: "a" }
+                values { string: "b" }
+                values { string: "c" }
+              } } }
+              expressions { literal { list {
+                values { null { string { nullability: NULLABILITY_NULLABLE } } }
+                values { string: "a" }
+                values { string: "b" }
+              } } }
+              expressions { literal { empty_list { type { string { } } } } }
+              expressions { literal { empty_list { type { string {
+                nullability: NULLABILITY_NULLABLE } } } } }
+              expressions { literal { empty_list { type { string { } }
+                nullability: NULLABILITY_NULLABLE } } }
+              } } })")),
+      },
+      {
+          "test10-literals-lists-nulls",
+          R"(project relation literalexamples {
+            expression null_list<string>;
+            expression null_list<list<string?>>;
+            expression null_list<list<string>>?;
+            expression null_list?<list<string>>;
+          })",
+          AsBinaryPlan((EqualsProto<::substrait::proto::Plan>(
+              R"(relations { rel { project {
+              expressions { literal { null { list { type { string { } }
+                nullability: NULLABILITY_NULLABLE } } } }
+              expressions { literal { null { list { type {
+                list { type { string {
+                  nullability: NULLABILITY_NULLABLE } } } }
+                    nullability: NULLABILITY_NULLABLE } } } }
+              expressions { literal { null { list { type {
+                list { type { string { } } } }
+                nullability: NULLABILITY_NULLABLE } } } }
+              expressions { literal { null { list { type {
+                list { type { string { } } } }
+                 nullability: NULLABILITY_NULLABLE } } } }
+              } } })"))),
+      },
+      {
+          "test10-literals-maps",
+          R"(project relation literalexamples {
+            expression {42 : "life", 32 : "everything"}_map<i16, string>;
+            expression {}_map<fp32, string>;
+          })",
+          AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
+              R"(relations { rel { project {
+                expressions { literal { map {
+                  key_values { key { i16: 42 } value { string: "life" } }
+                  key_values { key { i16: 32 } value { string: "everything" } }
+                } } }
+                expressions { literal {
+                  empty_map { key { fp32 {} } value { string { } } } } }
+              } } })")),
+      },
+      {
+          "test10-literals-maps-nulls",
+          R"(project relation literalexamples {
+            expression null_map<i8, string>;
+          })",
+          AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
+              R"(relations { rel { project {
+              expressions { literal {
+                null { map { key { i8 {} } value { string {} } } } } }
+              } } })"))),
+      },
+      {
+          "test10-literals-struct",
+          R"(project relation literalexamples {
+            expression {"a", {"b", "c"}}_struct<string, struct<string, string>>;
+          })",
+          AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
+              R"(relations { rel { project {
+              expressions { literal { struct {
+                fields { string: "a" }
+                fields { struct {
+                  fields { string: "b" }
+                  fields { string: "c" }
+                } }
+              } } }
+              } } })")),
+      },
+      {
+          "test10-literals-struct-nulls",
+          R"(project relation literalexamples {
+            expression null_struct<string, struct<string, string>>;
+          })",
+          AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
+              R"(relations { rel { project {
+              expressions { literal { null { struct {
+                types { string {} }
+                types { struct {
+                  types { string {} }
+                  types { string {} } } } } } } }
+              } } })"))),
+      },
+      {
+          "test10-literals-lists-of-structs",
+          R"(project relation literalexamples {
+            expression {{"a", 12}, {"b", -13}, {"c", 0}}_list<struct<string, i32>>;
+          })",
+          AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
+              R"(relations { rel { project {
+              expressions { literal { list {
+                values { struct { fields { string: "a" } fields { i32: 12 } } }
+                values { struct { fields { string: "b" } fields { i32: -13 } } }
+                values { struct { fields { string: "c" } fields { i32: 0 } } }
+              } } }
+              } } })"))),
       },
       {
           "test6.5-bad-literals",
           R"(project relation literalexamples {
             expression 1;
             expression 1.5;
+            expression 1_potato;
             expression "data"_potato;
-          })",
-          ParsesOk(),
-      },
-      {
-          "test6.6-invalid-literals",
-          R"(project relation literalexamples {
-            expression {}_list<string?>?;
-          })",
-          HasErrors({"2:39 → extraneous input '?' expecting ';'"}),
+            expression null;
+            expression "ddb287e8"_uuid;
+            expression "nothex"_uuid;
+            expression 42_decimal<r5,-4>;
+            expression 42_decimal<r,-4>;
+            expression 42_decimal<-5,-4>;
+            expression {}_list<string>?;
+            expression {}_struct<a>;
+            expression {}_struct<>;
+            //expression {}_map<>;  // TODO - Catch this behavior.
+            expression {}_list<>;
+            expression "unknown\escape"_string;
+            expression {123_i8}_map<i8, bool>;
+            expression {123}_map<i8, bool>;
+         })",
+          HasErrors({
+              "9:34 → mismatched input 'r5' expecting NUMBER",
+              "9:36 → mismatched input ',' expecting 'FILTER'",
+              "10:34 → mismatched input 'r' expecting NUMBER",
+              "10:35 → mismatched input ',' expecting 'FILTER'",
+              "12:38 → extraneous input '?' expecting ';'",
+              "2:23 → Literals should include a type.",
+              "3:23 → Literals should include a type.",
+              "4:25 → Unable to recognize requested type.",
+              "5:30 → Unable to recognize requested type.",
+              "6:23 → Null literals require type.",
+              "7:23 → UUIDs are 128 bits long and thus should be specified "
+              "with exactly 32 hexadecimal digits.",
+              "8:23 → UUIDs should be be specified with hexadecimal characters "
+              "with optional dashes only.",
+              "9:26 → Failed to decode type.",
+              "9:34 → Best effort and post join are the only two legal filter "
+              "behavior choices.  You may also not provide one which will "
+              "result to the default filter behavior.",
+              "9:34 → Best effort and post join are the only two legal filter "
+              "behavior choices.  You may also not provide one which will "
+              "result to the default filter behavior.",
+              "9:34 → Filters are not permitted for this kind of relation.",
+              "10:26 → Failed to decode type.",
+              "10:34 → Best effort and post join are the only two legal filter "
+              "behavior choices.  You may also not provide one which will "
+              "result to the default filter behavior.",
+              "10:34 → Best effort and post join are the only two legal filter "
+              "behavior choices.  You may also not provide one which will "
+              "result to the default filter behavior.",
+              "10:34 → Filters are not permitted for this kind of relation.",
+              "11:23 → Could not parse literal as decimal.",
+              "13:26 → Unable to recognize requested type.",
+              "14:26 → Unable to recognize requested type.",
+              "16:26 → Unable to recognize requested type.",
+              "17:31 → Unknown slash escape sequence.",
+              "18:23 → Map literals require pairs of values separated by "
+              "colons.",
+              "19:23 → Map literals require pairs of values separated by "
+              "colons.",
+          }),
       },
       {
           "test7-relation-without-type",

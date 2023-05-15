@@ -88,17 +88,8 @@ std::string PlanPrinterVisitor::lookupFunctionReference(
     if (symbol->type != SymbolType::kFunction) {
       continue;
     }
-    if (symbol->blob.type() !=
-        typeid(const ::substrait::proto::extensions::
-                   SimpleExtensionDeclaration_ExtensionFunction*)) {
-      // TODO -- Implement function references for text plans.
-      continue;
-    }
-    auto function = ANY_CAST(
-        const ::substrait::proto::extensions::
-            SimpleExtensionDeclaration_ExtensionFunction*,
-        symbol->blob);
-    if (function->function_anchor() == function_reference) {
+    auto function = ANY_CAST(std::shared_ptr<FunctionData>, symbol->blob);
+    if (function->anchor == function_reference) {
       return symbol->name;
     }
   }
@@ -603,6 +594,7 @@ std::any PlanPrinterVisitor::visitExpression(
     const ::substrait::proto::Expression& expression) {
   if (expression.rex_type_case() ==
       ::substrait::proto::Expression::RexTypeCase::REX_TYPE_NOT_SET) {
+    // TODO -- Remove this check after expressions are finished.
     return std::string("EXPR-NOT-YET-IMPLEMENTED");
   }
   return BasePlanProtoVisitor::visitExpression(expression);

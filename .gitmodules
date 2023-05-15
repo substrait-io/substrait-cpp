@@ -13,3 +13,6 @@
 [submodule "third_party/abseil-cpp"]
 	path = third_party/abseil-cpp
 	url = https://github.com/abseil/abseil-cpp.git
+[submodule "protobuf-matchers"]
+	path = third_party/protobuf-matchers
+	url = https://github.com/inazarenko/protobuf-matchers.git

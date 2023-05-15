@@ -13,6 +13,7 @@
 #include "substrait/textplan/StructuredSymbolData.h"
 #include "substrait/textplan/parser/SubstraitParserErrorListener.h"
 #include "substrait/textplan/parser/SubstraitPlanPipelineVisitor.h"
+#include "substrait/textplan/parser/SubstraitPlanRelationVisitor.h"
 #include "substrait/textplan/parser/SubstraitPlanVisitor.h"
 
 namespace io::substrait::textplan {
@@ -47,8 +48,7 @@ ParseResult parseStream(antlr4::ANTLRInputStream stream) {
   parser.addErrorListener(&parserErrorListener);
   auto* tree = parser.plan();
 
-  auto visitor =
-      std::make_shared<::io::substrait::textplan::SubstraitPlanVisitor>();
+  auto visitor = std::make_shared<SubstraitPlanVisitor>();
   try {
     visitor->visitPlan(tree);
   } catch (...) {
@@ -75,11 +75,25 @@ ParseResult parseStream(antlr4::ANTLRInputStream stream) {
         std::current_exception());
   }
 
-  auto finalSymbolTable = pipelineVisitor->getSymbolTable();
+  auto relationVisitor = std::make_shared<SubstraitPlanRelationVisitor>(
+      *pipelineVisitor->getSymbolTable(), pipelineVisitor->getErrorListener());
+  try {
+    relationVisitor->visitPlan(tree);
+  } catch (...) {
+    parserErrorListener.syntaxError(
+        &parser,
+        nullptr,
+        1,
+        1,
+        "uncaught parser relation exception encountered",
+        std::current_exception());
+  }
+
+  auto finalSymbolTable = relationVisitor->getSymbolTable();
   return {
       *finalSymbolTable,
       parserErrorListener.getErrorMessages(),
-      pipelineVisitor->getErrorListener()->getErrorMessages()};
+      relationVisitor->getErrorListener()->getErrorMessages()};
 }
 
 } // namespace io::substrait::textplan

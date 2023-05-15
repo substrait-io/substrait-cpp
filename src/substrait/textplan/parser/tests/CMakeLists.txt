@@ -8,6 +8,7 @@ add_test_case(
   substrait_textplan_loader
   substrait_common
   parse_result_matchers
+  protobuf-matchers
   gmock
   gtest
   gtest_main)
@@ -24,8 +25,3 @@ add_custom_command(
     ${CMAKE_COMMAND} -E copy
     "${TEXTPLAN_SOURCE_DIR}/data/provided_sample1.splan"
     "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tests/data/provided_sample1.splan")
-
-message(
-  STATUS
-    "test data will be here:  ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tests/data/provided_sample1.splan"
-)
