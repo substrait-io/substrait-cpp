@@ -537,7 +537,6 @@ TEST_F(BinaryToTextPlanConversionTest, loadFromJSON) {
   auto result = parseBinaryPlan(plan);
   auto symbols = result.getSymbolTable().getSymbols();
   ASSERT_THAT(
-
       result,
       AllOf(
           HasSymbolsWithTypes(

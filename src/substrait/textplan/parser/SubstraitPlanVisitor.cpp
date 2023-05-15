@@ -43,28 +43,9 @@ std::any SubstraitPlanVisitor::visitPipelines(
   return visitChildren(ctx);
 }
 
-/*
- * Creates symbols in order of discovery, since the first symbol encountered is
- * the bottom of the chain, create children nodes first, then create the symbol.
- * Visits children to accomplish that.
- * Children know their parents allowing them to document the relationship.
- */
 std::any SubstraitPlanVisitor::visitPipeline(
     SubstraitPlanParser::PipelineContext* ctx) {
-  if (ctx->pipeline() != nullptr) {
-    visitPipeline(ctx->pipeline());
-  }
-
-  auto parentCtx = (antlr4::ParserRuleContext*)ctx->parent;
-  if (dynamic_cast<SubstraitPlanParser::PipelinesContext*>(parentCtx)) {
-    parentCtx = nullptr;
-  }
-
-  auto rel = ANY_CAST(std::string, visitRelation_ref(ctx->relation_ref()));
-  symbolTable_->defineSymbol(
-      rel, Location(ctx), SymbolType::kRelation, defaultResult(), parentCtx);
-
-  return rel;
+  return visitChildren(ctx);
 }
 
 std::any SubstraitPlanVisitor::visitExtensionspace(
@@ -165,12 +146,22 @@ std::any SubstraitPlanVisitor::visitRelation(
   if (ctx->relation_ref() == nullptr) {
     return nullptr;
   }
+
+  std::string relationName = ctx->relation_ref()->id(0)->getText();
+  auto symbol = symbolTable_->lookupSymbolByName(relationName);
+  if (symbol != nullptr) {
+    errorListener_->addError(
+        ctx->getStart(),
+        "Relation named " + relationName + " already defined.");
+  }
+
+  auto relationData = std::make_shared<RelationData>();
   symbolTable_->defineSymbol(
-      ctx->relation_ref()->id(0)->getText(),
+      relationName,
       Location(ctx),
       SymbolType::kRelation,
       relType,
-      ctx);
+      relationData);
   visitRelation_ref(ctx->relation_ref());
   for (const auto detail : ctx->relation_detail()) {
     visit(detail);

@@ -6,25 +6,34 @@
 #include <optional>
 
 #include "substrait/proto/algebra.pb.h"
+#include "substrait/textplan/Location.h"
 
 namespace io::substrait::textplan {
 
 class SymbolInfo;
 
-// Used by the PlanRelation and Relation to track connectivity.
+// Used by the PlanRelation and Relation concepts to track connectivity.
 struct RelationData {
-  RelationData(
-      const ::substrait::proto::Rel* relation,
-      const ::google::protobuf::Message* origin)
-      : protoAddr(relation), originProtoAddr(origin) {
-    continuingPipeline = nullptr;
-  };
+  // Keeps track of the first node in a pipeline.  For relations starting a
+  // pipeline this will not be a self-reference -- it will be nullptr unless
+  // it is in another pipeline (which in that case the value will be the node
+  // that starts that pipeline).  As such this will only have nullptr as a value
+  // when it is a root node.
+  const SymbolInfo* pipelineStart{nullptr};
 
-  const ::substrait::proto::Rel* protoAddr;
-  const ::google::protobuf::Message* originProtoAddr;
+  // The next node in the pipeline that this node is part of.
+  const SymbolInfo* continuingPipeline{nullptr};
+  // The next nodes in the pipelines that this node starts.
+  std::vector<const SymbolInfo*> newPipelines;
 
-  const ::substrait::proto::Rel* continuingPipeline;
-  std::vector<const ::substrait::proto::Rel*> newPipelines;
+  // The information corresponding to the relation without any references to
+  // other relations or inputs.
+  ::substrait::proto::Rel relation;
+
+  // Source stores the input symbol of a read relation.
+  const SymbolInfo* source{nullptr};
+  // Schema keeps track schema used in this relation.
+  const SymbolInfo* schema{nullptr};
 
   // Column name for each field known to this relation (in field order).  Used
   // to determine what fields are coming in as well and fields are going out.

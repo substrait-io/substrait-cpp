@@ -13,6 +13,7 @@
 #include "substrait/textplan/Any.h"
 #include "substrait/textplan/Finally.h"
 #include "substrait/textplan/StructuredSymbolData.h"
+#include "substrait/textplan/SymbolTable.h"
 
 // The visitor should try and be tolerant of older plans.  This
 // requires calling deprecated APIs.
@@ -39,18 +40,25 @@ std::string stringEscape(std::string_view str) {
 
 } // namespace
 
-std::string PlanPrinterVisitor::printRelation(
-    const ::substrait::proto::Rel* relation) {
+std::string PlanPrinterVisitor::printRelation(const SymbolInfo& symbol) {
   std::stringstream text;
-  auto symbol = symbolTable_->lookupSymbolByLocation(PROTO_LOCATION(*relation));
-  text << ::substrait::proto::relTypeCaseName(relation->rel_type_case())
+  auto relationData = ANY_CAST(std::shared_ptr<RelationData>, symbol.blob);
+  text << ::substrait::proto::relTypeCaseName(
+              relationData->relation.rel_type_case())
        << " relation " << symbol.name << " {\n";
+  if (relationData->source != nullptr) {
+    text << "  source " << relationData->source->name << ";\n";
+  }
+  if (relationData->schema != nullptr) {
+    text << "  base_schema " << relationData->schema->name << ";\n";
+  }
 
-  auto result = this->visitRelation(*relation);
+  auto result = this->visitRelation(relationData->relation);
   if (result.type() != typeid(std::string)) {
     errorListener_->addError(
         "ERROR:  Relation subtype " +
-        ::substrait::proto::relTypeCaseName((relation->rel_type_case())) +
+        ::substrait::proto::relTypeCaseName(
+            (relationData->relation.rel_type_case())) +
         " not supported!");
     return "";
   }
@@ -591,6 +599,15 @@ std::any PlanPrinterVisitor::visitReferenceSegment(
   return std::string("REFSEG_NOT_YET_IMPLEMENTED");
 }
 
+std::any PlanPrinterVisitor::visitExpression(
+    const ::substrait::proto::Expression& expression) {
+  if (expression.rex_type_case() ==
+      ::substrait::proto::Expression::RexTypeCase::REX_TYPE_NOT_SET) {
+    return std::string("EXPR-NOT-YET-IMPLEMENTED");
+  }
+  return BasePlanProtoVisitor::visitExpression(expression);
+}
+
 std::any PlanPrinterVisitor::visitMaskExpression(
     const ::substrait::proto::Expression::MaskExpression& expression) {
   errorListener_->addError(
@@ -619,19 +636,19 @@ std::any PlanPrinterVisitor::visitReadRelation(
     const ::substrait::proto::ReadRel& relation) {
   std::stringstream text;
 
-  ::google::protobuf::Message* msg;
+  const google::protobuf::Message* msg;
   switch (relation.read_type_case()) {
     case ::substrait::proto::ReadRel::ReadTypeCase::kVirtualTable:
-      msg = (google::protobuf::Message*)&relation.virtual_table();
+      msg = (const google::protobuf::Message*)&relation.virtual_table();
       break;
     case ::substrait::proto::ReadRel::ReadTypeCase::kLocalFiles:
-      msg = (::google::protobuf::Message*)&relation.local_files();
+      msg = (const google::protobuf::Message*)&relation.local_files();
       break;
     case ::substrait::proto::ReadRel::ReadTypeCase::kNamedTable:
-      msg = (::google::protobuf::Message*)&relation.named_table();
+      msg = (const google::protobuf::Message*)&relation.named_table();
       break;
     case ::substrait::proto::ReadRel::ReadTypeCase::kExtensionTable:
-      msg = (::google::protobuf::Message*)&relation.extension_table();
+      msg = (const google::protobuf::Message*)&relation.extension_table();
       break;
     case ::substrait::proto::ReadRel::READ_TYPE_NOT_SET:
       return "";

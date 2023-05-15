@@ -2,9 +2,8 @@
 
 #pragma once
 
-#include <string>
+#include <functional>
 #include <variant>
-#include <vector>
 
 namespace antlr4 {
 class ParserRuleContext;
@@ -55,6 +54,13 @@ struct std::less<::io::substrait::textplan::Location> {
       const ::io::substrait::textplan::Location& rhs) const noexcept;
 };
 
-// Convenience macro useful for construction protobuffer based locations.
+// Convenience macro useful for constructing parser based locations when the
+// type needs recasting.
+#define PARSER_LOCATION(ctx)                                                   \
+  ::io::substrait::textplan::Location(                                         \
+      dynamic_cast<antlr4::ParserRuleContext*>(ctx))
+
+// Convenience macro useful for constructing protobuffer based locations.
 #define PROTO_LOCATION(proto)                                                  \
-  ::io::substrait::textplan::Location((::google::protobuf::Message*)&(proto))
+  ::io::substrait::textplan::Location(                                         \
+      dynamic_cast<const ::google::protobuf::Message*>(&(proto)))

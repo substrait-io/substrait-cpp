@@ -11,6 +11,7 @@
 #include "substrait/proto/algebra.pb.h"
 #include "substrait/proto/plan.pb.h"
 #include "substrait/textplan/Any.h"
+#include "substrait/textplan/Finally.h"
 #include "substrait/textplan/Location.h"
 #include "substrait/textplan/StructuredSymbolData.h"
 #include "substrait/textplan/SymbolTable.h"
@@ -25,6 +26,57 @@ std::string shortName(std::string str) {
     return str.substr(0, loc);
   }
   return str;
+}
+
+void eraseInputs(::substrait::proto::Rel* relation) {
+  switch (relation->rel_type_case()) {
+    case ::substrait::proto::Rel::kRead:
+      break;
+    case ::substrait::proto::Rel::kFilter:
+      relation->mutable_filter()->clear_input();
+      break;
+    case ::substrait::proto::Rel::kFetch:
+      relation->mutable_fetch()->clear_input();
+      break;
+    case ::substrait::proto::Rel::kAggregate:
+      relation->mutable_aggregate()->clear_input();
+      break;
+    case ::substrait::proto::Rel::kSort:
+      relation->mutable_sort()->clear_input();
+      break;
+    case ::substrait::proto::Rel::kJoin:
+      relation->mutable_join()->clear_left();
+      relation->mutable_join()->clear_right();
+      break;
+    case ::substrait::proto::Rel::kProject:
+      relation->mutable_project()->clear_input();
+      break;
+    case ::substrait::proto::Rel::kSet:
+      relation->mutable_set()->clear_inputs();
+      break;
+    case ::substrait::proto::Rel::kExtensionSingle:
+      relation->mutable_extension_single()->clear_input();
+      break;
+    case ::substrait::proto::Rel::kExtensionMulti:
+      relation->mutable_extension_multi()->clear_inputs();
+      break;
+    case ::substrait::proto::Rel::kExtensionLeaf:
+      break;
+    case ::substrait::proto::Rel::kCross:
+      relation->mutable_cross()->clear_left();
+      relation->mutable_cross()->clear_right();
+      break;
+    case ::substrait::proto::Rel::kHashJoin:
+      relation->mutable_hash_join()->clear_left();
+      relation->mutable_hash_join()->clear_right();
+      break;
+    case ::substrait::proto::Rel::kMergeJoin:
+      relation->mutable_merge_join()->clear_left();
+      relation->mutable_merge_join()->clear_right();
+      break;
+    case ::substrait::proto::Rel::REL_TYPE_NOT_SET:
+      break;
+  }
 }
 
 } // namespace
@@ -70,8 +122,7 @@ std::any InitialPlanProtoVisitor::visitPlanRelation(
   std::string name =
       ::substrait::proto::planRelTypeCaseName(relation.rel_type_case());
   auto uniqueName = symbolTable_->getUniqueName(name);
-  auto relationData = std::make_shared<RelationData>(
-      (const ::substrait::proto::Rel*)(&relation), nullptr);
+  auto relationData = std::make_shared<RelationData>();
   symbolTable_->defineSymbol(
       uniqueName,
       PROTO_LOCATION(relation),
@@ -85,17 +136,33 @@ std::any InitialPlanProtoVisitor::visitRelation(
     const ::substrait::proto::Rel& relation) {
   std::string name =
       ::substrait::proto::relTypeCaseName(relation.rel_type_case());
+
+  auto previousRelationScope = currentRelationScope_;
+  currentRelationScope_ = &relation;
+  auto resetRelationScope = finally([this, &previousRelationScope]() {
+    currentRelationScope_ = previousRelationScope;
+  });
+
   BasePlanProtoVisitor::visitRelation(relation);
+
   auto uniqueName = symbolTable_->getUniqueName(name);
-  auto relationData = std::make_shared<RelationData>(
-      (const ::substrait::proto::Rel*)(&relation), nullptr);
+  auto relationData = std::make_shared<RelationData>();
+  relationData->relation = relation;
+  eraseInputs(&relationData->relation);
   updateLocalSchema(relationData, relation);
-  symbolTable_->defineSymbol(
+  if (readRelationSources_.find(&relation) != readRelationSources_.end()) {
+    relationData->source = readRelationSources_[&relation];
+  }
+  if (readRelationSchemas_.find(&relation) != readRelationSchemas_.end()) {
+    relationData->schema = readRelationSchemas_[&relation];
+  }
+  auto symbol = symbolTable_->defineSymbol(
       uniqueName,
       PROTO_LOCATION(relation),
       SymbolType::kRelation,
       relation.rel_type_case(),
       relationData);
+  symbolTable_->updateLocation(*symbol, PROTO_LOCATION(relationData->relation));
   return std::nullopt;
 }
 
@@ -109,12 +176,13 @@ std::any InitialPlanProtoVisitor::visitReadRelation(
     const ::substrait::proto::ReadRel& relation) {
   if (relation.has_base_schema()) {
     const std::string& name = symbolTable_->getUniqueName("schema");
-    symbolTable_->defineSymbol(
+    auto symbol = symbolTable_->defineSymbol(
         name,
         PROTO_LOCATION(relation.base_schema()),
         SymbolType::kSchema,
         std::nullopt,
         &relation.base_schema());
+    readRelationSchemas_[currentRelationScope_] = symbol;
     visitNamedStruct(relation.base_schema());
   }
 
@@ -124,36 +192,39 @@ std::any InitialPlanProtoVisitor::visitReadRelation(
 std::any InitialPlanProtoVisitor::visitVirtualTable(
     const ::substrait::proto::ReadRel_VirtualTable& table) {
   const auto& uniqueName = symbolTable_->getUniqueName("virtual");
-  symbolTable_->defineSymbol(
+  auto symbol = symbolTable_->defineSymbol(
       uniqueName,
       PROTO_LOCATION(table),
       SymbolType::kSource,
       SourceType::kVirtualTable,
       &table);
+  readRelationSources_[currentRelationScope_] = symbol;
   return BasePlanProtoVisitor::visitVirtualTable(table);
 }
 
 std::any InitialPlanProtoVisitor::visitLocalFiles(
     const ::substrait::proto::ReadRel_LocalFiles& local) {
   const auto& uniqueName = symbolTable_->getUniqueName("local");
-  symbolTable_->defineSymbol(
+  auto symbol = symbolTable_->defineSymbol(
       uniqueName,
       PROTO_LOCATION(local),
       SymbolType::kSource,
       SourceType::kLocalFiles,
       &local);
+  readRelationSources_[currentRelationScope_] = symbol;
   return BasePlanProtoVisitor::visitLocalFiles(local);
 }
 
 std::any InitialPlanProtoVisitor::visitNamedTable(
     const ::substrait::proto::ReadRel_NamedTable& table) {
   const auto& uniqueName = symbolTable_->getUniqueName("named");
-  symbolTable_->defineSymbol(
+  auto symbol = symbolTable_->defineSymbol(
       uniqueName,
       PROTO_LOCATION(table),
       SymbolType::kSource,
       SourceType::kNamedTable,
       &table);
+  readRelationSources_[currentRelationScope_] = symbol;
   for (const auto& name : table.names()) {
     symbolTable_->defineSymbol(
         name,
@@ -168,12 +239,13 @@ std::any InitialPlanProtoVisitor::visitNamedTable(
 std::any InitialPlanProtoVisitor::visitExtensionTable(
     const ::substrait::proto::ReadRel_ExtensionTable& table) {
   const auto& uniqueName = symbolTable_->getUniqueName("extensiontable");
-  symbolTable_->defineSymbol(
+  auto symbol = symbolTable_->defineSymbol(
       uniqueName,
       PROTO_LOCATION(table),
       SymbolType::kSource,
       SourceType::kExtensionTable,
       &table);
+  readRelationSources_[currentRelationScope_] = symbol;
   return BasePlanProtoVisitor::visitExtensionTable(table);
 }
 

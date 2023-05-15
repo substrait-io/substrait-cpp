@@ -81,6 +81,12 @@ class InitialPlanProtoVisitor : public BasePlanProtoVisitor {
 
   std::shared_ptr<SymbolTable> symbolTable_;
   std::shared_ptr<SubstraitErrorListener> errorListener_;
+
+  const ::substrait::proto::Rel* currentRelationScope_;
+  std::map<const ::substrait::proto::Rel*, const SymbolInfo*>
+      readRelationSources_;
+  std::map<const ::substrait::proto::Rel*, const SymbolInfo*>
+      readRelationSchemas_;
 };
 
 } // namespace io::substrait::textplan
