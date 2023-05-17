@@ -20,6 +20,7 @@ sudo --preserve-env apt install -y \
   protobuf-compiler \
   clang-format \
   uuid-dev \
-  default-jre
+  default-jre \
+  googletest
 
 pip install cmake-format
