@@ -21,6 +21,6 @@ sudo --preserve-env apt install -y \
   clang-format \
   uuid-dev \
   default-jre \
-  googletest
+  libcurl4-openssl-dev
 
 pip install cmake-format

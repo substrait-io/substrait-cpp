@@ -15,7 +15,9 @@
 	url = https://github.com/abseil/abseil-cpp.git
 [submodule "protobuf-matchers"]
 	path = third_party/protobuf-matchers
-	url = https://github.com/inazarenko/protobuf-matchers.git
+	url = https://github.com/EpsilonPrime/protobuf-matchers.git
 [submodule "third_party/datetime"]
 	path = third_party/datetime
 	url = https://github.com/HowardHinnant/date
+[submodule "third_party/protobuf-matchers"]
+	url = https://github.com/EpsilonPrime/protobuf-matchers.git
