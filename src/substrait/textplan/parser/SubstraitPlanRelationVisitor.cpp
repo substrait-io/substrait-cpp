@@ -9,7 +9,7 @@
 
 #include "SubstraitPlanParser/SubstraitPlanParser.h"
 #include "absl/strings/numbers.h"
-#include "datetime/tz.h"
+#include "date/tz.h"
 #include "substrait/expression/DecimalLiteral.h"
 #include "substrait/proto/algebra.pb.h"
 #include "substrait/proto/type.pb.h"

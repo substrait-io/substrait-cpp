@@ -23,7 +23,8 @@ target_link_libraries(
   substrait_expression
   textplan_grammar
   fmt::fmt-header-only
-  datetime)
+  date::date
+  date-tz)
 
 add_executable(planparser Tool.cpp)
 

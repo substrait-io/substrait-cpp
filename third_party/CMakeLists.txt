@@ -3,7 +3,7 @@
 set(ABSL_PROPAGATE_CXX_STD ON)
 add_subdirectory(abseil-cpp)
 
-include_directories(datetime)
+set(BUILD_TZ_LIB ON)
 add_subdirectory(datetime)
 
 add_subdirectory(fmt)
