@@ -7,7 +7,6 @@
 #include <sstream>
 #include <string>
 
-#include "SubstraitPlanParser/SubstraitPlanParser.h"
 #include "absl/strings/numbers.h"
 #include "date/tz.h"
 #include "substrait/expression/DecimalLiteral.h"
