@@ -24,7 +24,7 @@ target_link_libraries(
   textplan_grammar
   fmt::fmt-header-only
   date::date
-  date-tz)
+  date::date-tz)
 
 add_executable(planparser Tool.cpp)
 
