@@ -527,7 +527,9 @@ std::string ParameterizedMap::signature() const {
   sign << "<";
   sign << keyType()->signature();
   sign << ",";
-  sign << valueType()->signature();
+  if (valueType() != nullptr) {
+    sign << valueType()->signature();
+  }
   sign << ">";
   return sign.str();
 }
