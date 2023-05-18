@@ -8,7 +8,6 @@
 #include "substrait/textplan/Any.h"
 #include "substrait/textplan/Location.h"
 #include "substrait/textplan/StructuredSymbolData.h"
-#include "substrait/textplan/parser/SubstraitPlanVisitor.h"
 
 namespace io::substrait::textplan {
 
