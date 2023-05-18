@@ -38,7 +38,7 @@ jobs:
         run: ./scripts/setup-ubuntu.sh
       - run: mkdir build
       - name: Run cmake
-        run: cmake -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Debug
+        run: cmake -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Debug -DBUILD_TZ_LIB=ON
       - name: Build
         run: ninja -C build
       - name: Test
