@@ -312,10 +312,10 @@ std::vector<TestCase> getTestCases() {
           AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
               R"(relations { rel { project {
               expressions { literal { decimal: { value:
-                "B\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+                "\052\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
                 precision: 5 scale: 4 } } }
               expressions { literal { decimal: { value:
-                "B\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+                "\052\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
                 precision: 5 scale: -4 } } }
               } } })"))),
       },

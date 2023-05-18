@@ -50,7 +50,7 @@ DecimalLiteral DecimalLiteral::fromString(
     int32_t precision,
     int32_t scale) {
   absl::uint128 v;
-  if (!absl::SimpleHexAtoi(str, &v)) {
+  if (!absl::SimpleAtoi(str, &v)) {
     // TODO -- Store the parse errors so that they can be examined later.
     return {"", 0, 0};
   }
