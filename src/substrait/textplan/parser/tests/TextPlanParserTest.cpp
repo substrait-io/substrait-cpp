@@ -637,35 +637,23 @@ std::vector<TestCase> getTestCases() {
               "4:25 → Unable to recognize requested type.",
               "5:30 → Unable to recognize requested type.",
               "6:23 → Null literals require type.",
-              "7:23 → UUIDs are 128 bits long and thus should be specified "
-              "with exactly 32 hexadecimal digits.",
-              "8:23 → UUIDs should be be specified with hexadecimal characters "
-              "with optional dashes only.",
+              "7:23 → UUIDs are 128 bits long and thus should be specified with exactly 32 hexadecimal digits.",
+              "8:23 → UUIDs should be be specified with hexadecimal characters with optional dashes only.",
               "9:26 → Failed to decode type.",
-              "9:34 → Best effort and post join are the only two legal filter "
-              "behavior choices.  You may also not provide one which will "
-              "result to the default filter behavior.",
-              "9:34 → Best effort and post join are the only two legal filter "
-              "behavior choices.  You may also not provide one which will "
-              "result to the default filter behavior.",
+              "9:34 → Best effort and post join are the only two legal filter behavior choices.  You may also not provide one which will result to the default filter behavior.",
+              "9:34 → Best effort and post join are the only two legal filter behavior choices.  You may also not provide one which will result to the default filter behavior.",
               "9:34 → Filters are not permitted for this kind of relation.",
               "10:26 → Failed to decode type.",
-              "10:34 → Best effort and post join are the only two legal filter "
-              "behavior choices.  You may also not provide one which will "
-              "result to the default filter behavior.",
-              "10:34 → Best effort and post join are the only two legal filter "
-              "behavior choices.  You may also not provide one which will "
-              "result to the default filter behavior.",
+              "10:34 → Best effort and post join are the only two legal filter behavior choices.  You may also not provide one which will result to the default filter behavior.",
+              "10:34 → Best effort and post join are the only two legal filter behavior choices.  You may also not provide one which will result to the default filter behavior.",
               "10:34 → Filters are not permitted for this kind of relation.",
               "11:23 → Could not parse literal as decimal.",
               "13:26 → Unable to recognize requested type.",
               "14:26 → Unable to recognize requested type.",
               "16:26 → Unable to recognize requested type.",
               "17:31 → Unknown slash escape sequence.",
-              "18:23 → Map literals require pairs of values separated by "
-              "colons.",
-              "19:23 → Map literals require pairs of values separated by "
-              "colons.",
+              "18:23 → Map literals require pairs of values separated by colons.",
+              "19:23 → Map literals require pairs of values separated by colons.",
           }),
       },
       {

@@ -436,8 +436,9 @@ std::string SymbolTablePrinter::outputToText(const SymbolTable& symbolTable) {
     const SymbolTable& symbolTable) {
   ::substrait::proto::Plan plan;
   for (const SymbolInfo& info : symbolTable) {
-    if (info.type != SymbolType::kRelation)
+    if (info.type != SymbolType::kRelation) {
       continue;
+    }
     auto relationData = ANY_CAST(std::shared_ptr<RelationData>, info.blob);
     auto relation = plan.add_relations();
     // TODO -- Figure out when to use rel_root and when to use rel.
