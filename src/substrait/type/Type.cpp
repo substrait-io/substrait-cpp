@@ -69,8 +69,7 @@ ParameterizedTypePtr decodeType<TypeKind::kMap>(
       return std::make_shared<ParameterizedMap>(
           parameterTypes[0], nullptr, nullable);
     } else {
-      return std::make_shared<ParameterizedMap>(
-          nullptr, nullptr, nullable);
+      return std::make_shared<ParameterizedMap>(nullptr, nullptr, nullable);
     }
   } else {
     return std::make_shared<Map>(
