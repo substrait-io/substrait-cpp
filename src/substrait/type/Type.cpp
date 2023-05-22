@@ -525,7 +525,9 @@ std::string ParameterizedMap::signature() const {
   std::stringstream sign;
   sign << TypeTraits<TypeKind::kMap>::kSignature;
   sign << "<";
-  sign << keyType()->signature();
+  if (keyType() != nullptr) {
+    sign << keyType()->signature();
+  }
   sign << ",";
   if (valueType() != nullptr) {
     sign << valueType()->signature();
