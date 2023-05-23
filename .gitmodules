@@ -17,4 +17,5 @@
 	path = third_party/datetime
 	url = https://github.com/HowardHinnant/date
 [submodule "third_party/protobuf-matchers"]
+	path = third_party/protobuf-matchers
 	url = https://github.com/EpsilonPrime/protobuf-matchers.git
