@@ -28,8 +28,6 @@ target_link_libraries(
 
 add_executable(planparser Tool.cpp)
 
-include_directories(${datetime_INCLUDE_DIRS})
-include_directories(${textplan_grammar_INCLUDE_DIRS})
 target_link_libraries(planparser substrait_textplan_loader error_listener)
 
 if(${SUBSTRAIT_CPP_BUILD_TESTING})
