@@ -83,8 +83,8 @@ ParseResult parseStream(antlr4::ANTLRInputStream stream) {
     parserErrorListener.syntaxError(
         &parser,
         nullptr,
-        1,
-        1,
+        /*line=*/1,
+        /*charPositionInLine=*/1,
         "uncaught parser relation exception encountered",
         std::current_exception());
   }

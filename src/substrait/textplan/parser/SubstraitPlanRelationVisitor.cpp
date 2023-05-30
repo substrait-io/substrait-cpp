@@ -140,6 +140,7 @@ void setNullable(::substrait::proto::Type* type) {
       break;
     case ::substrait::proto::Type::kUserDefinedTypeReference:
     case ::substrait::proto::Type::KIND_NOT_SET:
+      // We are guaranteed to have a valid type so no need to emit an error.
       break;
   }
 }

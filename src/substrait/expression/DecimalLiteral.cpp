@@ -56,7 +56,6 @@ DecimalLiteral DecimalLiteral::fromString(
   }
   std::uint8_t valueBytes[16];
   uint128ToBytes(v, valueBytes);
-  // TODO -- Store parse errors locally so folks can determine what went wrong.
   return {std::string((const char*)valueBytes, 16), precision, scale};
 }
 
