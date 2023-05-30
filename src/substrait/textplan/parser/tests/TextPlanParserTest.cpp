@@ -486,6 +486,7 @@ std::vector<TestCase> getTestCases() {
           R"(project relation literalexamples {
             expression {"a", "b", "c"}_list<string>;
             expression {null, "a", "b"}_list<string?>;
+            expression {{"a", "b"}, {"1", "2"}}_list<list<string>>?;
             expression {}_list<string>;
             expression {}_list<string?>;
             expression {}_list?<string>;
@@ -502,6 +503,13 @@ std::vector<TestCase> getTestCases() {
                 values { string: "a" }
                 values { string: "b" }
               } } }
+              expressions { literal { list { values { list {
+                values { string: "a" }
+                values { string: "b" }
+             } } values { list {
+                values { string: "1" }
+                values { string: "2" }
+              } } } } }
               expressions { literal { empty_list { type { string { } } } } }
               expressions { literal { empty_list { type { string {
                 nullability: NULLABILITY_NULLABLE } } } } }
