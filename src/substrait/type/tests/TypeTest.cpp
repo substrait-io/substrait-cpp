@@ -228,6 +228,12 @@ TEST_F(TypeTest, decodeTest) {
       });
 
   testDecode<ParameterizedMap>(
+      "map<>", [](const std::shared_ptr<const ParameterizedMap>& typePtr) {
+        ASSERT_EQ(typePtr->signature(), "map<,>");
+        ASSERT_EQ(typePtr->valueType(), nullptr);
+      });
+
+  testDecode<ParameterizedMap>(
       "map<string,map<string,any>",
       [](const std::shared_ptr<const ParameterizedMap>& typePtr) {
         ASSERT_EQ(typePtr->signature(), "map<str,map<str,any>>");

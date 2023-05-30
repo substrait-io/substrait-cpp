@@ -4,6 +4,9 @@
 # Minimal setup for Ubuntu 20.04.
 set -eufx -o pipefail
 
+# Update the list of packages so we're running the latest.
+sudo apt update
+
 # Install all dependencies.
 sudo --preserve-env apt install -y \
   wget \

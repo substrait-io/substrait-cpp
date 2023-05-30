@@ -62,8 +62,15 @@ ParameterizedTypePtr decodeType<TypeKind::kMap>(
     bool nullable,
     const std::vector<ParameterizedTypePtr>& parameterTypes) {
   if (isParameterized) {
-    return std::make_shared<ParameterizedMap>(
-        parameterTypes[0], parameterTypes[1], nullable);
+    if (parameterTypes.size() >= 2) {
+      return std::make_shared<ParameterizedMap>(
+          parameterTypes[0], parameterTypes[1], nullable);
+    } else if (!parameterTypes.empty()) {
+      return std::make_shared<ParameterizedMap>(
+          parameterTypes[0], nullptr, nullable);
+    } else {
+      return std::make_shared<ParameterizedMap>(nullptr, nullptr, nullable);
+    }
   } else {
     return std::make_shared<Map>(
         std::dynamic_pointer_cast<const Type>(parameterTypes[0]),
@@ -525,9 +532,13 @@ std::string ParameterizedMap::signature() const {
   std::stringstream sign;
   sign << TypeTraits<TypeKind::kMap>::kSignature;
   sign << "<";
-  sign << keyType()->signature();
+  if (keyType() != nullptr) {
+    sign << keyType()->signature();
+  }
   sign << ",";
-  sign << valueType()->signature();
+  if (valueType() != nullptr) {
+    sign << valueType()->signature();
+  }
   sign << ">";
   return sign.str();
 }
