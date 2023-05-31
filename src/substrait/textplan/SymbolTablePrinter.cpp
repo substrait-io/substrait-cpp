@@ -17,7 +17,7 @@ namespace io::substrait::textplan {
 
 namespace {
 
-static const int kBinaryRelationInputCount = 2;
+const int kBinaryRelationInputCount = 2;
 
 void localFileToText(
     const ::substrait::proto::ReadRel::LocalFiles::FileOrFiles& item,
@@ -447,7 +447,7 @@ void SymbolTablePrinter::addInputsToRelation(
     // The type isn't one we expected bail.
     return;
   }
-  RelationType relationType = ANY_CAST(RelationType, symbolInfo.subtype);
+  auto relationType = ANY_CAST(RelationType, symbolInfo.subtype);
   switch (relationType) {
     case RelationType::kRead:
       // No inputs to add.

@@ -10,7 +10,6 @@
 #include <string>
 #include <utility>
 
-#include "gtest/gtest.h"
 #include "substrait/proto/plan.pb.h"
 #include "substrait/textplan/ParseResult.h"
 #include "substrait/textplan/SymbolTable.h"
