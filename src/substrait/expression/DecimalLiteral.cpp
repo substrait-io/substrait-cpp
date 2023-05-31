@@ -5,6 +5,7 @@
 #include <sstream>
 
 #include "absl/numeric/int128.h"
+#include "absl/strings/numbers.h"
 #include "substrait/proto/algebra.pb.h"
 
 namespace io::substrait::expression {
@@ -14,7 +15,7 @@ namespace {
 // negate flips the sign of a two-complements value.
 std::string negate(const std::string& value) {
   std::string newValue = value;
-  // Flip all of the bits and add one.
+  // Flip all the bits and add one.
   bool carryover = true;
   for (char& b : newValue) {
     uint8_t newB = ~(static_cast<uint8_t>(b));
@@ -27,11 +28,35 @@ std::string negate(const std::string& value) {
   return newValue;
 }
 
+void uint128ToBytes(const absl::uint128& value, std::uint8_t* bytes) {
+  // Copy the low 64 bits of the uint128 value into the first 8 bytes of the
+  // output buffer.
+  std::memcpy(bytes, &value, 8);
+
+  // Copy the high 64 bits of the uint128 value into the next 8 bytes of the
+  // output buffer.
+  std::memcpy(bytes + 8, reinterpret_cast<const std::uint8_t*>(&value) + 8, 8);
+}
+
 } // namespace
 
 DecimalLiteral DecimalLiteral::fromProto(
     const ::substrait::proto::Expression_Literal_Decimal& proto) {
   return {proto.value(), proto.precision(), proto.scale()};
+}
+
+DecimalLiteral DecimalLiteral::fromString(
+    const std::string& str,
+    int32_t precision,
+    int32_t scale) {
+  absl::uint128 v;
+  if (!absl::SimpleAtoi(str, &v)) {
+    // TODO -- Store the parse errors so that they can be examined later.
+    return {"", 0, 0};
+  }
+  std::uint8_t valueBytes[16];
+  uint128ToBytes(v, valueBytes);
+  return {std::string((const char*)valueBytes, 16), precision, scale};
 }
 
 bool DecimalLiteral::isValid() {
@@ -91,5 +116,13 @@ std::string DecimalLiteral::toString() {
 
   return decimalString.str();
 }
+
+::substrait::proto::Expression_Literal_Decimal DecimalLiteral::toProto() {
+  ::substrait::proto::Expression_Literal_Decimal result;
+  result.set_value(value_);
+  result.set_precision(precision_);
+  result.set_scale(scale_);
+  return result;
+};
 
 } // namespace io::substrait::expression

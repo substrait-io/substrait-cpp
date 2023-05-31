@@ -18,6 +18,9 @@ class DecimalLiteral {
   static DecimalLiteral fromProto(
       const ::substrait::proto::Expression_Literal_Decimal& proto);
 
+  static DecimalLiteral
+  fromString(const std::string& str, int32_t precision, int32_t scale);
+
   // Validates that the constructed decimal has an exactly 16 byte value with
   // a stated precision between 1 and 38.
   bool isValid();
@@ -28,6 +31,9 @@ class DecimalLiteral {
   // Converts the entirety of the decimal (including precision and scale) to
   // a string.
   std::string toString();
+
+  // Emits a proto version of the corresponding decimal.
+  ::substrait::proto::Expression_Literal_Decimal toProto();
 
   [[nodiscard]] int32_t precision() const {
     return precision_;

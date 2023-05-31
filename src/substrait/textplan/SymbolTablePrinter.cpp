@@ -154,9 +154,6 @@ std::string typeToText(const ::substrait::proto::Type& type) {
 std::string relationToText(
     const SymbolTable& symbolTable,
     const SymbolInfo& info) {
-  if (info.blob.type() != typeid(std::shared_ptr<RelationData>)) {
-    return "not-yet-implemented";
-  }
   auto relationData = ANY_CAST(std::shared_ptr<RelationData>, info.blob);
   if (relationData->relation.rel_type_case() ==
       ::substrait::proto::Rel::REL_TYPE_NOT_SET) {
@@ -192,9 +189,6 @@ std::string outputPipelinesSection(const SymbolTable& symbolTable) {
     if (info.type != SymbolType::kPlanRelation &&
         info.type != SymbolType::kRelation) {
       continue;
-    }
-    if (info.blob.type() != typeid(std::shared_ptr<RelationData>)) {
-      return "not-yet-implemented";
     }
     auto relationData = ANY_CAST(std::shared_ptr<RelationData>, info.blob);
     for (auto pipelineStart : relationData->newPipelines) {
@@ -270,7 +264,7 @@ std::string outputSchemaSection(const SymbolTable& symbolTable) {
   return text.str();
 }
 
-std::string outputSourceSection(const SymbolTable& symbolTable) {
+std::string outputSourcesSection(const SymbolTable& symbolTable) {
   std::stringstream text;
   bool hasPreviousText = false;
   for (const SymbolInfo& info : symbolTable) {
@@ -419,7 +413,7 @@ std::string SymbolTablePrinter::outputToText(const SymbolTable& symbolTable) {
     hasPreviousText = true;
   }
 
-  newText = outputSourceSection(symbolTable);
+  newText = outputSourcesSection(symbolTable);
   if (!newText.empty()) {
     if (hasPreviousText) {
       text << "\n";
@@ -436,6 +430,22 @@ std::string SymbolTablePrinter::outputToText(const SymbolTable& symbolTable) {
     text << newText;
   }
   return text.str();
+}
+
+::substrait::proto::Plan SymbolTablePrinter::outputToBinaryPlan(
+    const SymbolTable& symbolTable) {
+  ::substrait::proto::Plan plan;
+  for (const SymbolInfo& info : symbolTable) {
+    if (info.type != SymbolType::kRelation) {
+      continue;
+    }
+    auto relationData = ANY_CAST(std::shared_ptr<RelationData>, info.blob);
+    auto relation = plan.add_relations();
+    // TODO -- Figure out when to use rel_root and when to use rel.
+    *relation->mutable_rel() = relationData->relation;
+  }
+
+  return plan;
 }
 
 } // namespace io::substrait::textplan

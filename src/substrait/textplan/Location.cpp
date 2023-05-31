@@ -2,6 +2,8 @@
 
 #include "substrait/textplan/Location.h"
 
+#include <functional>
+
 namespace io::substrait::textplan {
 
 constexpr Location Location::kUnknownLocation(

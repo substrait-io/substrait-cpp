@@ -10,6 +10,7 @@
 #include <string>
 #include <utility>
 
+#include "substrait/proto/plan.pb.h"
 #include "substrait/textplan/ParseResult.h"
 #include "substrait/textplan/SymbolTable.h"
 #include "substrait/textplan/SymbolTablePrinter.h"
@@ -239,6 +240,41 @@ class WhenSerializedMatcher {
 ::testing::Matcher<const ParseResult&> WhenSerialized(
     ::testing::Matcher<const std::string&> stringMatcher) {
   return WhenSerializedMatcher(std::move(stringMatcher));
+}
+
+class AsBinaryPlanMatcher {
+ public:
+  using is_gtest_matcher = void;
+
+  explicit AsBinaryPlanMatcher(
+      ::testing::Matcher<const ::substrait::proto::Plan&> proto_matcher)
+      : proto_matcher_(std::move(proto_matcher)) {}
+
+  bool MatchAndExplain(
+      const ParseResult& result,
+      ::testing::MatchResultListener* listener) const {
+    auto outputPlan =
+        SymbolTablePrinter::outputToBinaryPlan(result.getSymbolTable());
+    return MatchPrintAndExplain(outputPlan, proto_matcher_, listener);
+  }
+
+  void DescribeTo(::std::ostream* os) const {
+    *os << "matches after converting to a binary plan ";
+    proto_matcher_.DescribeTo(os);
+  }
+
+  void DescribeNegationTo(::std::ostream* os) const {
+    *os << "does not match after converting to a binary plan ";
+    proto_matcher_.DescribeTo(os);
+  }
+
+ private:
+  ::testing::Matcher<const ::substrait::proto::Plan&> proto_matcher_;
+};
+
+::testing::Matcher<const ParseResult&> AsBinaryPlan(
+    ::testing::Matcher<const ::substrait::proto::Plan&> proto_matcher) {
+  return AsBinaryPlanMatcher(std::move(proto_matcher));
 }
 
 class HasSymbolsWithTypesMatcher {

@@ -21,7 +21,7 @@ class SubstraitParserErrorListener : public antlr4::BaseErrorListener,
       const std::string& msg,
       std::exception_ptr e) override;
 
-  void addError(antlr4::Token* offendingSymbol, const std::string& msg);
+  void addError(const antlr4::Token* offendingSymbol, const std::string& msg);
 };
 
 } // namespace io::substrait::textplan

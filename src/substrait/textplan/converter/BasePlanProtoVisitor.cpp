@@ -649,6 +649,7 @@ std::any BasePlanProtoVisitor::visitExpression(
     case ::substrait::proto::Expression::RexTypeCase::REX_TYPE_NOT_SET:
       break;
   }
+  // TODO -- Use an error listener instead.
   SUBSTRAIT_UNSUPPORTED(
       "Unsupported expression type encountered: " +
       std::to_string(expression.rex_type_case()));

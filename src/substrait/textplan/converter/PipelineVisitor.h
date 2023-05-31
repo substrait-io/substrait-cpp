@@ -10,8 +10,8 @@ namespace io::substrait::textplan {
 
 class PipelineVisitor : public BasePlanProtoVisitor {
  public:
-  explicit PipelineVisitor(const SymbolTable& symbol_table) {
-    symbolTable_ = std::make_shared<SymbolTable>(symbol_table);
+  explicit PipelineVisitor(const SymbolTable& symbolTable) {
+    symbolTable_ = std::make_shared<SymbolTable>(symbolTable);
   }
 
   [[nodiscard]] std::shared_ptr<const SymbolTable> getSymbolTable() const {

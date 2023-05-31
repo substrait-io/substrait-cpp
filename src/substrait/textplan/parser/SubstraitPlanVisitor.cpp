@@ -182,6 +182,18 @@ std::any SubstraitPlanVisitor::visitRelation_type(
     return RelationType::kProject;
   } else if (id == "join") {
     return RelationType::kJoin;
+  } else if (id == "cross") {
+    return RelationType::kCross;
+  } else if (id == "fetch") {
+    return RelationType::kFetch;
+  } else if (id == "aggregate") {
+    return RelationType::kAggregate;
+  } else if (id == "sort") {
+    return RelationType::kSort;
+  } else if (id == "filter") {
+    return RelationType::kFilter;
+  } else if (id == "set") {
+    return RelationType::kSet;
   }
   this->errorListener_->addError(
       ctx->getStart(), "Unrecognized relation type: " + ctx->getText());
@@ -244,13 +256,18 @@ std::any SubstraitPlanVisitor::visitSource_reference(
   return visitChildren(ctx);
 }
 
-std::any SubstraitPlanVisitor::visitExpression(
-    SubstraitPlanParser::ExpressionContext* ctx) {
-  // TODO -- Implement this in a second visitor as described below.
-  // Problem:  We don't know the function ids yet, so we can't complete a proto
-  // on the first pass. We also can't validate the number of arguments until we
-  // know the details of the function, so we can't just blindly assign numbers
-  // and double check later unless we want to additional checking later.
+std::any SubstraitPlanVisitor::visitExpressionFunctionUse(
+    SubstraitPlanParser::ExpressionFunctionUseContext* ctx) {
+  return visitChildren(ctx);
+}
+
+std::any SubstraitPlanVisitor::visitExpressionConstant(
+    SubstraitPlanParser::ExpressionConstantContext* ctx) {
+  return visitChildren(ctx);
+}
+
+std::any SubstraitPlanVisitor::visitExpressionColumn(
+    SubstraitPlanParser::ExpressionColumnContext* ctx) {
   return visitChildren(ctx);
 }
 
@@ -261,6 +278,11 @@ std::any SubstraitPlanVisitor::visitRelationCommon(
 
 std::any SubstraitPlanVisitor::visitRelationUsesSchema(
     SubstraitPlanParser::RelationUsesSchemaContext* ctx) {
+  return visitChildren(ctx);
+}
+
+std::any SubstraitPlanVisitor::visitRelation_filter_behavior(
+    SubstraitPlanParser::Relation_filter_behaviorContext* ctx) {
   return visitChildren(ctx);
 }
 
@@ -276,18 +298,7 @@ std::any SubstraitPlanVisitor::visitRelationProjection(
 
 std::any SubstraitPlanVisitor::visitRelationExpression(
     SubstraitPlanParser::RelationExpressionContext* ctx) {
-  auto symbol = symbolTable_->getUniqueName("internal-expression");
-  std::any result = defaultResult();
-  if (ctx->expression()) {
-    result = visitExpression(ctx->expression());
-  }
-  symbolTable_->defineSymbol(
-      symbol,
-      Location(ctx),
-      SymbolType::kRelationDetail,
-      RelationDetailType::kExpression,
-      result);
-  return defaultResult();
+  return visitChildren(ctx);
 }
 
 std::any SubstraitPlanVisitor::visitRelationAdvancedExtension(

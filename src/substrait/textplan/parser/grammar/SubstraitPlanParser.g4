@@ -50,18 +50,36 @@ relation_ref
    : id (LEFTPAREN SCHEMA id RIGHTPAREN)?
    ;
 
-relation_detail
-   : COMMON SEMICOLON                # relationCommon
-   | BASE_SCHEMA id SEMICOLON        # relationUsesSchema
-   | FILTER expression SEMICOLON      # relationFilter
-   | PROJECTION SEMICOLON            # relationProjection
-   | EXPRESSION expression SEMICOLON  # relationExpression
-   | ADVANCED_EXTENSION SEMICOLON    # relationAdvancedExtension
-   | source_reference SEMICOLON      # relationSourceReference
+relation_filter_behavior
+   : id
+   | id MINUS id
+   | id id
    ;
 
-literal_specifier
-   : LEFTANGLEBRACKET NUMBER (COMMA NUMBER)* RIGHTANGLEBRACKET
+relation_detail
+   : COMMON SEMICOLON                 # relationCommon
+   | BASE_SCHEMA id SEMICOLON         # relationUsesSchema
+   | relation_filter_behavior? FILTER expression SEMICOLON      # relationFilter
+   | PROJECTION SEMICOLON             # relationProjection
+   | EXPRESSION expression SEMICOLON  # relationExpression
+   | ADVANCED_EXTENSION SEMICOLON     # relationAdvancedExtension
+   | source_reference SEMICOLON       # relationSourceReference
+   ;
+
+expression
+   : id LEFTPAREN expression (COMMA expression)? COMMA? RIGHTPAREN  # expressionFunctionUse
+   | constant                                                       # expressionConstant
+   | column_name                                                    # expressionColumn
+   ;
+
+constant
+   : NUMBER (UNDERSCORE literal_basic_type)?
+   | STRING (UNDERSCORE literal_basic_type)?
+   | map_literal (UNDERSCORE literal_complex_type)?
+   | struct_literal (UNDERSCORE literal_complex_type)?
+   | NULLVAL (UNDERSCORE literal_complex_type)?
+   | TRUEVAL (UNDERSCORE literal_basic_type)?
+   | FALSEVAL (UNDERSCORE literal_basic_type)?
    ;
 
 literal_basic_type
@@ -70,17 +88,22 @@ literal_basic_type
 
 literal_complex_type
    : literal_basic_type
-   | LIST QUESTIONMARK? LEFTANGLEBRACKET literal_complex_type RIGHTANGLEBRACKET
-   | MAP QUESTIONMARK? LEFTANGLEBRACKET literal_basic_type COMMA literal_complex_type RIGHTANGLEBRACKET
-   | STRUCT QUESTIONMARK? LEFTANGLEBRACKET literal_complex_type (COMMA literal_complex_type)* RIGHTANGLEBRACKET
+   | LIST QUESTIONMARK? LEFTANGLEBRACKET literal_complex_type? RIGHTANGLEBRACKET
+   | MAP QUESTIONMARK? LEFTANGLEBRACKET (literal_basic_type COMMA literal_complex_type)? RIGHTANGLEBRACKET
+   | STRUCT QUESTIONMARK? LEFTANGLEBRACKET literal_complex_type? (COMMA literal_complex_type)* RIGHTANGLEBRACKET
    ;
 
-map_literal_value
-   : constant COLON constant
+literal_specifier   // Rename to literal_type_specifier?
+   : LEFTANGLEBRACKET NUMBER (COMMA NUMBER)* RIGHTANGLEBRACKET
    ;
 
 map_literal
    : LEFTBRACE map_literal_value (COMMA map_literal_value)* RIGHTBRACE
+   | LEFTBRACE RIGHTBRACE
+   ;
+
+map_literal_value
+   : constant COLON constant
    ;
 
 struct_literal
@@ -88,22 +111,8 @@ struct_literal
    | LEFTBRACE RIGHTBRACE
    ;
 
-constant
-   : NUMBER (UNDERSCORE literal_basic_type)?
-   | STRING (UNDERSCORE literal_basic_type)?
-   | map_literal (UNDERSCORE literal_complex_type)?
-   | struct_literal (UNDERSCORE literal_complex_type)?
-   | NULL
-   ;
-
 column_name
    : id
-   ;
-
-expression
-   : id LEFTPAREN expression (COMMA expression)? COMMA? RIGHTPAREN
-   | constant
-   | column_name
    ;
 
 source_reference
@@ -183,7 +192,7 @@ signature
 
 // List keywords here to make them not reserved.
 id
-   : IDENTIFIER
+   : IDENTIFIER (UNDERSCORE+ IDENTIFIER)*
    | FILTER
    | SCHEMA
    | COLUMN_TYPE  // Temporary addition until grammar stops using id everywhere.

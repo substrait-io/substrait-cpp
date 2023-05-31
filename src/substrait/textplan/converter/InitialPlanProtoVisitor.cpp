@@ -119,7 +119,7 @@ std::any InitialPlanProtoVisitor::visitExtensionUri(
 std::any InitialPlanProtoVisitor::visitPlanRelation(
     const ::substrait::proto::PlanRel& relation) {
   BasePlanProtoVisitor::visitPlanRelation(relation);
-  std::string name =
+  const std::string name =
       ::substrait::proto::planRelTypeCaseName(relation.rel_type_case());
   auto uniqueName = symbolTable_->getUniqueName(name);
   auto relationData = std::make_shared<RelationData>();
@@ -134,7 +134,7 @@ std::any InitialPlanProtoVisitor::visitPlanRelation(
 
 std::any InitialPlanProtoVisitor::visitRelation(
     const ::substrait::proto::Rel& relation) {
-  std::string name =
+  const std::string name =
       ::substrait::proto::relTypeCaseName(relation.rel_type_case());
 
   auto previousRelationScope = currentRelationScope_;
@@ -303,7 +303,7 @@ void InitialPlanProtoVisitor::updateLocalSchema(
                 std::nullopt,
                 std::nullopt);
           }
-          relationData->fieldReferences.push_back(symbol);
+          relationData->fieldReferences.emplace_back(symbol);
         }
       }
       break;

@@ -23,6 +23,7 @@ sudo --preserve-env apt install -y \
   protobuf-compiler \
   clang-format \
   uuid-dev \
-  default-jre
+  default-jre \
+  libcurl4-openssl-dev
 
 pip install cmake-format

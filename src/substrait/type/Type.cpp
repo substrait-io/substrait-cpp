@@ -102,6 +102,10 @@ ParameterizedTypePtr decodeType<TypeKind::kDecimal>(
     bool isParameterized,
     bool nullable,
     const std::vector<ParameterizedTypePtr>& parameterTypes) {
+  if (parameterTypes.size() != 2) {
+    SUBSTRAIT_FAIL(
+        "Decimal types should have both precision and scale specifiers.")
+  }
   auto precision =
       std::dynamic_pointer_cast<const StringLiteral>(parameterTypes[0]);
   auto scale =
@@ -199,7 +203,8 @@ ParameterizedTypePtr ParameterizedType::decode(
         ? matchingType = matchingType.substr(0, questionMaskPos)
         : matchingType;
 
-    if (TypeTraits<TypeKind::kBool>::kTypeString == baseType) {
+    if (TypeTraits<TypeKind::kBool>::kTypeString == baseType ||
+        TypeTraits<TypeKind::kBool>::kSignature == baseType) {
       return decodeType<TypeKind::kBool>(nullable);
     } else if (TypeTraits<TypeKind::kI8>::kTypeString == baseType) {
       return decodeType<TypeKind::kI8>(nullable);
@@ -213,7 +218,9 @@ ParameterizedTypePtr ParameterizedType::decode(
       return decodeType<TypeKind::kFp32>(nullable);
     } else if (TypeTraits<TypeKind::kFp64>::kTypeString == baseType) {
       return decodeType<TypeKind::kFp64>(nullable);
-    } else if (TypeTraits<TypeKind::kString>::kTypeString == baseType) {
+    } else if (
+        TypeTraits<TypeKind::kString>::kTypeString == baseType ||
+        TypeTraits<TypeKind::kString>::kSignature == baseType) {
       return decodeType<TypeKind::kString>(nullable);
     } else if (TypeTraits<TypeKind::kBinary>::kTypeString == baseType) {
       return decodeType<TypeKind::kBinary>(nullable);
