@@ -9,7 +9,7 @@
 namespace substrait::proto {
 class Plan;
 class Rel;
-}
+} // namespace substrait::proto
 
 namespace io::substrait::textplan {
 
