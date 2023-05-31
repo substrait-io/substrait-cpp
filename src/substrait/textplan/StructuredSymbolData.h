@@ -6,7 +6,6 @@
 #include <optional>
 
 #include "substrait/proto/algebra.pb.h"
-#include "substrait/textplan/Location.h"
 
 namespace io::substrait::textplan {
 

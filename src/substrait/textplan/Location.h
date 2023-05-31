@@ -31,6 +31,10 @@ class Location {
  protected:
   friend bool operator==(const Location& c1, const Location& c2);
 
+  friend bool operator!=(const Location& c1, const Location& c2) {
+    return !(c1 == c2);
+  }
+
  private:
   friend std::hash<Location>;
   friend std::less<Location>;

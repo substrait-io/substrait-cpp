@@ -8,6 +8,7 @@ add_test_case(
   substrait_textplan_converter
   substrait_common
   parse_result_matchers
+  protobuf-matchers
   gmock
   gtest
   gtest_main)

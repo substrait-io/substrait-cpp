@@ -57,13 +57,12 @@ relation_filter_behavior
    ;
 
 relation_detail
-   : COMMON SEMICOLON                 # relationCommon
-   | BASE_SCHEMA id SEMICOLON         # relationUsesSchema
+   : COMMON SEMICOLON                                           # relationCommon
+   | BASE_SCHEMA id SEMICOLON                                   # relationUsesSchema
    | relation_filter_behavior? FILTER expression SEMICOLON      # relationFilter
-   | PROJECTION SEMICOLON             # relationProjection
-   | EXPRESSION expression SEMICOLON  # relationExpression
-   | ADVANCED_EXTENSION SEMICOLON     # relationAdvancedExtension
-   | source_reference SEMICOLON       # relationSourceReference
+   | EXPRESSION expression SEMICOLON (AS id)?                   # relationExpression
+   | ADVANCED_EXTENSION SEMICOLON                               # relationAdvancedExtension
+   | source_reference SEMICOLON                                 # relationSourceReference
    ;
 
 expression

@@ -45,8 +45,14 @@ class SubstraitPlanRelationVisitor : public SubstraitPlanParserBaseVisitor {
   std::any visitRelationFilter(
       SubstraitPlanParser::RelationFilterContext* ctx) override;
 
+  std::any visitRelationUsesSchema(
+      SubstraitPlanParser::RelationUsesSchemaContext* ctx) override;
+
   std::any visitRelationExpression(
       SubstraitPlanParser::RelationExpressionContext* ctx) override;
+
+  std::any visitRelationSourceReference(
+      SubstraitPlanParser::RelationSourceReferenceContext* ctx) override;
 
   // visitExpression is a new method delegating to the methods below.
   std::any visitExpression(SubstraitPlanParser::ExpressionContext* ctx);
@@ -146,12 +152,18 @@ class SubstraitPlanRelationVisitor : public SubstraitPlanParserBaseVisitor {
       const antlr4::tree::TerminalNode* node,
       const std::string& str);
 
+  ::substrait::proto::Type textToTypeProto(
+      const antlr4::Token* token,
+      const std::string& typeText);
+
   ::substrait::proto::Type typeToProto(
       const antlr4::Token* token,
       const ParameterizedType& decodedType);
 
   std::shared_ptr<SymbolTable> symbolTable_;
   std::shared_ptr<SubstraitParserErrorListener> errorListener_;
+
+  const SymbolInfo* currentRelationScope_{nullptr}; // Not owned.
 };
 
 } // namespace io::substrait::textplan

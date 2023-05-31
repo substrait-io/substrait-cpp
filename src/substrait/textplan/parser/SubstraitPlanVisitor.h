@@ -81,8 +81,6 @@ class SubstraitPlanVisitor : public SubstraitPlanParserVisitor {
       SubstraitPlanParser::Relation_filter_behaviorContext* ctx) override;
   std::any visitRelationFilter(
       SubstraitPlanParser::RelationFilterContext* ctx) override;
-  std::any visitRelationProjection(
-      SubstraitPlanParser::RelationProjectionContext* ctx) override;
   std::any visitRelationExpression(
       SubstraitPlanParser::RelationExpressionContext* ctx) override;
   std::any visitRelationAdvancedExtension(
@@ -113,6 +111,8 @@ class SubstraitPlanVisitor : public SubstraitPlanParserVisitor {
  private:
   std::shared_ptr<SymbolTable> symbolTable_;
   std::shared_ptr<SubstraitParserErrorListener> errorListener_;
+
+  const SymbolInfo* currentRelationScope_{nullptr}; // Not owned.
 
   int numFunctionsSeen_{0};
 };
