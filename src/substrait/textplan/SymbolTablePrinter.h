@@ -8,6 +8,7 @@
 
 namespace substrait::proto {
 class Plan;
+class Rel;
 }
 
 namespace io::substrait::textplan {
@@ -18,6 +19,11 @@ class SymbolTablePrinter {
 
   static ::substrait::proto::Plan outputToBinaryPlan(
       const SymbolTable& symbolTable);
+
+ private:
+  static void addInputsToRelation(
+      const SymbolInfo& symbolInfo,
+      ::substrait::proto::Rel* relation);
 };
 
 } // namespace io::substrait::textplan

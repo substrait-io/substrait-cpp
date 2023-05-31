@@ -70,6 +70,7 @@ expression
    : id LEFTPAREN expression (COMMA expression)? COMMA? RIGHTPAREN  # expressionFunctionUse
    | constant                                                       # expressionConstant
    | column_name                                                    # expressionColumn
+   | expression AS literal_complex_type                             # expressionCast
    ;
 
 constant
@@ -93,7 +94,7 @@ literal_complex_type
    | STRUCT QUESTIONMARK? LEFTANGLEBRACKET literal_complex_type? (COMMA literal_complex_type)* RIGHTANGLEBRACKET
    ;
 
-literal_specifier   // Rename to literal_type_specifier?
+literal_specifier   // Rename to literal_basic_type_specifier?
    : LEFTANGLEBRACKET NUMBER (COMMA NUMBER)* RIGHTANGLEBRACKET
    ;
 
@@ -156,7 +157,7 @@ schema_item
    ;
 
 column_type
-   : column_attribute* COLUMN_TYPE
+   : column_attribute* id
    ;
 
 column_attribute
@@ -195,5 +196,4 @@ id
    : IDENTIFIER (UNDERSCORE+ IDENTIFIER)*
    | FILTER
    | SCHEMA
-   | COLUMN_TYPE  // Temporary addition until grammar stops using id everywhere.
    ;

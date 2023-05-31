@@ -28,7 +28,7 @@ namespace io::substrait::textplan {
     ::testing::Matcher<const std::string&> stringMatcher);
 
 [[maybe_unused]] ::testing::Matcher<const ParseResult&> AsBinaryPlan(
-    ::testing::Matcher<const ::substrait::proto::Plan&> proto_matcher);
+    ::testing::Matcher<const ::substrait::proto::Plan&> protoMatcher);
 
 [[maybe_unused]] ::testing::Matcher<const ParseResult&> HasErrors(
     const std::vector<std::string>& expectedErrors);

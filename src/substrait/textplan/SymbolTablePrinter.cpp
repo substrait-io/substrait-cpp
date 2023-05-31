@@ -17,6 +17,8 @@ namespace io::substrait::textplan {
 
 namespace {
 
+static const int kBinaryRelationInputCount = 2;
+
 void localFileToText(
     const ::substrait::proto::ReadRel::LocalFiles::FileOrFiles& item,
     std::stringstream* text) {
@@ -368,13 +370,14 @@ std::string outputFunctionsSection(const SymbolTable& symbolTable) {
         continue;
       }
 
-      auto extension = ANY_CAST(std::shared_ptr<FunctionData>, info.blob);
-      if (extension->extensionUriReference.has_value() &&
-          extension->extensionUriReference.value() != space) {
+      auto functionData = ANY_CAST(std::shared_ptr<FunctionData>, info.blob);
+      if (functionData->extensionUriReference.has_value() &&
+          functionData->extensionUriReference.value() != space) {
         continue;
       }
 
-      text << "  function " << extension->name << " as " << info.name << ";\n";
+      text << "  function " << functionData->name << " as " << info.name
+           << ";\n";
     }
     text << "}\n";
     hasPreviousOutput = true;
@@ -432,6 +435,199 @@ std::string SymbolTablePrinter::outputToText(const SymbolTable& symbolTable) {
   return text.str();
 }
 
+void SymbolTablePrinter::addInputsToRelation(
+    const SymbolInfo& symbolInfo,
+    ::substrait::proto::Rel* relation) {
+  auto relationData = ANY_CAST(std::shared_ptr<RelationData>, symbolInfo.blob);
+
+  // Connect up the incoming inputs in the relation data to the appropriate
+  // input/left/right/inputs of this relation (which recursively also needs to
+  // have its inputs added).
+  if (symbolInfo.subtype.type() != typeid(RelationType)) {
+    // The type isn't one we expected bail.
+    return;
+  }
+  RelationType relationType = ANY_CAST(RelationType, symbolInfo.subtype);
+  switch (relationType) {
+    case RelationType::kRead:
+      // No inputs to add.
+      break;
+    case RelationType::kProject:
+      if (relationData->continuingPipeline != nullptr) {
+        auto continuingRelationData = ANY_CAST(
+            std::shared_ptr<RelationData>,
+            relationData->continuingPipeline->blob);
+        *relation->mutable_project()->mutable_input() =
+            continuingRelationData->relation;
+        addInputsToRelation(
+            *relationData->continuingPipeline,
+            relation->mutable_project()->mutable_input());
+      }
+      break;
+    case RelationType::kJoin:
+      if (relationData->newPipelines.size() == kBinaryRelationInputCount) {
+        auto leftRelationData = ANY_CAST(
+            std::shared_ptr<RelationData>, relationData->newPipelines[0]->blob);
+        *relation->mutable_join()->mutable_left() = leftRelationData->relation;
+        addInputsToRelation(
+            *relationData->newPipelines[0],
+            relation->mutable_join()->mutable_left());
+
+        auto rightRelationData = ANY_CAST(
+            std::shared_ptr<RelationData>, relationData->newPipelines[1]->blob);
+        *relation->mutable_join()->mutable_right() =
+            rightRelationData->relation;
+        addInputsToRelation(
+            *relationData->newPipelines[1],
+            relation->mutable_join()->mutable_right());
+      }
+      break;
+    case RelationType::kCross:
+      if (relationData->newPipelines.size() == kBinaryRelationInputCount) {
+        auto leftRelationData = ANY_CAST(
+            std::shared_ptr<RelationData>, relationData->newPipelines[0]->blob);
+        *relation->mutable_cross()->mutable_left() = leftRelationData->relation;
+        addInputsToRelation(
+            *relationData->newPipelines[0],
+            relation->mutable_cross()->mutable_left());
+
+        auto rightRelationData = ANY_CAST(
+            std::shared_ptr<RelationData>, relationData->newPipelines[1]->blob);
+        *relation->mutable_cross()->mutable_right() =
+            rightRelationData->relation;
+        addInputsToRelation(
+            *relationData->newPipelines[1],
+            relation->mutable_cross()->mutable_right());
+      }
+      break;
+    case RelationType::kFetch:
+      if (relationData->continuingPipeline != nullptr) {
+        auto continuingRelationData = ANY_CAST(
+            std::shared_ptr<RelationData>,
+            relationData->continuingPipeline->blob);
+        *relation->mutable_fetch()->mutable_input() =
+            continuingRelationData->relation;
+        addInputsToRelation(
+            *relationData->continuingPipeline,
+            relation->mutable_fetch()->mutable_input());
+      }
+      break;
+    case RelationType::kAggregate:
+      if (relationData->continuingPipeline != nullptr) {
+        auto continuingRelationData = ANY_CAST(
+            std::shared_ptr<RelationData>,
+            relationData->continuingPipeline->blob);
+        *relation->mutable_aggregate()->mutable_input() =
+            continuingRelationData->relation;
+        addInputsToRelation(
+            *relationData->continuingPipeline,
+            relation->mutable_aggregate()->mutable_input());
+      }
+      break;
+    case RelationType::kSort:
+      if (relationData->continuingPipeline != nullptr) {
+        auto continuingRelationData = ANY_CAST(
+            std::shared_ptr<RelationData>,
+            relationData->continuingPipeline->blob);
+        *relation->mutable_sort()->mutable_input() =
+            continuingRelationData->relation;
+        addInputsToRelation(
+            *relationData->continuingPipeline,
+            relation->mutable_sort()->mutable_input());
+      }
+      break;
+    case RelationType::kFilter:
+      if (relationData->continuingPipeline != nullptr) {
+        auto continuingRelationData = ANY_CAST(
+            std::shared_ptr<RelationData>,
+            relationData->continuingPipeline->blob);
+        *relation->mutable_filter()->mutable_input() =
+            continuingRelationData->relation;
+        addInputsToRelation(
+            *relationData->continuingPipeline,
+            relation->mutable_filter()->mutable_input());
+      }
+      break;
+    case RelationType::kSet:
+      for (const auto& pipeline : relationData->newPipelines) {
+        auto inputRelationData =
+            ANY_CAST(std::shared_ptr<RelationData>, pipeline->blob);
+        auto* input = relation->mutable_set()->add_inputs();
+        *input = inputRelationData->relation;
+        addInputsToRelation(*pipeline, input);
+      }
+      break;
+    case RelationType::kHashJoin:
+      if (relationData->newPipelines.size() == kBinaryRelationInputCount) {
+        auto leftRelationData = ANY_CAST(
+            std::shared_ptr<RelationData>, relationData->newPipelines[0]->blob);
+        *relation->mutable_hash_join()->mutable_left() =
+            leftRelationData->relation;
+        addInputsToRelation(
+            *relationData->newPipelines[0],
+            relation->mutable_hash_join()->mutable_left());
+
+        auto rightRelationData = ANY_CAST(
+            std::shared_ptr<RelationData>, relationData->newPipelines[1]->blob);
+        *relation->mutable_hash_join()->mutable_right() =
+            rightRelationData->relation;
+        addInputsToRelation(
+            *relationData->newPipelines[1],
+            relation->mutable_hash_join()->mutable_right());
+      }
+      break;
+    case RelationType::kMergeJoin:
+      if (relationData->newPipelines.size() == kBinaryRelationInputCount) {
+        auto leftRelationData = ANY_CAST(
+            std::shared_ptr<RelationData>, relationData->newPipelines[0]->blob);
+        *relation->mutable_merge_join()->mutable_left() =
+            leftRelationData->relation;
+        addInputsToRelation(
+            *relationData->newPipelines[0],
+            relation->mutable_merge_join()->mutable_left());
+
+        auto rightRelationData = ANY_CAST(
+            std::shared_ptr<RelationData>, relationData->newPipelines[1]->blob);
+        *relation->mutable_merge_join()->mutable_right() =
+            rightRelationData->relation;
+        addInputsToRelation(
+            *relationData->newPipelines[1],
+            relation->mutable_merge_join()->mutable_right());
+      }
+      break;
+    case RelationType::kExchange:
+    case RelationType::kDdl:
+    case RelationType::kWrite:
+      // Not yet possible to reach these relations in plans.
+      break;
+    case RelationType::kExtensionLeaf:
+      break;
+    case RelationType::kExtensionSingle:
+      if (relationData->continuingPipeline != nullptr) {
+        auto continuingRelationData = ANY_CAST(
+            std::shared_ptr<RelationData>,
+            relationData->continuingPipeline->blob);
+        *relation->mutable_extension_single()->mutable_input() =
+            continuingRelationData->relation;
+        addInputsToRelation(
+            *relationData->continuingPipeline,
+            relation->mutable_extension_single()->mutable_input());
+      }
+      break;
+    case RelationType::kExtensionMulti:
+      for (const auto& pipeline : relationData->newPipelines) {
+        auto inputRelationData =
+            ANY_CAST(std::shared_ptr<RelationData>, pipeline->blob);
+        auto* input = relation->mutable_extension_multi()->add_inputs();
+        *input = inputRelationData->relation;
+        addInputsToRelation(*pipeline, input);
+      }
+      break;
+    case RelationType::kUnknown:
+      break;
+  }
+}
+
 ::substrait::proto::Plan SymbolTablePrinter::outputToBinaryPlan(
     const SymbolTable& symbolTable) {
   ::substrait::proto::Plan plan;
@@ -440,9 +636,25 @@ std::string SymbolTablePrinter::outputToText(const SymbolTable& symbolTable) {
       continue;
     }
     auto relationData = ANY_CAST(std::shared_ptr<RelationData>, info.blob);
+    if (relationData->pipelineStart != nullptr &&
+        *relationData->pipelineStart != SymbolInfo::kUnknown) {
+      // This is not the start node for all pipelines it is a part of.
+      continue;
+    }
+
     auto relation = plan.add_relations();
-    // TODO -- Figure out when to use rel_root and when to use rel.
-    *relation->mutable_rel() = relationData->relation;
+    if (relationData->newPipelines.empty()) {
+      *relation->mutable_root()->mutable_input() = relationData->relation;
+    } else {
+      // This is a root node, copy the first node in before iterating.
+      auto inputRelationData = ANY_CAST(
+          std::shared_ptr<RelationData>, relationData->newPipelines[0]->blob);
+      *relation->mutable_root()->mutable_input() = inputRelationData->relation;
+
+      addInputsToRelation(
+          *relationData->newPipelines[0],
+          relation->mutable_root()->mutable_input());
+    }
   }
 
   return plan;

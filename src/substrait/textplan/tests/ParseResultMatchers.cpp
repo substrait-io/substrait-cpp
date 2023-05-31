@@ -10,6 +10,7 @@
 #include <string>
 #include <utility>
 
+#include "gtest/gtest.h"
 #include "substrait/proto/plan.pb.h"
 #include "substrait/textplan/ParseResult.h"
 #include "substrait/textplan/SymbolTable.h"
@@ -368,9 +369,17 @@ class HasErrorsMatcher {
   explicit HasErrorsMatcher(const std::vector<std::string>& expectedErrors)
       : expectedErrors_(std::move(expectedErrors)) {}
 
-  bool MatchAndExplain(const ParseResult& result, std::ostream* /* listener */)
+  bool MatchAndExplain(const ParseResult& result, std::ostream* listener)
       const {
-    return result.getAllErrors() == expectedErrors_;
+    ::testing::Matcher<std::vector<std::string>> matcher =
+        ::testing::ContainerEq(expectedErrors_);
+    ::testing::StringMatchResultListener strListener;
+    std::vector<std::string> errors = result.getAllErrors();
+    bool match = MatchPrintAndExplain(errors, matcher, &strListener);
+    if (listener) {
+      *listener << strListener.str();
+    }
+    return match;
   }
 
   void DescribeTo(std::ostream* os) const {
