@@ -628,7 +628,7 @@ std::vector<TestCase> getTestCases() {
             expression {}_list<string>?;
             expression {}_struct<a>;
             expression {}_struct<>;
-            //expression {}_map<>;  // TODO - Catch this behavior.
+            expression {}_map<>;
             expression {}_list<>;
             expression "unknown\escape"_string;
             expression {123_i8}_map<i8, bool>;
@@ -658,6 +658,8 @@ std::vector<TestCase> getTestCases() {
               "11:23 → Could not parse literal as decimal.",
               "13:26 → Unable to recognize requested type.",
               "14:26 → Unable to recognize requested type.",
+              "15:26 → Maps require both a key and a value type.",
+              "15:23 → Unsupported type 0.",
               "16:26 → Unable to recognize requested type.",
               "17:31 → Unknown slash escape sequence.",
               "18:23 → Map literals require pairs of values separated by colons.",

@@ -1223,6 +1223,11 @@ SubstraitPlanRelationVisitor::visitTimestampTz(
     }
     case TypeKind::kMap: {
       auto map = reinterpret_cast<const ParameterizedMap*>(&decodedType);
+      if (map->keyType() == nullptr || map->valueType() == nullptr) {
+        errorListener_->addError(
+            token, "Maps require both a key and a value type.");
+        break;
+      }
       *type.mutable_map()->mutable_key() = typeToProto(token, *map->keyType());
       *type.mutable_map()->mutable_value() =
           typeToProto(token, *map->valueType());
