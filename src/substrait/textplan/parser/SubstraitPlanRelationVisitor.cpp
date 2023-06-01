@@ -381,24 +381,22 @@ std::any SubstraitPlanRelationVisitor::visitRelationExpression(
 
 std::any SubstraitPlanRelationVisitor::visitExpression(
     SubstraitPlanParser::ExpressionContext* ctx) {
-  if (dynamic_cast<SubstraitPlanParser::ExpressionFunctionUseContext*>(ctx)) {
-    return visitExpressionFunctionUse(
-        dynamic_cast<SubstraitPlanParser::ExpressionFunctionUseContext*>(ctx));
+  if (auto* funcUseCtx =
+          dynamic_cast<SubstraitPlanParser::ExpressionFunctionUseContext*>(
+              ctx)) {
+    return visitExpressionFunctionUse(funcUseCtx);
   } else if (
-      dynamic_cast<SubstraitPlanParser::ExpressionConstantContext*>(ctx) !=
-      nullptr) {
-    return visitExpressionConstant(
-        dynamic_cast<SubstraitPlanParser::ExpressionConstantContext*>(ctx));
+      auto* constantCtx =
+          dynamic_cast<SubstraitPlanParser::ExpressionConstantContext*>(ctx)) {
+    return visitExpressionConstant(constantCtx);
   } else if (
-      dynamic_cast<SubstraitPlanParser::ExpressionColumnContext*>(ctx) !=
-      nullptr) {
-    return visitExpressionColumn(
-        dynamic_cast<SubstraitPlanParser::ExpressionColumnContext*>(ctx));
+      auto* columnCtx =
+          dynamic_cast<SubstraitPlanParser::ExpressionColumnContext*>(ctx)) {
+    return visitExpressionColumn(columnCtx);
   } else if (
-      dynamic_cast<SubstraitPlanParser::ExpressionCastContext*>(ctx) !=
-      nullptr) {
-    return visitExpressionCast(
-        dynamic_cast<SubstraitPlanParser::ExpressionCastContext*>(ctx));
+      auto* castCtx =
+          dynamic_cast<SubstraitPlanParser::ExpressionCastContext*>(ctx)) {
+    return visitExpressionCast(castCtx);
   }
   return defaultResult();
 }

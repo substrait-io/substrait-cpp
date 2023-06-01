@@ -710,12 +710,12 @@ std::vector<TestCase> getTestCases() {
       {
           "test13-functions",
           R"(extension_space blah.yaml {
-            function sum:str as sum;
-            function min:str AS min;
+            function myfunc:str as myfunc;
+            function otherfunc:str AS otherfunc;
           }
 
           project relation literalexamples {
-            expression sum(min(1_i32, -2_i32), "foo"_string);
+            expression myfunc(otherfunc(1_i32, -2_i32), "foo"_string);
           })",
           AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
               R"(relations { root { input { project {
@@ -749,7 +749,7 @@ std::vector<TestCase> getTestCases() {
           }
 
           join relation join {
-            //type JOIN_TYPE_UNSPECIFIED;
+            type UNSPECIFIED;
             expression product_id;
             post_join filter count;
           }
@@ -760,7 +760,7 @@ std::vector<TestCase> getTestCases() {
           }
 
           join relation join2 {
-            //type JOIN_TYPE_UNSPECIFIED;
+            type UNSPECIFIED;
             expression order_id;
           }
           schema schema {
