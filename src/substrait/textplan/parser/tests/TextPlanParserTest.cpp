@@ -629,6 +629,9 @@ std::vector<TestCase> getTestCases() {
             expression {}_struct<a>;
             expression {}_struct<>;
             expression {}_map<>;
+            expression {}_map<string>;
+            expression {}_map<,string>;
+            expression {}_map<,>;
             expression {}_list<>;
             expression "unknown\escape"_string;
             expression {123_i8}_map<i8, bool>;
@@ -660,10 +663,15 @@ std::vector<TestCase> getTestCases() {
               "14:26 → Unable to recognize requested type.",
               "15:26 → Maps require both a key and a value type.",
               "15:23 → Unsupported type 0.",
-              "16:26 → Unable to recognize requested type.",
-              "17:31 → Unknown slash escape sequence.",
-              "18:23 → Map literals require pairs of values separated by colons.",
-              "19:23 → Map literals require pairs of values separated by colons.",
+              "16:26 → Maps require both a key and a value type.",
+              "16:23 → Unsupported type 0.",
+              "17:26 → Unable to recognize requested type.",
+              "18:26 → Unable to recognize requested type.",
+              "18:26 → Unable to recognize requested type.",
+              "19:26 → Unable to recognize requested type.",
+              "20:31 → Unknown slash escape sequence.",
+              "21:23 → Map literals require pairs of values separated by colons.",
+              "22:23 → Map literals require pairs of values separated by colons.",
           }),
       },
       {
