@@ -48,11 +48,17 @@ class SubstraitPlanRelationVisitor : public SubstraitPlanParserBaseVisitor {
   std::any visitRelationExpression(
       SubstraitPlanParser::RelationExpressionContext* ctx) override;
 
+  // visitExpression is a new method delegating to the methods below.
+  std::any visitExpression(SubstraitPlanParser::ExpressionContext* ctx);
+
   std::any visitExpressionFunctionUse(
       SubstraitPlanParser::ExpressionFunctionUseContext* ctx) override;
 
   std::any visitExpressionConstant(
       SubstraitPlanParser::ExpressionConstantContext* ctx) override;
+
+  std::any visitExpressionCast(
+      SubstraitPlanParser::ExpressionCastContext* ctx) override;
 
   std::any visitExpressionColumn(
       SubstraitPlanParser::ExpressionColumnContext* ctx) override;

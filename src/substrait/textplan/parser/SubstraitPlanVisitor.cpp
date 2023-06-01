@@ -76,7 +76,6 @@ std::any SubstraitPlanVisitor::visitExtensionspace(
 std::any SubstraitPlanVisitor::visitFunction(
     SubstraitPlanParser::FunctionContext* ctx) {
   // TODO -- Transition to using the symbol table for the function number.  #42
-  static int numFunctionsSeen = 0;
   // Let our enclosing extension space provide us with the detail.
   symbolTable_->defineSymbol(
       ctx->id()->getText(),
@@ -84,7 +83,7 @@ std::any SubstraitPlanVisitor::visitFunction(
       SymbolType::kFunction,
       defaultResult(),
       std::make_shared<FunctionData>(
-          ctx->name()->getText(), std::nullopt, numFunctionsSeen++));
+          ctx->name()->getText(), std::nullopt, ++numFunctionsSeen_));
   return visitChildren(ctx);
 }
 
@@ -268,6 +267,11 @@ std::any SubstraitPlanVisitor::visitExpressionConstant(
 
 std::any SubstraitPlanVisitor::visitExpressionColumn(
     SubstraitPlanParser::ExpressionColumnContext* ctx) {
+  return visitChildren(ctx);
+}
+
+std::any SubstraitPlanVisitor::visitExpressionCast(
+    SubstraitPlanParser::ExpressionCastContext* ctx) {
   return visitChildren(ctx);
 }
 

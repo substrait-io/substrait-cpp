@@ -2,7 +2,6 @@
 
 #include "substrait/textplan/converter/InitialPlanProtoVisitor.h"
 
-#include <iterator>
 #include <optional>
 #include <string>
 

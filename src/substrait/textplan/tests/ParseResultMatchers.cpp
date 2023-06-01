@@ -368,9 +368,17 @@ class HasErrorsMatcher {
   explicit HasErrorsMatcher(const std::vector<std::string>& expectedErrors)
       : expectedErrors_(std::move(expectedErrors)) {}
 
-  bool MatchAndExplain(const ParseResult& result, std::ostream* /* listener */)
+  bool MatchAndExplain(const ParseResult& result, std::ostream* listener)
       const {
-    return result.getAllErrors() == expectedErrors_;
+    ::testing::Matcher<std::vector<std::string>> matcher =
+        ::testing::ContainerEq(expectedErrors_);
+    ::testing::StringMatchResultListener strListener;
+    std::vector<std::string> errors = result.getAllErrors();
+    bool match = MatchPrintAndExplain(errors, matcher, &strListener);
+    if (listener) {
+      *listener << strListener.str();
+    }
+    return match;
   }
 
   void DescribeTo(std::ostream* os) const {

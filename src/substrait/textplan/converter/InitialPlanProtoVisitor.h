@@ -82,7 +82,8 @@ class InitialPlanProtoVisitor : public BasePlanProtoVisitor {
   std::shared_ptr<SymbolTable> symbolTable_;
   std::shared_ptr<SubstraitErrorListener> errorListener_;
 
-  const ::substrait::proto::Rel* currentRelationScope_{nullptr};
+  const ::substrait::proto::Rel* currentRelationScope_{nullptr}; // Not owned.
+
   std::map<const ::substrait::proto::Rel*, const SymbolInfo*>
       readRelationSources_;
   std::map<const ::substrait::proto::Rel*, const SymbolInfo*>

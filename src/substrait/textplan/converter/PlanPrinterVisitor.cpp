@@ -88,8 +88,8 @@ std::string PlanPrinterVisitor::lookupFunctionReference(
     if (symbol->type != SymbolType::kFunction) {
       continue;
     }
-    auto function = ANY_CAST(std::shared_ptr<FunctionData>, symbol->blob);
-    if (function->anchor == function_reference) {
+    auto functionData = ANY_CAST(std::shared_ptr<FunctionData>, symbol->blob);
+    if (functionData->anchor == function_reference) {
       return symbol->name;
     }
   }
@@ -189,7 +189,7 @@ std::any PlanPrinterVisitor::visitType(const ::substrait::proto::Type& type) {
       return std::string("UNSUPPORTED_TYPE");
   }
   errorListener_->addError(
-      "New unspported type requested: " + type.ShortDebugString());
+      "New unsupported type requested: " + type.ShortDebugString());
   return std::string("UNSUPPORTED_TYPE");
 }
 

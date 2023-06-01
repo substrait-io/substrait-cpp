@@ -7,6 +7,7 @@
 #include <sstream>
 #include <string>
 
+#include "SubstraitPlanParser/SubstraitPlanParser.h"
 #include "absl/strings/numbers.h"
 #include "date/tz.h"
 #include "substrait/expression/DecimalLiteral.h"
@@ -378,10 +379,49 @@ std::any SubstraitPlanRelationVisitor::visitRelationExpression(
   return defaultResult();
 }
 
+std::any SubstraitPlanRelationVisitor::visitExpression(
+    SubstraitPlanParser::ExpressionContext* ctx) {
+  if (auto* funcUseCtx =
+          dynamic_cast<SubstraitPlanParser::ExpressionFunctionUseContext*>(
+              ctx)) {
+    return visitExpressionFunctionUse(funcUseCtx);
+  } else if (
+      auto* constantCtx =
+          dynamic_cast<SubstraitPlanParser::ExpressionConstantContext*>(ctx)) {
+    return visitExpressionConstant(constantCtx);
+  } else if (
+      auto* columnCtx =
+          dynamic_cast<SubstraitPlanParser::ExpressionColumnContext*>(ctx)) {
+    return visitExpressionColumn(columnCtx);
+  } else if (
+      auto* castCtx =
+          dynamic_cast<SubstraitPlanParser::ExpressionCastContext*>(ctx)) {
+    return visitExpressionCast(castCtx);
+  }
+  return defaultResult();
+}
+
 std::any SubstraitPlanRelationVisitor::visitExpressionFunctionUse(
     SubstraitPlanParser::ExpressionFunctionUseContext* ctx) {
   ::substrait::proto::Expression expr;
-  visitChildren(ctx);
+  std::string funcName = ctx->id()->getText();
+  uint32_t funcReference = 0;
+  auto symbol = symbolTable_->lookupSymbolByName(funcName);
+  if (symbol->type != SymbolType::kFunction) {
+    errorListener_->addError(
+        ctx->id()->getStart(),
+        ctx->id()->getText() + " is not a function reference.");
+  } else {
+    auto functionData = ANY_CAST(std::shared_ptr<FunctionData>, symbol->blob);
+    funcReference = functionData->anchor;
+  }
+
+  expr.mutable_scalar_function()->set_function_reference(funcReference);
+  for (const auto& exp : ctx->expression()) {
+    auto newExpr =
+        ANY_CAST(::substrait::proto::Expression, visitExpression(exp));
+    *expr.mutable_scalar_function()->add_arguments()->mutable_value() = newExpr;
+  }
   return expr;
 }
 
@@ -397,6 +437,19 @@ std::any SubstraitPlanRelationVisitor::visitExpressionColumn(
     SubstraitPlanParser::ExpressionColumnContext* ctx) {
   ::substrait::proto::Expression expr;
   visitChildren(ctx);
+  return expr;
+}
+
+std::any SubstraitPlanRelationVisitor::visitExpressionCast(
+    SubstraitPlanParser::ExpressionCastContext* ctx) {
+  ::substrait::proto::Expression expr;
+  auto origExpression = ANY_CAST(
+      ::substrait::proto::Expression, visitExpression(ctx->expression()));
+  auto literalType = ANY_CAST(
+      ::substrait::proto::Type,
+      visitLiteral_complex_type(ctx->literal_complex_type()));
+  *expr.mutable_cast()->mutable_type() = literalType;
+  *expr.mutable_cast()->mutable_input() = origExpression;
   return expr;
 }
 
@@ -762,7 +815,7 @@ std::string SubstraitPlanRelationVisitor::escapeText(
           break;
         case 'x':
           if (i < str.length() - 3) {
-            int32_t hex;
+            int32_t hex{0};
             if (absl::SimpleHexAtoi(str.substr(i + 2, 2), &hex)) {
               result << static_cast<char>(hex & 0xff);
               i += 3;

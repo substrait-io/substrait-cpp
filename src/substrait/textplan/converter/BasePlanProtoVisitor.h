@@ -8,7 +8,7 @@
 
 namespace io::substrait::textplan {
 
-// BasePlanProtoVisitor provides a visitor that will visit all of the major
+// BasePlanProtoVisitor provides a visitor that will visit all the major
 // messages within a Plan protobuffer object.  Subclass the visitor to add your
 // own functionality.
 class BasePlanProtoVisitor {

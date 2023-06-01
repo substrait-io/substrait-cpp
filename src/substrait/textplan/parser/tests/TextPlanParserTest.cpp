@@ -117,7 +117,15 @@ std::vector<TestCase> getTestCases() {
               WhenSerialized(EqSquashingWhitespace(R"(pipelines {
                 myself -> a;
                 b -> myself;
-              })"))),
+              })")),
+              AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
+                  R"(relations {
+                    root {
+                      input {
+                        # No relation node means this will be empty.
+                      }
+                    }
+                   })"))),
       },
       {
           "test2-legal-two-pipeline-participant-alternate-order",
@@ -130,7 +138,15 @@ std::vector<TestCase> getTestCases() {
               WhenSerialized(EqSquashingWhitespace(R"(pipelines {
                 b -> myself;
                 myself -> a;
-              })"))),
+              })")),
+              AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
+                  R"(relations {
+                    root {
+                      input {
+                        # No relation node means this will be empty.
+                      }
+                    }
+                  })"))),
       },
       {
           "test2-impossible-node-reuse-in-pipelines",
@@ -183,12 +199,18 @@ std::vector<TestCase> getTestCases() {
       },
       {
           "test5-project-relation",
-          R"(project relation myproject {
+          R"(extension_space blah.yaml {
+            function add:i8 as add;
+            function subtract:i8 AS subtract;
+            function concat:str AS concat;
+          }
+
+          project relation myproject {
             expression r_regionkey;
             expression r_name;
             expression r_comment;
-            expression add(r_regionkey, 1);
-            expression subtract(r_regionkey, 1);
+            expression add(r_regionkey, 1_i8);
+            expression subtract(r_regionkey, 1_i8);
             expression concat(r_name, r_name);
           })",
           AllOf(
@@ -198,9 +220,15 @@ std::vector<TestCase> getTestCases() {
                       expression EXPR-NOT-YET-IMPLEMENTED;
                       expression EXPR-NOT-YET-IMPLEMENTED;
                       expression EXPR-NOT-YET-IMPLEMENTED;
-                      expression EXPR-NOT-YET-IMPLEMENTED;
-                      expression EXPR-NOT-YET-IMPLEMENTED;
-                      expression EXPR-NOT-YET-IMPLEMENTED;
+                      expression add(EXPR-NOT-YET-IMPLEMENTED, 1_i8);
+                      expression subtract(EXPR-NOT-YET-IMPLEMENTED, 1_i8);
+                      expression concat(EXPR-NOT-YET-IMPLEMENTED, EXPR-NOT-YET-IMPLEMENTED);
+                    }
+
+                    extension_space blah.yaml {
+                      function add:i8 as add;
+                      function subtract:i8 as subtract;
+                      function concat:str as concat;
                     })"))),
       },
       {
@@ -227,11 +255,11 @@ std::vector<TestCase> getTestCases() {
             expression false_bool;
           })",
           AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
-              R"(relations { rel { project {
-              expressions { literal { boolean: true } }
-              expressions { literal { boolean: true } }
-              expressions { literal { boolean: false } }
-              } } })"))),
+              R"(relations { root { input { project {
+                expressions { literal { boolean: true } }
+                expressions { literal { boolean: true } }
+                expressions { literal { boolean: false } }
+              } } } })"))),
       },
       {
           "test10-literals-boolean-nulls",
@@ -240,12 +268,10 @@ std::vector<TestCase> getTestCases() {
             expression null_bool?;
           })",
           AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
-              R"(relations { rel { project {
-              expressions { literal { null: { bool {
-                nullability: NULLABILITY_NULLABLE } } } }
-              expressions { literal { null: { bool {
-                nullability: NULLABILITY_NULLABLE } } } }
-              } } })"))),
+              R"(relations { root { input { project {
+                expressions { literal { null: { bool { nullability: NULLABILITY_NULLABLE } } } }
+                expressions { literal { null: { bool { nullability: NULLABILITY_NULLABLE } } } }
+              } } } })"))),
       },
       {
           "test10-literals-integers",
@@ -256,12 +282,12 @@ std::vector<TestCase> getTestCases() {
             expression 9999_i64?;
           })",
           AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
-              R"(relations { rel { project {
-              expressions { literal { i8: 12 } }
-              expressions { literal { i16: -223 } }
-              expressions { literal { i32: 12345 } }
-              expressions { literal { i64: 9999 nullable: true } }
-              } } })"))),
+              R"(relations { root { input { project {
+                expressions { literal { i8: 12 } }
+                expressions { literal { i16: -223 } }
+                expressions { literal { i32: 12345 } }
+                expressions { literal { i64: 9999 nullable: true } }
+              } } } })"))),
       },
       {
           "test10-literals-integers-nulls",
@@ -270,12 +296,10 @@ std::vector<TestCase> getTestCases() {
             expression null_i16?;
           })",
           AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
-              R"(relations { rel { project {
-              expressions { literal { null: { i8 {
-                nullability: NULLABILITY_NULLABLE } } } }
-              expressions { literal { null: { i16 {
-                nullability: NULLABILITY_NULLABLE } } } }
-              } } })"))),
+              R"(relations { root { input { project {
+                expressions { literal { null: { i8 { nullability: NULLABILITY_NULLABLE } } } }
+                expressions { literal { null: { i16 { nullability: NULLABILITY_NULLABLE } } } }
+              } } } })"))),
       },
       {
           "test10-literals-floats",
@@ -285,11 +309,11 @@ std::vector<TestCase> getTestCases() {
             expression 1.2345E-2_fp64?;
           })",
           AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
-              R"(relations { rel { project {
-              expressions { literal { fp32: 1.23 } }
-              expressions { literal { fp64: -1.2345 } }
-              expressions { literal { fp64: .012345 nullable: true } }
-              } } })"))),
+              R"(relations { root { input { project {
+                expressions { literal { fp32: 1.23 } }
+                expressions { literal { fp64: -1.2345 } }
+                expressions { literal { fp64: .012345 nullable: true } }
+              } } } })"))),
       },
       {
           "test10-literals-floats-nulls",
@@ -298,10 +322,10 @@ std::vector<TestCase> getTestCases() {
             expression null_fp64?;
           })",
           AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
-              R"(relations { rel { project {
-              expressions { literal { null: { fp32 { nullability: NULLABILITY_NULLABLE } } } }
-              expressions { literal { null: { fp64 { nullability: NULLABILITY_NULLABLE } } } }
-              } } })"))),
+              R"(relations { root { input { project {
+                expressions { literal { null: { fp32 { nullability: NULLABILITY_NULLABLE } } } }
+                expressions { literal { null: { fp64 { nullability: NULLABILITY_NULLABLE } } } }
+              } } } })"))),
       },
       {
           "test10-literals-decimal",
@@ -310,14 +334,14 @@ std::vector<TestCase> getTestCases() {
             expression 42_decimal<5,-4>;
           })",
           AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
-              R"(relations { rel { project {
-              expressions { literal { decimal: { value:
-                "\052\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
-                precision: 5 scale: 4 } } }
-              expressions { literal { decimal: { value:
-                "\052\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
-                precision: 5 scale: -4 } } }
-              } } })"))),
+              R"(relations { root { input { project {
+                expressions { literal { decimal: { value:
+                  "\052\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+                  precision: 5 scale: 4 } } }
+                expressions { literal { decimal: { value:
+                  "\052\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+                  precision: 5 scale: -4 } } }
+              } } } })"))),
       },
       {
           "test10-literals-decimal-nulls",
@@ -325,10 +349,10 @@ std::vector<TestCase> getTestCases() {
             expression null_decimal<3, 2>?;
           })",
           AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
-              R"(relations { rel { project {
+              R"(relations { root { input { project {
                 expressions { literal { null: { decimal { scale: 2 precision: 3
                   nullability: NULLABILITY_NULLABLE } } } }
-              } } })"))),
+              } } } })"))),
       },
       {
           "test10-literals-strings",
@@ -347,26 +371,26 @@ std::vector<TestCase> getTestCases() {
             expression "abcde"_fixedchar<5>;
           })",
           AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
-              R"(relations { rel { project {
-              expressions { literal { string: "simple text" } }
-              expressions { literal { string: "123" } }
-              expressions { literal {
-                string: "basic escapes: \\\'\"\b\f\n\r\t" } }
-              expressions { literal { string: "embedded bytes: \xA9\x72" } }
-              expressions { literal { string: "unicode char: \x02" } }
-              expressions { literal { string: "unicode char: \x02\x3B" } }
-              expressions { literal { string: "unicode char: \x02\x3B\x41" } }
-              expressions { literal {
-                string: "raw string with a Windows path: C:\\file.txt" } }
-              expressions { literal {
-                string: "string with a backtick (`) in it" } }
-              expressions { literal {
-                var_char: { value: "12345" length: 5 } } }
-              expressions { literal {
-                var_char: { value: "two\nlines with \"escapes\""
-                            length: 80 } } }
-              expressions { literal { fixed_char: "abcde" } }
-              } } })"))),
+              R"(relations { root { input { project {
+                expressions { literal { string: "simple text" } }
+                expressions { literal { string: "123" } }
+                expressions { literal {
+                  string: "basic escapes: \\\'\"\b\f\n\r\t" } }
+                expressions { literal { string: "embedded bytes: \xA9\x72" } }
+                expressions { literal { string: "unicode char: \x02" } }
+                expressions { literal { string: "unicode char: \x02\x3B" } }
+                expressions { literal { string: "unicode char: \x02\x3B\x41" } }
+                expressions { literal {
+                  string: "raw string with a Windows path: C:\\file.txt" } }
+                expressions { literal {
+                  string: "string with a backtick (`) in it" } }
+                expressions { literal {
+                  var_char: { value: "12345" length: 5 } } }
+                expressions { literal {
+                  var_char: { value: "two\nlines with \"escapes\""
+                              length: 80 } } }
+                expressions { literal { fixed_char: "abcde" } }
+              } } } })"))),
       },
       {
           "test10-literals-strings-nulls",
@@ -377,16 +401,16 @@ std::vector<TestCase> getTestCases() {
             expression null_fixedchar<5>?;
           })",
           AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
-              R"(relations { rel { project {
-              expressions { literal { null: { string {
-                nullability: NULLABILITY_NULLABLE } } } }
-              expressions { literal { null: { string {
-                nullability: NULLABILITY_NULLABLE } } } }
-              expressions { literal { null: {
-                varchar { length: 5 nullability: NULLABILITY_NULLABLE } } } }
-              expressions { literal { null: {
-                fixed_char { length: 5 nullability: NULLABILITY_NULLABLE } } } }
-              } } })"))),
+              R"(relations { root { input { project {
+                expressions { literal { null: { string {
+                  nullability: NULLABILITY_NULLABLE } } } }
+                expressions { literal { null: { string {
+                  nullability: NULLABILITY_NULLABLE } } } }
+                expressions { literal { null: {
+                  varchar { length: 5 nullability: NULLABILITY_NULLABLE } } } }
+                expressions { literal { null: {
+                  fixed_char { length: 5 nullability: NULLABILITY_NULLABLE } } } }
+              } } } })"))),
       },
       {
           "test10-literals-binary",
@@ -397,12 +421,12 @@ std::vector<TestCase> getTestCases() {
             expression "1234"_fixedbinary<2>;
           })",
           AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
-              R"(relations { rel { project {
-              expressions { literal { binary: "0123456789abcde" } }
-              expressions { literal { uuid: "ddb287e87d4c4fadb2e707428be043e5" } }
-              expressions { literal { uuid: "ddb287e87d4c4fadb2e707428be043e5" } }
-              expressions { literal { fixed_binary: "1234" } }
-              } } })"))),
+              R"(relations { root { input { project {
+                expressions { literal { binary: "0123456789abcde" } }
+                expressions { literal { uuid: "ddb287e87d4c4fadb2e707428be043e5" } }
+                expressions { literal { uuid: "ddb287e87d4c4fadb2e707428be043e5" } }
+                expressions { literal { fixed_binary: "1234" } }
+              } } } })"))),
       },
       {
           "test10-literals-binary-nulls",
@@ -412,14 +436,14 @@ std::vector<TestCase> getTestCases() {
             expression null_fixedbinary<2>;
           })",
           AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
-              R"(relations { rel { project {
-              expressions { literal { null: { binary {
-                nullability: NULLABILITY_NULLABLE } } } }
-              expressions { literal { null: { uuid {
-                nullability: NULLABILITY_NULLABLE } } } }
-              expressions { literal { null: { fixed_binary {
-                nullability: NULLABILITY_NULLABLE } } } }
-              } } })"))),
+              R"(relations { root { input { project {
+                expressions { literal { null: { binary {
+                  nullability: NULLABILITY_NULLABLE } } } }
+                expressions { literal { null: { uuid {
+                  nullability: NULLABILITY_NULLABLE } } } }
+                expressions { literal { null: { fixed_binary {
+                  nullability: NULLABILITY_NULLABLE } } } }
+              } } } })"))),
       },
       {
           "test10-literals-time",
@@ -437,7 +461,7 @@ std::vector<TestCase> getTestCases() {
             expression "2000-01-01 00:00:00.000000 UTC"_timestamp_tz;
           })",
           AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
-              R"(relations { rel { project {
+              R"(relations { root { input { project {
                 expressions { literal { timestamp: 946684800 } }
                 expressions { literal { timestamp: 946684800 } }
                 expressions { literal { date: 18616 } }
@@ -453,7 +477,7 @@ std::vector<TestCase> getTestCases() {
                     days: 4 seconds: 1 microseconds: 13 } } }
                 expressions { literal { timestamp_tz: 946706400 } }
                 expressions { literal { timestamp_tz: 946684800 } }
-              } } })")),
+              } } } })")),
       },
       {
           "test10-literals-time-nulls",
@@ -466,7 +490,7 @@ std::vector<TestCase> getTestCases() {
             expression null_timestamp_tz;
           })",
           AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
-              R"(relations { rel { project {
+              R"(relations { root { input { project {
                 expressions { literal { null: {
                   timestamp { nullability: NULLABILITY_NULLABLE } } } }
                 expressions { literal { null: { date {
@@ -479,7 +503,7 @@ std::vector<TestCase> getTestCases() {
                   nullability: NULLABILITY_NULLABLE } } } }
                 expressions { literal { null: { timestamp_tz {
                   nullability: NULLABILITY_NULLABLE } } } }
-              } } })"))),
+              } } } })"))),
       },
       {
           "test10-literals-lists",
@@ -492,30 +516,30 @@ std::vector<TestCase> getTestCases() {
             expression {}_list?<string>;
           })",
           AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
-              R"(relations { rel { project {
-              expressions { literal { list {
-                values { string: "a" }
-                values { string: "b" }
-                values { string: "c" }
-              } } }
-              expressions { literal { list {
-                values { null { string { nullability: NULLABILITY_NULLABLE } } }
-                values { string: "a" }
-                values { string: "b" }
-              } } }
-              expressions { literal { list { values { list {
-                values { string: "a" }
-                values { string: "b" }
-             } } values { list {
-                values { string: "1" }
-                values { string: "2" }
-              } } } } }
-              expressions { literal { empty_list { type { string { } } } } }
-              expressions { literal { empty_list { type { string {
-                nullability: NULLABILITY_NULLABLE } } } } }
-              expressions { literal { empty_list { type { string { } }
-                nullability: NULLABILITY_NULLABLE } } }
-              } } })")),
+              R"(relations { root { input { project {
+                expressions { literal { list {
+                  values { string: "a" }
+                  values { string: "b" }
+                  values { string: "c" }
+                } } }
+                expressions { literal { list {
+                  values { null { string { nullability: NULLABILITY_NULLABLE } } }
+                  values { string: "a" }
+                  values { string: "b" }
+                } } }
+                expressions { literal { list { values { list {
+                  values { string: "a" }
+                  values { string: "b" }
+                } } values { list {
+                  values { string: "1" }
+                  values { string: "2" }
+                } } } } }
+                expressions { literal { empty_list { type { string { } } } } }
+                expressions { literal { empty_list { type { string {
+                  nullability: NULLABILITY_NULLABLE } } } } }
+                expressions { literal { empty_list { type { string { } }
+                  nullability: NULLABILITY_NULLABLE } } }
+              } } } })")),
       },
       {
           "test10-literals-lists-nulls",
@@ -526,20 +550,20 @@ std::vector<TestCase> getTestCases() {
             expression null_list?<list<string>>;
           })",
           AsBinaryPlan((EqualsProto<::substrait::proto::Plan>(
-              R"(relations { rel { project {
-              expressions { literal { null { list { type { string { } }
-                nullability: NULLABILITY_NULLABLE } } } }
-              expressions { literal { null { list { type {
-                list { type { string {
+              R"(relations { root { input { project {
+                expressions { literal { null { list { type { string { } }
                   nullability: NULLABILITY_NULLABLE } } } }
+                expressions { literal { null { list { type {
+                  list { type { string {
                     nullability: NULLABILITY_NULLABLE } } } }
-              expressions { literal { null { list { type {
-                list { type { string { } } } }
-                nullability: NULLABILITY_NULLABLE } } } }
-              expressions { literal { null { list { type {
-                list { type { string { } } } }
-                 nullability: NULLABILITY_NULLABLE } } } }
-              } } })"))),
+                      nullability: NULLABILITY_NULLABLE } } } }
+                expressions { literal { null { list { type {
+                  list { type { string { } } } }
+                  nullability: NULLABILITY_NULLABLE } } } }
+                expressions { literal { null { list { type {
+                  list { type { string { } } } }
+                   nullability: NULLABILITY_NULLABLE } } } }
+              } } } })"))),
       },
       {
           "test10-literals-maps",
@@ -548,14 +572,14 @@ std::vector<TestCase> getTestCases() {
             expression {}_map<fp32, string>;
           })",
           AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
-              R"(relations { rel { project {
+              R"(relations { root { input { project {
                 expressions { literal { map {
                   key_values { key { i16: 42 } value { string: "life" } }
                   key_values { key { i16: 32 } value { string: "everything" } }
                 } } }
                 expressions { literal {
                   empty_map { key { fp32 {} } value { string { } } } } }
-              } } })")),
+              } } } })")),
       },
       {
           "test10-literals-maps-nulls",
@@ -563,10 +587,10 @@ std::vector<TestCase> getTestCases() {
             expression null_map<i8, string>;
           })",
           AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
-              R"(relations { rel { project {
-              expressions { literal {
-                null { map { key { i8 {} } value { string {} } } } } }
-              } } })"))),
+              R"(relations { root { input { project {
+                expressions { literal {
+                  null { map { key { i8 {} } value { string {} } } } } }
+              } } } })"))),
       },
       {
           "test10-literals-struct",
@@ -574,15 +598,15 @@ std::vector<TestCase> getTestCases() {
             expression {"a", {"b", "c"}}_struct<string, struct<string, string>>;
           })",
           AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
-              R"(relations { rel { project {
-              expressions { literal { struct {
-                fields { string: "a" }
-                fields { struct {
-                  fields { string: "b" }
-                  fields { string: "c" }
-                } }
-              } } }
-              } } })")),
+              R"(relations { root { input { project {
+                expressions { literal { struct {
+                  fields { string: "a" }
+                  fields { struct {
+                    fields { string: "b" }
+                    fields { string: "c" }
+                  } }
+                } } }
+              } } } })")),
       },
       {
           "test10-literals-struct-nulls",
@@ -590,13 +614,13 @@ std::vector<TestCase> getTestCases() {
             expression null_struct<string, struct<string, string>>;
           })",
           AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
-              R"(relations { rel { project {
+              R"(relations { root { input { project {
               expressions { literal { null { struct {
                 types { string {} }
                 types { struct {
                   types { string {} }
                   types { string {} } } } } } } }
-              } } })"))),
+              } } } })"))),
       },
       {
           "test10-literals-lists-of-structs",
@@ -604,16 +628,16 @@ std::vector<TestCase> getTestCases() {
             expression {{"a", 12}, {"b", -13}, {"c", 0}}_list<struct<string, i32>>;
           })",
           AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
-              R"(relations { rel { project {
-              expressions { literal { list {
-                values { struct { fields { string: "a" } fields { i32: 12 } } }
-                values { struct { fields { string: "b" } fields { i32: -13 } } }
-                values { struct { fields { string: "c" } fields { i32: 0 } } }
-              } } }
-              } } })"))),
+              R"(relations { root { input { project {
+                expressions { literal { list {
+                  values { struct { fields { string: "a" } fields { i32: 12 } } }
+                  values { struct { fields { string: "b" } fields { i32: -13 } } }
+                  values { struct { fields { string: "c" } fields { i32: 0 } } }
+                } } }
+              }} } })"))),
       },
       {
-          "test6.5-bad-literals",
+          "test11-bad-literals",
           R"(project relation literalexamples {
             expression 1;
             expression 1.5;
@@ -633,7 +657,7 @@ std::vector<TestCase> getTestCases() {
             expression "unknown\escape"_string;
             expression {123_i8}_map<i8, bool>;
             expression {123}_map<i8, bool>;
-         })",
+          })",
           HasErrors({
               "9:34 → mismatched input 'r5' expecting NUMBER",
               "9:36 → mismatched input ',' expecting 'FILTER'",
@@ -665,26 +689,166 @@ std::vector<TestCase> getTestCases() {
           }),
       },
       {
-          "test7-relation-without-type",
+          "test12-casts",
+          R"(project relation literalexamples {
+            expression 123_i8 AS i32;
+            expression 123_i8 AS i32 AS i64;
+            // TODO -- Add casts of non-constant types when supported.
+            // expression r_address AS fixedchar<23>;
+          })",
+          AllOf(
+              HasErrors({}),
+              AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
+                  R"(relations { root { input { project {
+                    expressions { cast { type { i32 {} }
+                      input { literal { i8: 123 } } } }
+                    expressions { cast { type { i64 {} }
+                      input { cast { type { i32 {} }
+                        input { literal { i8: 123 } } } } } }
+                  } } } })"))),
+      },
+      {
+          "test13-functions",
+          R"(extension_space blah.yaml {
+            function myfunc:str as myfunc;
+            function otherfunc:str AS otherfunc;
+          }
+
+          project relation literalexamples {
+            expression myfunc(otherfunc(1_i32, -2_i32), "foo"_string);
+          })",
+          AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
+              R"(relations { root { input { project {
+                expressions { scalar_function { function_reference: 1
+                  arguments { value { scalar_function { function_reference: 2
+                    arguments { value { literal { i32: 1 } } }
+                    arguments { value { literal { i32: -2 } } }
+                  } } }
+                  arguments { value { literal { string: "foo" } } }
+                } }
+              } } } })"))),
+      },
+      {
+          "test14-three-node-pipeline-with-fields",
+          R"(pipelines {
+            read -> join;
+            read2 -> join;
+            join -> join2;
+            read3 -> join2;
+            join2 -> root;
+          }
+
+          read relation read {
+            source named;
+            base_schema schema;
+          }
+
+          read relation read2 {
+            source named2;
+            base_schema schema2;
+          }
+
+          join relation join {
+            type UNSPECIFIED;
+            expression product_id;
+            post_join filter count;
+          }
+
+          read relation read3 {
+            source named3;
+            base_schema schema3;
+          }
+
+          join relation join2 {
+            type UNSPECIFIED;
+            expression order_id;
+          }
+          schema schema {
+            order_id i32;
+            product_id i32;
+            count i64;
+          }
+
+          schema schema2 {
+            product_id i32;
+            cost fp32;
+          }
+
+          schema schema3 {
+            company string;
+            order_id i32;
+          }
+
+          source named_table named {
+            names = [
+              "#1",
+            ]
+          }
+
+          source named_table named2 {
+            names = [
+              "#2",
+            ]
+          }
+
+          source named_table named3 {
+            names = [
+              "#3",
+            ]
+          })",
+          AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
+              R"(relations: {
+                root: {
+                  input: {
+                    join: {
+                      left: {
+                        join: {
+                          left: {
+                            read: {
+                            }
+                          }
+                          right: {
+                            read: {
+                            }
+                          }
+                          expression: {
+                          }
+                          post_join_filter: {
+                          }
+                        }
+                      }
+                      right: {
+                        read: {
+                        }
+                      }
+                      expression: {
+                      }
+                    }
+                  }
+                }
+              })")),
+      },
+      {
+          "test15-relation-without-type",
           R"(relation notyperelation {
           })",
           // TODO -- Replace this error message with something user-friendly.
           HasErrors({
               "1:0 → extraneous input 'relation' expecting {<EOF>, "
               "'EXTENSION_SPACE', 'SCHEMA', 'PIPELINES', 'FILTER', "
-              "'SOURCE', COLUMN_TYPE, IDENTIFIER}",
+              "'SOURCE', IDENTIFIER}",
               "1:24 → mismatched input '{' expecting 'RELATION'",
               "1:9 → Unrecognized relation type: notyperelation",
           }),
       },
       {
-          "test8-relation-invalid-type",
+          "test16-relation-invalid-type",
           R"(weird relation notyperelation {
           })",
           HasErrors({"1:0 → Unrecognized relation type: weird"}),
       },
       {
-          "test9-pipelines-with-relations",
+          "test17-pipelines-with-relations",
           R"(pipelines {
             root -> project -> read;
           }

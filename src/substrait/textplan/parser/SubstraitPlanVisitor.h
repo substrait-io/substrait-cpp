@@ -69,6 +69,8 @@ class SubstraitPlanVisitor : public SubstraitPlanParserVisitor {
       SubstraitPlanParser::ExpressionFunctionUseContext* ctx) override;
   std::any visitExpressionConstant(
       SubstraitPlanParser::ExpressionConstantContext* ctx) override;
+  std::any visitExpressionCast(
+      SubstraitPlanParser::ExpressionCastContext* ctx) override;
   std::any visitExpressionColumn(
       SubstraitPlanParser::ExpressionColumnContext* ctx) override;
   std::any visitRelationCommon(
@@ -111,6 +113,8 @@ class SubstraitPlanVisitor : public SubstraitPlanParserVisitor {
  private:
   std::shared_ptr<SymbolTable> symbolTable_;
   std::shared_ptr<SubstraitParserErrorListener> errorListener_;
+
+  int numFunctionsSeen_{0};
 };
 
 } // namespace io::substrait::textplan

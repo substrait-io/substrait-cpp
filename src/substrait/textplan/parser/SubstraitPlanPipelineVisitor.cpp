@@ -44,10 +44,11 @@ void SubstraitPlanPipelineVisitor::updateRelationSymbol(
         relationName,
         Location(ctx),
         SymbolType::kRelation,
-        RelationDetailType::kUnknown,
+        RelationType::kUnknown,
         relationData);
   } else {
-    // Add our location to this symbol so we can find it either way.
+    // Update the location on this symbol, so we can find it in its canonical
+    // location.
     symbolTable_->updateLocation(*symbol, Location(ctx));
   }
 }
