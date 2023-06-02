@@ -103,7 +103,7 @@ literal_basic_type
 literal_complex_type
    : literal_basic_type
    | LIST QUESTIONMARK? LEFTANGLEBRACKET literal_complex_type? RIGHTANGLEBRACKET
-   | MAP QUESTIONMARK? LEFTANGLEBRACKET (literal_basic_type COMMA literal_complex_type)? RIGHTANGLEBRACKET
+   | MAP QUESTIONMARK? LEFTANGLEBRACKET literal_basic_type? COMMA? literal_complex_type? RIGHTANGLEBRACKET
    | STRUCT QUESTIONMARK? LEFTANGLEBRACKET literal_complex_type? (COMMA literal_complex_type)* RIGHTANGLEBRACKET
    ;
 
