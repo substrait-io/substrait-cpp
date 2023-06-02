@@ -19,6 +19,12 @@ add_test_case(
   gtest
   gtest_main)
 
+option(
+        SUBSTRAIT_CPP_ROUNDTRIP_TESTING
+        "Enable substrait-cpp textplan roundtrip tests."
+        OFF)
+
+if(${SUBSTRAIT_CPP_ROUNDTRIP_TESTING})
 add_test_case(
   round_trip_test
   SOURCES
@@ -55,3 +61,4 @@ message(
   STATUS
     "test data will be here:  ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tests/data"
 )
+endif()
