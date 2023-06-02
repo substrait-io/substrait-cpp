@@ -783,8 +783,8 @@ std::vector<TestCase> getTestCases() {
           })",
           AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
               R"(relations { root { input { project {
-                expressions { scalar_function { function_reference: 1
-                  arguments { value { scalar_function { function_reference: 2
+                expressions { scalar_function { function_reference: 0
+                  arguments { value { scalar_function { function_reference: 1
                     arguments { value { literal { i32: 1 } } }
                     arguments { value { literal { i32: -2 } } }
                   } } }
