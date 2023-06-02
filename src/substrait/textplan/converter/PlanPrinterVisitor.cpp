@@ -44,11 +44,14 @@ std::string stringEscape(std::string_view str) {
 std::string invocationToString(
     ::substrait::proto::AggregateFunction_AggregationInvocation invocation) {
   switch (invocation) {
-    case ::substrait::proto::AggregateFunction_AggregationInvocation_AGGREGATION_INVOCATION_ALL:
+    case ::substrait::proto::
+        AggregateFunction_AggregationInvocation_AGGREGATION_INVOCATION_ALL:
       return "all";
-    case ::substrait::proto::AggregateFunction_AggregationInvocation_AGGREGATION_INVOCATION_DISTINCT:
+    case ::substrait::proto::
+        AggregateFunction_AggregationInvocation_AGGREGATION_INVOCATION_DISTINCT:
       return "distinct";
-    case ::substrait::proto::AggregateFunction_AggregationInvocation_AGGREGATION_INVOCATION_UNSPECIFIED:
+    case ::substrait::proto::
+        AggregateFunction_AggregationInvocation_AGGREGATION_INVOCATION_UNSPECIFIED:
     default:
       return "unspecified";
   }
@@ -190,7 +193,8 @@ std::any PlanPrinterVisitor::visitType(const ::substrait::proto::Type& type) {
     case ::substrait::proto::Type::kVarchar: {
       std::stringstream result;
       result << "varchar";
-      if (type.varchar().nullability()) {
+      if (type.varchar().nullability() ==
+          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
         result << "?";
       }
       result << "<" << type.varchar().length() << ">";
@@ -199,7 +203,8 @@ std::any PlanPrinterVisitor::visitType(const ::substrait::proto::Type& type) {
     case ::substrait::proto::Type::kFixedChar: {
       std::stringstream result;
       result << "fixedchar";
-      if (type.fixed_char().nullability()) {
+      if (type.fixed_char().nullability() ==
+          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
         result << "?";
       }
       result << "<" << type.fixed_char().length() << ">";
