@@ -1189,7 +1189,8 @@ SubstraitPlanRelationVisitor::visitNumber(
       case ::substrait::proto::Type::kI8: {
         int32_t val = std::stoi(node->getText());
         literal.set_i8(val);
-        if (literalType.i8().nullability()) {
+        if (literalType.i8().nullability() ==
+            ::substrait::proto::Type_Nullability_NULLABILITY_NULLABLE) {
           literal.set_nullable(true);
         }
         break;
@@ -1197,7 +1198,8 @@ SubstraitPlanRelationVisitor::visitNumber(
       case ::substrait::proto::Type::kI16: {
         int32_t val = std::stoi(node->getText());
         literal.set_i16(val);
-        if (literalType.i16().nullability()) {
+        if (literalType.i16().nullability() ==
+            ::substrait::proto::Type_Nullability_NULLABILITY_NULLABLE) {
           literal.set_nullable(true);
         }
         break;
@@ -1205,7 +1207,8 @@ SubstraitPlanRelationVisitor::visitNumber(
       case ::substrait::proto::Type::kI32: {
         int32_t val = std::stoi(node->getText());
         literal.set_i32(val);
-        if (literalType.i32().nullability()) {
+        if (literalType.i32().nullability() ==
+            ::substrait::proto::Type_Nullability_NULLABILITY_NULLABLE) {
           literal.set_nullable(true);
         }
         break;
@@ -1213,7 +1216,8 @@ SubstraitPlanRelationVisitor::visitNumber(
       case ::substrait::proto::Type::kI64: {
         int64_t val = std::stol(node->getText());
         literal.set_i64(val);
-        if (literalType.i64().nullability()) {
+        if (literalType.i64().nullability() ==
+            ::substrait::proto::Type_Nullability_NULLABILITY_NULLABLE) {
           literal.set_nullable(true);
         }
         break;
@@ -1221,7 +1225,8 @@ SubstraitPlanRelationVisitor::visitNumber(
       case ::substrait::proto::Type::kFp32: {
         float val = std::stof(node->getText());
         literal.set_fp32(val);
-        if (literalType.fp32().nullability()) {
+        if (literalType.fp32().nullability() ==
+            ::substrait::proto::Type_Nullability_NULLABILITY_NULLABLE) {
           literal.set_nullable(true);
         }
         break;
@@ -1229,7 +1234,8 @@ SubstraitPlanRelationVisitor::visitNumber(
       case ::substrait::proto::Type::kFp64: {
         double val = std::stod(node->getText());
         literal.set_fp64(val);
-        if (literalType.fp64().nullability()) {
+        if (literalType.fp64().nullability() ==
+            ::substrait::proto::Type_Nullability_NULLABILITY_NULLABLE) {
           literal.set_nullable(true);
         }
         break;
@@ -1245,7 +1251,8 @@ SubstraitPlanRelationVisitor::visitNumber(
           break;
         }
         *literal.mutable_decimal() = decimal.toProto();
-        if (literalType.decimal().nullability()) {
+        if (literalType.decimal().nullability() ==
+            ::substrait::proto::Type_Nullability_NULLABILITY_NULLABLE) {
           literal.set_nullable(true);
         }
         break;
