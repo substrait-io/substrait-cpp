@@ -9,6 +9,7 @@
 #include "substrait/textplan/Finally.h"
 #include "substrait/textplan/Location.h"
 #include "substrait/textplan/StructuredSymbolData.h"
+#include "substrait/type/Type.h"
 
 namespace io::substrait::textplan {
 
@@ -51,10 +52,14 @@ std::any SubstraitPlanVisitor::visitPipeline(
 
 std::any SubstraitPlanVisitor::visitExtensionspace(
     SubstraitPlanParser::ExtensionspaceContext* ctx) {
+  if (ctx->URI() == nullptr) {
+    // Nothing to keep track of at this level.
+    return visitChildren(ctx);
+  }
+
   const std::string& uri = ctx->URI()->getText();
   // TODO -- Transition to querying the symbol table for the space number.  #42
-  static uint32_t numSpacesSeen = 0;
-  uint32_t thisSpace = numSpacesSeen++;
+  uint32_t thisSpace = ++numSpacesSeen_;
   symbolTable_->defineSymbol(
       uri,
       Location(ctx),
@@ -78,13 +83,26 @@ std::any SubstraitPlanVisitor::visitFunction(
     SubstraitPlanParser::FunctionContext* ctx) {
   // TODO -- Transition to using the symbol table for the function number.  #42
   // Let our enclosing extension space provide us with the detail.
+  std::string referenceName;
+  if (ctx->id() != nullptr) {
+    referenceName = ctx->id()->getText();
+  } else if (ctx->name() != nullptr) {
+    referenceName = ctx->name()->getText();
+    auto colonPos = referenceName.find_first_of(':');
+    if (colonPos != std::string::npos) {
+      referenceName = referenceName.substr(0, colonPos);
+    }
+  } else {
+    referenceName = "";
+  }
+
   symbolTable_->defineSymbol(
-      ctx->id()->getText(),
+      referenceName,
       Location(ctx),
       SymbolType::kFunction,
       defaultResult(),
       std::make_shared<FunctionData>(
-          ctx->name()->getText(), std::nullopt, ++numFunctionsSeen_));
+          ctx->name()->getText(), std::nullopt, numFunctionsSeen_++));
   return visitChildren(ctx);
 }
 
@@ -107,9 +125,9 @@ std::any SubstraitPlanVisitor::visitSchema_definition(
       defaultResult(),
       defaultResult());
 
+  // Mark all of the schema items so we can find the ones related to this schema.
   for (const auto& item : ctx->schema_item()) {
     auto symbol = ANY_CAST(SymbolInfo*, visitSchema_item(item));
-    // TODO -- Implement schemas instead of skipping them.
     if (symbol == nullptr) {
       continue;
     }
@@ -119,16 +137,6 @@ std::any SubstraitPlanVisitor::visitSchema_definition(
   return nullptr;
 }
 
-std::any SubstraitPlanVisitor::visitColumn_attribute(
-    SubstraitPlanParser::Column_attributeContext* ctx) {
-  return visitChildren(ctx);
-}
-
-std::any SubstraitPlanVisitor::visitColumn_type(
-    SubstraitPlanParser::Column_typeContext* ctx) {
-  return visitChildren(ctx);
-}
-
 std::any SubstraitPlanVisitor::visitSchema_item(
     SubstraitPlanParser::Schema_itemContext* ctx) {
   return symbolTable_->defineSymbol(
@@ -136,7 +144,7 @@ std::any SubstraitPlanVisitor::visitSchema_item(
       Location(ctx),
       SymbolType::kSchemaColumn,
       defaultResult(),
-      ctx->column_type()->getText());
+      visitLiteral_complex_type(ctx->literal_complex_type()));
 }
 
 std::any SubstraitPlanVisitor::visitRelation(
@@ -223,16 +231,6 @@ std::any SubstraitPlanVisitor::visitLiteral_specifier(
   return visitChildren(ctx);
 }
 
-std::any SubstraitPlanVisitor::visitLiteral_basic_type(
-    SubstraitPlanParser::Literal_basic_typeContext* ctx) {
-  return visitChildren(ctx);
-}
-
-std::any SubstraitPlanVisitor::visitLiteral_complex_type(
-    SubstraitPlanParser::Literal_complex_typeContext* ctx) {
-  return visitChildren(ctx);
-}
-
 std::any SubstraitPlanVisitor::visitMap_literal_value(
     SubstraitPlanParser::Map_literal_valueContext* ctx) {
   return visitChildren(ctx);
@@ -311,6 +309,11 @@ std::any SubstraitPlanVisitor::visitRelation_filter_behavior(
   return visitChildren(ctx);
 }
 
+std::any SubstraitPlanVisitor::visitMeasure_detail(
+    SubstraitPlanParser::Measure_detailContext* ctx) {
+  return visitChildren(ctx);
+}
+
 std::any SubstraitPlanVisitor::visitRelationFilter(
     SubstraitPlanParser::RelationFilterContext* ctx) {
   return visitChildren(ctx);
@@ -318,7 +321,8 @@ std::any SubstraitPlanVisitor::visitRelationFilter(
 
 std::any SubstraitPlanVisitor::visitRelationExpression(
     SubstraitPlanParser::RelationExpressionContext* ctx) {
-  return visitChildren(ctx);
+  visitChildren(ctx);
+  return nullptr;
 }
 
 std::any SubstraitPlanVisitor::visitRelationAdvancedExtension(
@@ -328,6 +332,31 @@ std::any SubstraitPlanVisitor::visitRelationAdvancedExtension(
 
 std::any SubstraitPlanVisitor::visitRelationSourceReference(
     SubstraitPlanParser::RelationSourceReferenceContext* ctx) {
+  return visitChildren(ctx);
+}
+
+std::any SubstraitPlanVisitor::visitRelationGrouping(
+    SubstraitPlanParser::RelationGroupingContext* ctx) {
+  return visitChildren(ctx);
+}
+
+std::any SubstraitPlanVisitor::visitRelationMeasure(
+    SubstraitPlanParser::RelationMeasureContext* ctx) {
+  return visitChildren(ctx);
+}
+
+std::any SubstraitPlanVisitor::visitRelationSort(
+    SubstraitPlanParser::RelationSortContext* ctx) {
+  return visitChildren(ctx);
+}
+
+std::any SubstraitPlanVisitor::visitRelationCount(
+    SubstraitPlanParser::RelationCountContext* ctx) {
+  return visitChildren(ctx);
+}
+
+std::any SubstraitPlanVisitor::visitRelationJoinType(
+    SubstraitPlanParser::RelationJoinTypeContext* ctx) {
   return visitChildren(ctx);
 }
 
@@ -406,8 +435,18 @@ std::any SubstraitPlanVisitor::visitRelation_ref(
   return rel;
 }
 
+std::any SubstraitPlanVisitor::visitSort_field(
+    SubstraitPlanParser::Sort_fieldContext* ctx) {
+  return defaultResult();
+}
+
 std::any SubstraitPlanVisitor::visitId(SubstraitPlanParser::IdContext* ctx) {
   return ctx->getText();
+}
+
+std::any SubstraitPlanVisitor::visitSimple_id(
+    SubstraitPlanParser::Simple_idContext* ctx) {
+  return defaultResult();
 }
 
 // NOLINTEND(readability-convert-member-functions-to-static)

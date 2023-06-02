@@ -56,20 +56,34 @@ relation_filter_behavior
    | id id
    ;
 
+// TODO -- Can the type be determined automatically from the function definition?
+// TODO -- Consider moving the run phase to an optional third detail line.
+measure_detail
+   : MEASURE expression (ARROW literal_complex_type)? (ATSIGN id)? SEMICOLON
+   | FILTER expression SEMICOLON
+   | INVOCATION id SEMICOLON
+   | sort_field
+   ;
+
 relation_detail
    : COMMON SEMICOLON                                           # relationCommon
    | BASE_SCHEMA id SEMICOLON                                   # relationUsesSchema
    | relation_filter_behavior? FILTER expression SEMICOLON      # relationFilter
-   | EXPRESSION expression SEMICOLON (AS id)?                   # relationExpression
-   | ADVANCED_EXTENSION SEMICOLON                               # relationAdvancedExtension
-   | source_reference SEMICOLON                                 # relationSourceReference
+   | EXPRESSION expression SEMICOLON (AS id)? # relationExpression
+   | ADVANCED_EXTENSION SEMICOLON    # relationAdvancedExtension
+   | source_reference SEMICOLON      # relationSourceReference
+   | GROUPING expression SEMICOLON   # relationGrouping
+   | MEASURE LEFTBRACE measure_detail* RIGHTBRACE # relationMeasure
+   | sort_field                      # relationSort
+   | COUNT NUMBER SEMICOLON          # relationCount
+   | TYPE id SEMICOLON               # relationJoinType
    ;
 
 expression
-   : id LEFTPAREN expression (COMMA expression)? COMMA? RIGHTPAREN  # expressionFunctionUse
-   | constant                                                       # expressionConstant
-   | column_name                                                    # expressionColumn
-   | expression AS literal_complex_type                             # expressionCast
+   : id LEFTPAREN (expression COMMA?)* RIGHTPAREN  # expressionFunctionUse
+   | constant                                      # expressionConstant
+   | column_name                                   # expressionColumn
+   | expression AS literal_complex_type            # expressionCast
    ;
 
 constant
@@ -83,13 +97,13 @@ constant
    ;
 
 literal_basic_type
-   : id literal_specifier? QUESTIONMARK?
+   : id QUESTIONMARK? literal_specifier?
    ;
 
 literal_complex_type
    : literal_basic_type
    | LIST QUESTIONMARK? LEFTANGLEBRACKET literal_complex_type? RIGHTANGLEBRACKET
-   | MAP QUESTIONMARK? LEFTANGLEBRACKET literal_basic_type? COMMA? literal_complex_type? RIGHTANGLEBRACKET
+   | MAP QUESTIONMARK? LEFTANGLEBRACKET (literal_basic_type COMMA literal_complex_type)? RIGHTANGLEBRACKET
    | STRUCT QUESTIONMARK? LEFTANGLEBRACKET literal_complex_type? (COMMA literal_complex_type)* RIGHTANGLEBRACKET
    ;
 
@@ -130,6 +144,7 @@ file_detail
    : PARTITION_INDEX COLON NUMBER
    | START COLON NUMBER
    | LENGTH COLON NUMBER
+   | ORC COLON LEFTBRACE RIGHTBRACE
    | file_location
    ;
 
@@ -152,15 +167,7 @@ schema_definition
    ;
 
 schema_item
-   : id column_type SEMICOLON
-   ;
-
-column_type
-   : column_attribute* id
-   ;
-
-column_attribute
-   : NULLABLE
+   : id literal_complex_type SEMICOLON
    ;
 
 source_definition
@@ -182,8 +189,12 @@ function
    : FUNCTION name (AS id)? SEMICOLON
    ;
 
+sort_field
+   : SORT expression (BY id)? SEMICOLON
+   ;
+
 name
-   : id COLON signature
+   : id COLON signature?
    ;
 
 signature
@@ -192,7 +203,17 @@ signature
 
 // List keywords here to make them not reserved.
 id
-   : IDENTIFIER (UNDERSCORE+ IDENTIFIER)*
+   : simple_id (UNDERSCORE+ simple_id)*
+   ;
+
+simple_id
+   : IDENTIFIER
    | FILTER
    | SCHEMA
+   | NULLVAL
+   | SORT
+   | MEASURE
+   | GROUPING
+   | COUNT
+   | TYPE
    ;

@@ -161,9 +161,9 @@ std::vector<TestCase> getTestCases() {
       {
           "test3-schema",
           R"(schema schema {
-            r_regionkey UNKNOWN;
-            r_name nullable UNKNOWN;
-            r_comment UNKNOWN;
+            r_regionkey i32;
+            r_name string?;
+            r_comment string;
           })",
           AllOf(
               HasSymbols({"schema", "r_regionkey", "r_name", "r_comment"}),
@@ -292,6 +292,16 @@ std::vector<TestCase> getTestCases() {
           AllOf(HasSymbols({"myread"}), ParsesOk()),
       },
       {
+          "test7-bad-filter-relation",
+          R"(filter relation filter {
+            condition true_bool;
+          })",
+          HasErrors(
+              {"2:22 → missing 'FILTER' at 'true'",
+               "2:12 → Best effort and post join are the only two legal filter behavior choices.  You may also not provide one which will result to the default filter behavior.",
+               "2:12 → Best effort and post join are the only two legal filter behavior choices.  You may also not provide one which will result to the default filter behavior."}),
+      },
+      {
           "test10-literals-boolean",
           R"(project relation literalexamples {
             expression true;
@@ -414,8 +424,10 @@ std::vector<TestCase> getTestCases() {
             expression "two\nlines with \"escapes\""_varchar<80>;
             expression "abcde"_fixedchar<5>;
           })",
-          AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
-              R"(relations { root { input { project {
+          AllOf(
+              HasErrors({}),
+              AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
+                  R"(relations { root { input { project {
                 expressions { literal { string: "simple text" } }
                 expressions { literal { string: "123" } }
                 expressions { literal {
@@ -434,7 +446,7 @@ std::vector<TestCase> getTestCases() {
                   var_char: { value: "two\nlines with \"escapes\""
                               length: 80 } } }
                 expressions { literal { fixed_char: "abcde" } }
-              } } } })"))),
+              } } } })")))),
       },
       {
           "test10-literals-strings-nulls",
@@ -554,7 +566,7 @@ std::vector<TestCase> getTestCases() {
           R"(project relation literalexamples {
             expression {"a", "b", "c"}_list<string>;
             expression {null, "a", "b"}_list<string?>;
-            expression {{"a", "b"}, {"1", "2"}}_list<list<string>>?;
+            expression {{"a", "b"}, {"1", "2"}}_list?<list<string>>;
             expression {}_list<string>;
             expression {}_list<string?>;
             expression {}_list?<string>;
@@ -578,10 +590,14 @@ std::vector<TestCase> getTestCases() {
                   values { string: "1" }
                   values { string: "2" }
                 } } } } }
-                expressions { literal { empty_list { type { string { } } } } }
                 expressions { literal { empty_list { type { string {
-                  nullability: NULLABILITY_NULLABLE } } } } }
-                expressions { literal { empty_list { type { string { } }
+                    nullability: NULLABILITY_REQUIRED } }
+                  nullability: NULLABILITY_REQUIRED } } }
+                expressions { literal { empty_list { type { string {
+                    nullability: NULLABILITY_NULLABLE } }
+                  nullability: NULLABILITY_REQUIRED } } }
+                expressions { literal { empty_list { type { string {
+                    nullability: NULLABILITY_REQUIRED } }
                   nullability: NULLABILITY_NULLABLE } } }
               } } } })")),
       },
@@ -704,6 +720,7 @@ std::vector<TestCase> getTestCases() {
             expression "unknown\escape"_string;
             expression {123_i8}_map<i8, bool>;
             expression {123}_map<i8, bool>;
+            expression "abcde"_fixedchar;
           })",
           HasErrors({
               "9:34 → mismatched input 'r5' expecting NUMBER",
@@ -774,6 +791,13 @@ std::vector<TestCase> getTestCases() {
                   arguments { value { literal { string: "foo" } } }
                 } }
               } } } })"))),
+      },
+      {
+          "test13-bad-functions",
+          R"(extension_space blah.yaml {
+            function sum: as sum;
+          })",
+          HasErrors({"Functions should have an associated type."}),
       },
       {
           "test14-three-node-pipeline-with-fields",

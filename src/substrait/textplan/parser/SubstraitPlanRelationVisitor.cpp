@@ -9,6 +9,7 @@
 #include <string>
 
 #include "SubstraitPlanParser/SubstraitPlanParser.h"
+#include "SubstraitPlanTypeVisitor.h"
 #include "absl/strings/numbers.h"
 #include "date/tz.h"
 #include "substrait/expression/DecimalLiteral.h"
@@ -24,6 +25,10 @@
 namespace io::substrait::textplan {
 
 namespace {
+
+std::string kAggregationPhasePrefix = "aggregationphase";
+std::string kAggregationInvocationPrefix = "aggregationinvocation";
+std::string kSortDirectionPrefix = "sortdirection";
 
 enum RelationFilterBehavior {
   kDefault = 0,
@@ -346,6 +351,10 @@ std::any SubstraitPlanRelationVisitor::visitRelationFilter(
               "specified.");
           break;
         }
+        if (result.type() != typeid(::substrait::proto::Expression)) {
+          // MEGAHACK - expression not of the right type needs to be returned
+          return defaultResult();
+        }
         *parentRelationData->relation.mutable_filter()->mutable_condition() =
             ANY_CAST(::substrait::proto::Expression, result);
       } else {
@@ -387,7 +396,7 @@ std::any SubstraitPlanRelationVisitor::visitRelationUsesSchema(
         schema->add_names(sym.name);
         auto typeText = ANY_CAST(std::string, sym.blob);
         // TODO -- Use the location of the schema item for errors.
-        auto typeProto = textToTypeProto(ctx->getStart(), typeText);
+        auto typeProto = textToTypeProto(ctx, typeText);
         if (typeProto.kind_case() != ::substrait::proto::Type::KIND_NOT_SET) {
           *schema->mutable_struct_()->add_types() = typeProto;
         }
@@ -434,26 +443,220 @@ std::any SubstraitPlanRelationVisitor::visitRelationExpression(
   return defaultResult();
 }
 
-std::any SubstraitPlanRelationVisitor::visitExpression(
-    SubstraitPlanParser::ExpressionContext* ctx) {
-  if (auto* funcUseCtx =
-          dynamic_cast<SubstraitPlanParser::ExpressionFunctionUseContext*>(
-              ctx)) {
-    return visitExpressionFunctionUse(funcUseCtx);
-  } else if (
-      auto* constantCtx =
-          dynamic_cast<SubstraitPlanParser::ExpressionConstantContext*>(ctx)) {
-    return visitExpressionConstant(constantCtx);
-  } else if (
-      auto* columnCtx =
-          dynamic_cast<SubstraitPlanParser::ExpressionColumnContext*>(ctx)) {
-    return visitExpressionColumn(columnCtx);
-  } else if (
-      auto* castCtx =
-          dynamic_cast<SubstraitPlanParser::ExpressionCastContext*>(ctx)) {
-    return visitExpressionCast(castCtx);
+std::any SubstraitPlanRelationVisitor::visitRelationGrouping(
+    SubstraitPlanParser::RelationGroupingContext* ctx) {
+  auto parentSymbol = symbolTable_->lookupSymbolByLocation(
+      Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)));
+  auto parentRelationData =
+      ANY_CAST(std::shared_ptr<RelationData>, parentSymbol.blob);
+  auto result = SubstraitPlanRelationVisitor::visitChildren(ctx);
+  auto parentRelationType = ANY_CAST(RelationType, parentSymbol.subtype);
+  switch (parentRelationType) {
+    case RelationType::kAggregate: {
+      if (parentRelationData->relation.aggregate().groupings_size() == 0) {
+        parentRelationData->relation.mutable_aggregate()->add_groupings();
+      }
+      // Always add new expressions to the first groupings group.
+      auto newExpr = parentRelationData->relation.mutable_aggregate()
+                         ->mutable_groupings(0)
+                         ->add_grouping_expressions();
+      *newExpr = ANY_CAST(::substrait::proto::Expression, result);
+      if (newExpr->has_selection()) {
+        newExpr->mutable_selection()->mutable_root_reference();
+      }
+      break;
+    }
+    default:
+      errorListener_->addError(
+          ctx->getStart(),
+          "Groupings are not permitted for this kind of relation.");
+      break;
   }
   return defaultResult();
+}
+
+std::any SubstraitPlanRelationVisitor::visitRelationMeasure(
+    SubstraitPlanParser::RelationMeasureContext* ctx) {
+  // Construct the measure.
+  ::substrait::proto::AggregateRel_Measure measure;
+  auto invocation = ::substrait::proto::
+      AggregateFunction_AggregationInvocation_AGGREGATION_INVOCATION_UNSPECIFIED;
+  std::vector<::substrait::proto::SortField> sorts;
+  for (auto detail : ctx->measure_detail()) {
+    auto detailItem = ANY_CAST(
+        ::substrait::proto::AggregateRel_Measure, visitMeasure_detail(detail));
+    if (detail->getStart()->getType() == SubstraitPlanParser::MEASURE) {
+      if (measure.has_measure()) {
+        errorListener_->addError(
+            detail->getStart(),
+            "A measure expression has already been provided for this measure.");
+        break;
+      }
+      *measure.mutable_measure() = detailItem.measure();
+    } else if (detail->getStart()->getType() == SubstraitPlanParser::FILTER) {
+      if (measure.has_filter()) {
+        errorListener_->addError(
+            detail->getStart(),
+            "A filter has already been provided for this measure.");
+        break;
+      }
+      *measure.mutable_filter() = detailItem.filter();
+    } else if (
+        detail->getStart()->getType() == SubstraitPlanParser::INVOCATION) {
+      invocation = detailItem.measure().invocation();
+    } else if (detail->getStart()->getType() == SubstraitPlanParser::SORT) {
+      auto newSorts = detailItem.measure().sorts();
+      sorts.insert(sorts.end(), newSorts.begin(), newSorts.end());
+    }
+  }
+  if (invocation !=
+      ::substrait::proto::
+          AggregateFunction_AggregationInvocation_AGGREGATION_INVOCATION_UNSPECIFIED) {
+    measure.mutable_measure()->set_invocation(invocation);
+  }
+  for (const auto& sort : sorts) {
+    *measure.mutable_measure()->add_sorts() = sort;
+  }
+
+  // Add it to our relation.
+  auto parentSymbol = symbolTable_->lookupSymbolByLocation(
+      Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)));
+  auto parentRelationData =
+      ANY_CAST(std::shared_ptr<RelationData>, parentSymbol.blob);
+  auto parentRelationType = ANY_CAST(RelationType, parentSymbol.subtype);
+  switch (parentRelationType) {
+    case RelationType::kAggregate:
+      *parentRelationData->relation.mutable_aggregate()->add_measures() =
+          measure;
+      break;
+    default:
+      errorListener_->addError(
+          ctx->getStart(),
+          "Measures are not permitted for this kind of relation.");
+      break;
+  }
+  return defaultResult();
+}
+
+int32_t SubstraitPlanRelationVisitor::visitAggregationInvocation(
+    SubstraitPlanParser::IdContext* ctx) {
+  std::string id = ctx->getText();
+  id.erase(
+      std::remove_if(
+          id.begin(),
+          id.end(),
+          [](auto const& c) -> bool { return !std::isalpha(c); }),
+      id.end());
+  std::transform(id.begin(), id.end(), id.begin(), [](unsigned char c) {
+    return std::tolower(c);
+  });
+  if (startsWith(id, kAggregationInvocationPrefix)) {
+    id = id.substr(kAggregationInvocationPrefix.length());
+  }
+  // TODO -- Replace this with a handcrafted function or a trie.
+  if (id == "unspecified") {
+    return ::substrait::proto::AggregateFunction::
+        AGGREGATION_INVOCATION_UNSPECIFIED;
+  } else if (id == "all") {
+    return ::substrait::proto::AggregateFunction::AGGREGATION_INVOCATION_ALL;
+  } else if (id == "distinct") {
+    return ::substrait::proto::AggregateFunction::
+        AGGREGATION_INVOCATION_DISTINCT;
+  }
+  this->errorListener_->addError(
+      ctx->getStart(),
+      "Unrecognized aggregation invocation: " + ctx->getText());
+  return ::substrait::proto::AggregateFunction::
+      AGGREGATION_INVOCATION_UNSPECIFIED;
+}
+
+int32_t SubstraitPlanRelationVisitor::visitAggregationPhase(
+    SubstraitPlanParser::IdContext* ctx) {
+  std::string id = ctx->getText();
+  id.erase(
+      std::remove_if(
+          id.begin(),
+          id.end(),
+          [](auto const& c) -> bool { return !std::isalpha(c); }),
+      id.end());
+  std::transform(id.begin(), id.end(), id.begin(), [](unsigned char c) {
+    return std::tolower(c);
+  });
+  if (startsWith(id, kAggregationPhasePrefix)) {
+    id = id.substr(kAggregationPhasePrefix.length());
+  }
+  // TODO -- Replace this with a handcrafted function or a trie.
+  if (id == "unspecified") {
+    return ::substrait::proto::AGGREGATION_PHASE_UNSPECIFIED;
+  } else if (id == "initialtointermediate") {
+    return ::substrait::proto::AGGREGATION_PHASE_INITIAL_TO_INTERMEDIATE;
+  } else if (id == "intermediatetointermediate") {
+    return ::substrait::proto::AGGREGATION_PHASE_INTERMEDIATE_TO_INTERMEDIATE;
+  } else if (id == "initialtoresult") {
+    return ::substrait::proto::AGGREGATION_PHASE_INITIAL_TO_RESULT;
+  } else if (id == "intermediatetoresult") {
+    return ::substrait::proto::AGGREGATION_PHASE_INTERMEDIATE_TO_RESULT;
+  }
+  this->errorListener_->addError(
+      ctx->getStart(), "Unrecognized aggregation phase: " + ctx->getText());
+  return ::substrait::proto::AGGREGATION_PHASE_UNSPECIFIED;
+}
+
+std::any SubstraitPlanRelationVisitor::visitMeasure_detail(
+    SubstraitPlanParser::Measure_detailContext* ctx) {
+  ::substrait::proto::AggregateRel_Measure measure;
+  switch (ctx->getStart()->getType()) {
+    case SubstraitPlanParser::MEASURE: {
+      auto function = measure.mutable_measure();
+      auto result = visitExpression(ctx->expression());
+      auto expr = ANY_CAST(::substrait::proto::Expression, result);
+      if (expr.has_scalar_function()) {
+        const auto& scalarFunc = expr.scalar_function();
+        function->set_function_reference(scalarFunc.function_reference());
+        for (const auto& arg : scalarFunc.arguments()) {
+          *function->add_arguments() = arg;
+        }
+        for (const auto& option : scalarFunc.options()) {
+          *function->add_options() = option;
+        }
+        if (scalarFunc.has_output_type()) {
+          *function->mutable_output_type() = scalarFunc.output_type();
+        }
+        if (ctx->literal_complex_type() != nullptr) {
+          // The version here overrides any that might be in the function.
+          *function->mutable_output_type() = ANY_CAST(
+              ::substrait::proto::Type,
+              visitLiteral_complex_type(ctx->literal_complex_type()));
+        }
+        if (ctx->id() != nullptr) {
+          measure.mutable_measure()->set_phase(
+              static_cast<::substrait::proto::AggregationPhase>(
+                  visitAggregationPhase(ctx->id())));
+        }
+      } else {
+        // MEGAHACK -- Raise an error as this is not a function use.
+      }
+
+      return measure;
+    }
+    case SubstraitPlanParser::FILTER:
+      *measure.mutable_filter() = ANY_CAST(
+          ::substrait::proto::Expression, visitExpression(ctx->expression()));
+      return measure;
+    case SubstraitPlanParser::INVOCATION:
+      measure.mutable_measure()->set_invocation(
+          static_cast<
+              ::substrait::proto::AggregateFunction_AggregationInvocation>(
+              visitAggregationInvocation(ctx->id())));
+      return measure;
+    case SubstraitPlanParser::SORT:
+      *measure.mutable_measure()->add_sorts() = ANY_CAST(
+          ::substrait::proto::SortField, visitSort_field(ctx->sort_field()));
+      return measure;
+    default:
+      // Alert that this kind of measure detail is not in the grammar.
+      return measure;
+  }
 }
 
 std::any SubstraitPlanRelationVisitor::visitRelationSourceReference(
@@ -463,27 +666,56 @@ std::any SubstraitPlanRelationVisitor::visitRelationSourceReference(
   auto parentRelationData =
       ANY_CAST(std::shared_ptr<RelationData>, parentSymbol.blob);
   auto parentRelationType = ANY_CAST(RelationType, parentSymbol.subtype);
+  switch (parentRelationType) {
+    case RelationType::kRead:
+      *parentRelationData->relation.mutable_read()->mutable_base_schema() =
+          constructSchema(parentSymbol);
+      break;
+    default:
+      errorListener_->addError(
+          ctx->getStart(),
+          "Only read relations support base_schema properties.");
+      break;
+  }
+  return defaultResult();
+}
 
-  if (parentRelationType == RelationType::kRead) {
-    auto sourceName = ctx->source_reference()->id()->getText();
-    auto* symbol = symbolTable_->lookupSymbolByName(sourceName);
-    if (symbol != nullptr) {
-      auto* source =
-          parentRelationData->relation.mutable_read()->mutable_named_table();
-      for (const auto& sym : *symbolTable_) {
-        if (sym.type != SymbolType::kSourceDetail) {
-          continue;
-        }
-        if (sym.location != symbol->location) {
-          continue;
-        }
-        source->add_names(sym.name);
-      }
-    }
-  } else {
-    errorListener_->addError(
-        ctx->getStart(),
-        "Source references are not defined for this kind of relation.");
+std::any SubstraitPlanRelationVisitor::visitRelationSort(
+    SubstraitPlanParser::RelationSortContext* ctx) {
+  auto parentSymbol = symbolTable_->lookupSymbolByLocation(
+      Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)));
+  auto parentRelationData =
+      ANY_CAST(std::shared_ptr<RelationData>, parentSymbol.blob);
+  auto parentRelationType = ANY_CAST(RelationType, parentSymbol.subtype);
+  switch (parentRelationType) {
+    case RelationType::kSort:
+      *parentRelationData->relation.mutable_sort()->add_sorts() = ANY_CAST(
+          ::substrait::proto::SortField, visitSort_field(ctx->sort_field()));
+      break;
+    default:
+      errorListener_->addError(
+          ctx->getStart(),
+          "Sorts are not permitted for this kind of relation.");
+      break;
+  }
+  return defaultResult();
+}
+
+std::any SubstraitPlanRelationVisitor::visitExpression(
+    SubstraitPlanParser::ExpressionContext* ctx) {
+  if (dynamic_cast<SubstraitPlanParser::ExpressionFunctionUseContext*>(ctx)) {
+    return visitExpressionFunctionUse(
+        dynamic_cast<SubstraitPlanParser::ExpressionFunctionUseContext*>(ctx));
+  } else if (dynamic_cast<SubstraitPlanParser::ExpressionConstantContext*>(
+                 ctx)) {
+    return visitExpressionConstant(
+        dynamic_cast<SubstraitPlanParser::ExpressionConstantContext*>(ctx));
+  } else if (dynamic_cast<SubstraitPlanParser::ExpressionColumnContext*>(ctx)) {
+    return visitExpressionColumn(
+        dynamic_cast<SubstraitPlanParser::ExpressionColumnContext*>(ctx));
+  } else if (dynamic_cast<SubstraitPlanParser::ExpressionCastContext*>(ctx)) {
+    return visitExpressionCast(
+        dynamic_cast<SubstraitPlanParser::ExpressionCastContext*>(ctx));
   }
   return defaultResult();
 }
@@ -494,7 +726,7 @@ std::any SubstraitPlanRelationVisitor::visitExpressionFunctionUse(
   std::string funcName = ctx->id()->getText();
   uint32_t funcReference = 0;
   auto symbol = symbolTable_->lookupSymbolByName(funcName);
-  if (symbol->type != SymbolType::kFunction) {
+  if (symbol == nullptr || symbol->type != SymbolType::kFunction) {
     errorListener_->addError(
         ctx->id()->getStart(),
         ctx->id()->getText() + " is not a function reference.");
@@ -505,8 +737,12 @@ std::any SubstraitPlanRelationVisitor::visitExpressionFunctionUse(
 
   expr.mutable_scalar_function()->set_function_reference(funcReference);
   for (const auto& exp : ctx->expression()) {
-    auto newExpr =
-        ANY_CAST(::substrait::proto::Expression, visitExpression(exp));
+    auto result = visitExpression(exp);
+    if (result.type() != typeid(::substrait::proto::Expression)) {
+      // MEGAHACK -- Add an error for a bad type.
+      return expr;
+    }
+    auto newExpr = ANY_CAST(::substrait::proto::Expression, result);
     *expr.mutable_scalar_function()->add_arguments()->mutable_value() = newExpr;
   }
   return expr;
@@ -591,22 +827,6 @@ std::any SubstraitPlanRelationVisitor::visitConstant(
     }
   }
   return literal;
-}
-
-std::any SubstraitPlanRelationVisitor::visitLiteral_specifier(
-    SubstraitPlanParser::Literal_specifierContext* ctx) {
-  // Provides detail for the width of the type.
-  return visitChildren(ctx);
-}
-
-std::any SubstraitPlanRelationVisitor::visitLiteral_basic_type(
-    SubstraitPlanParser::Literal_basic_typeContext* ctx) {
-  return textToTypeProto(ctx->getStart(), ctx->getText());
-}
-
-std::any SubstraitPlanRelationVisitor::visitLiteral_complex_type(
-    SubstraitPlanParser::Literal_complex_typeContext* ctx) {
-  return textToTypeProto(ctx->getStart(), ctx->getText());
 }
 
 std::any SubstraitPlanRelationVisitor::visitMap_literal(
@@ -1243,160 +1463,65 @@ SubstraitPlanRelationVisitor::visitTimestampTz(
   return literal;
 }
 
-::substrait::proto::Type SubstraitPlanRelationVisitor::textToTypeProto(
-    const antlr4::Token* token,
-    const std::string& typeText) {
-  std::shared_ptr<const ParameterizedType> decodedType;
-  try {
-    decodedType = Type::decode(typeText);
-  } catch (...) {
-    errorListener_->addError(token, "Failed to decode type.");
-    return ::substrait::proto::Type{};
+std::any SubstraitPlanRelationVisitor::visitSort_field(
+    SubstraitPlanParser::Sort_fieldContext* ctx) {
+  ::substrait::proto::SortField sort;
+  *sort.mutable_expr() = ANY_CAST(
+      ::substrait::proto::Expression, visitExpression(ctx->expression()));
+  if (ctx->id() != nullptr) {
+    sort.set_direction(static_cast<::substrait::proto::SortField_SortDirection>(
+        visitSortDirection(ctx->id())));
   }
-  return typeToProto(token, *decodedType);
+  return sort;
 }
 
-::substrait::proto::Type SubstraitPlanRelationVisitor::typeToProto(
-    const antlr4::Token* token,
-    const ParameterizedType& decodedType) {
-  ::substrait::proto::Type type;
-  auto nullValue = ::substrait::proto::Type_Nullability_NULLABILITY_UNSPECIFIED;
-  if (decodedType.nullable()) {
-    nullValue = ::substrait::proto::Type_Nullability_NULLABILITY_NULLABLE;
+int32_t SubstraitPlanRelationVisitor::visitSortDirection(
+    SubstraitPlanParser::IdContext* ctx) {
+  std::string id = ctx->getText();
+#if 1
+  // MEGAHACK -- Turn this common code into a subfunction.
+  id.erase(
+      std::remove_if(
+          id.begin(),
+          id.end(),
+          [](auto const& c) -> bool { return !std::isalpha(c); }),
+      id.end());
+  std::transform(id.begin(), id.end(), id.begin(), [](unsigned char c) {
+    return std::tolower(c);
+  });
+  if (startsWith(id, kSortDirectionPrefix)) {
+    id = id.substr(kSortDirectionPrefix.length());
   }
-  switch (decodedType.kind()) {
-    case TypeKind::kBool:
-      type.mutable_bool_()->set_nullability(nullValue);
-      break;
-    case TypeKind::kI8:
-      type.mutable_i8()->set_nullability(nullValue);
-      break;
-    case TypeKind::kI16:
-      type.mutable_i16()->set_nullability(nullValue);
-      break;
-    case TypeKind::kI32:
-      type.mutable_i32()->set_nullability(nullValue);
-      break;
-    case TypeKind::kI64:
-      type.mutable_i64()->set_nullability(nullValue);
-      break;
-    case TypeKind::kFp32:
-      type.mutable_fp32()->set_nullability(nullValue);
-      break;
-    case TypeKind::kFp64:
-      type.mutable_fp64()->set_nullability(nullValue);
-      break;
-    case TypeKind::kString:
-      type.mutable_string()->set_nullability(nullValue);
-      break;
-    case TypeKind::kBinary:
-      type.mutable_binary()->set_nullability(nullValue);
-      break;
-    case TypeKind::kTimestamp:
-      type.mutable_timestamp()->set_nullability(nullValue);
-      break;
-    case TypeKind::kDate:
-      type.mutable_date()->set_nullability(nullValue);
-      break;
-    case TypeKind::kTime:
-      type.mutable_time()->set_nullability(nullValue);
-      break;
-    case TypeKind::kIntervalYear:
-      type.mutable_interval_year()->set_nullability(nullValue);
-      break;
-    case TypeKind::kIntervalDay:
-      type.mutable_interval_day()->set_nullability(nullValue);
-      break;
-    case TypeKind::kTimestampTz:
-      type.mutable_timestamp_tz()->set_nullability(nullValue);
-      break;
-    case TypeKind::kUuid:
-      type.mutable_uuid()->set_nullability(nullValue);
-      break;
-    case TypeKind::kFixedChar: {
-      auto fixedChar =
-          reinterpret_cast<const ParameterizedFixedChar*>(&decodedType);
-      if (fixedChar == nullptr) {
-        break;
-      }
-      try {
-        int32_t length = std::stoi(fixedChar->length()->value());
-        type.mutable_fixed_char()->set_length(length);
-      } catch (...) {
-        errorListener_->addError(token, "Could not parse fixedchar length.");
-      }
-      type.mutable_fixed_char()->set_nullability(nullValue);
-      break;
-    }
-    case TypeKind::kVarchar: {
-      auto varChar =
-          reinterpret_cast<const ParameterizedFixedChar*>(&decodedType);
-      if (varChar == nullptr) {
-        break;
-      }
-      try {
-        int32_t length = std::stoi(varChar->length()->value());
-        type.mutable_varchar()->set_length(length);
-      } catch (...) {
-        errorListener_->addError(token, "Could not parse varchar length.");
-      }
-      type.mutable_varchar()->set_nullability(nullValue);
-      break;
-    }
-    case TypeKind::kFixedBinary:
-      type.mutable_fixed_binary()->set_nullability(nullValue);
-      break;
-    case TypeKind::kDecimal: {
-      auto dec = reinterpret_cast<const ParameterizedDecimal*>(&decodedType);
-      if (dec == nullptr) {
-        break;
-      }
-      try {
-        int32_t precision = std::stoi(dec->precision()->value());
-        int32_t scale = std::stoi(dec->scale()->value());
-        type.mutable_decimal()->set_precision(precision);
-        type.mutable_decimal()->set_scale(scale);
-      } catch (...) {
-        errorListener_->addError(
-            token, "Could not parse decimal precision and scale.");
-      }
-      type.mutable_decimal()->set_nullability(nullValue);
-      break;
-    }
-    case TypeKind::kStruct: {
-      auto structure =
-          reinterpret_cast<const ParameterizedStruct*>(&decodedType);
-      for (const auto& t : structure->children()) {
-        *type.mutable_struct_()->add_types() = typeToProto(token, *t);
-      }
-      type.mutable_struct_()->set_nullability(nullValue);
-      break;
-    }
-    case TypeKind::kList: {
-      auto list = reinterpret_cast<const ParameterizedList*>(&decodedType);
-      *type.mutable_list()->mutable_type() =
-          typeToProto(token, *list->elementType());
-      type.mutable_list()->set_nullability(nullValue);
-      break;
-    }
-    case TypeKind::kMap: {
-      auto map = reinterpret_cast<const ParameterizedMap*>(&decodedType);
-      if (map->keyType() == nullptr || map->valueType() == nullptr) {
-        errorListener_->addError(
-            token, "Maps require both a key and a value type.");
-        break;
-      }
-      *type.mutable_map()->mutable_key() = typeToProto(token, *map->keyType());
-      *type.mutable_map()->mutable_value() =
-          typeToProto(token, *map->valueType());
-      type.mutable_map()->set_nullability(nullValue);
-      break;
-    }
-    case TypeKind::kKindNotSet:
-      errorListener_->addError(token, "Unable to recognize requested type.");
-      break;
+#endif
+  // TODO -- Replace this with a handcrafted function or a trie.
+  if (id == "unspecified") {
+    return ::substrait::proto::SortField::SORT_DIRECTION_UNSPECIFIED;
+  } else if (id == "ascnullsfirst") {
+    return ::substrait::proto::SortField::SORT_DIRECTION_ASC_NULLS_FIRST;
+  } else if (id == "ascnullslast") {
+    return ::substrait::proto::SortField::SORT_DIRECTION_ASC_NULLS_LAST;
+  } else if (id == "descnullslast") {
+    return ::substrait::proto::SortField::SORT_DIRECTION_DESC_NULLS_FIRST;
+  } else if (id == "descnullslast") {
+    return ::substrait::proto::SortField::SORT_DIRECTION_DESC_NULLS_LAST;
+  } else if (id == "clustered") {
+    return ::substrait::proto::SortField::SORT_DIRECTION_CLUSTERED;
   }
-  return type;
+  this->errorListener_->addError(
+      ctx->getStart(), "Unrecognized sort direction: " + ctx->getText());
+  return ::substrait::proto::SortField::SORT_DIRECTION_UNSPECIFIED;
+}
+
+::substrait::proto::NamedStruct SubstraitPlanRelationVisitor::constructSchema(
+    SymbolInfo info) {
+  ::substrait::proto::NamedStruct schema;
+  for (const auto& symbol : *symbolTable_) {
+    if (symbol.type != SymbolType::kSchemaColumn) {
+      continue;
+    }
+    *schema.add_names() = symbol.name;
+  }
+  return schema;
 }
 
 } // namespace io::substrait::textplan
