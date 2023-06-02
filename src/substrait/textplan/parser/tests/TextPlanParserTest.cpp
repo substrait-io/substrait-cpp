@@ -232,7 +232,24 @@ std::vector<TestCase> getTestCases() {
                       function concat:str as concat;
                     })")),
               AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
-                  R"(relations { root { input { project {
+                  R"(extension_uris {
+                    extension_uri_anchor: 1 uri: "blah.yaml"
+                  }
+                  extensions {
+                    extension_function {
+                      extension_uri_reference: 1 name: "add:i8" }
+                  }
+                  extensions {
+                    extension_function {
+                      extension_uri_reference: 1 function_anchor: 1
+                      name: "subtract:i8" }
+                  }
+                  extensions {
+                    extension_function {
+                      extension_uri_reference: 1 function_anchor: 2
+                      name: "concat:str" }
+                  }
+                  relations { root { input { project {
                     expressions {
                       selection {
                         direct_reference {
@@ -261,15 +278,15 @@ std::vector<TestCase> getTestCases() {
                       }
                     }
                     expressions { scalar_function {
+                      function_reference: 0 arguments { value { selection {
+                        direct_reference { struct_field { } } } } }
+                        arguments { value { literal { i8: 1 } } } } }
+                    expressions { scalar_function {
                       function_reference: 1 arguments { value { selection {
                         direct_reference { struct_field { } } } } }
                         arguments { value { literal { i8: 1 } } } } }
                     expressions { scalar_function {
                       function_reference: 2 arguments { value { selection {
-                        direct_reference { struct_field { } } } } }
-                        arguments { value { literal { i8: 1 } } } } }
-                    expressions { scalar_function {
-                      function_reference: 3 arguments { value { selection {
                         direct_reference { struct_field { field: 1 } } } } }
                         arguments { value { selection { direct_reference {
                           struct_field { field: 1 } } } } } } }
