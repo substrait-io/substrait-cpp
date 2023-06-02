@@ -11,34 +11,14 @@
 
 namespace io::substrait::textplan {
 
-std::any SubstraitPlanTypeVisitor::visitLiteral_specifier(
-    SubstraitPlanParser::Literal_specifierContext* ctx) {
-  // Provides detail for the width of the type.
-  return visitChildren(ctx);
-}
-
 std::any SubstraitPlanTypeVisitor::visitLiteral_basic_type(
     SubstraitPlanParser::Literal_basic_typeContext* ctx) {
-  std::__1::shared_ptr<const ParameterizedType> decodedType;
-  try {
-    decodedType = Type::decode(ctx->getText());
-  } catch (...) {
-    errorListener_->addError(ctx->getStart(), "Failed to decode type.");
-    return ::substrait::proto::Type{};
-  }
-  return typeToProto(ctx, *decodedType);
+  return textToTypeProto(ctx, ctx->getText());
 }
 
 std::any SubstraitPlanTypeVisitor::visitLiteral_complex_type(
     SubstraitPlanParser::Literal_complex_typeContext* ctx) {
-  std::shared_ptr<const ParameterizedType> decodedType;
-  try {
-    decodedType = Type::decode(ctx->getText());
-  } catch (...) {
-    errorListener_->addError(ctx->getStart(), "Failed to decode type.");
-    return ::substrait::proto::Type{};
-  }
-  return typeToProto(ctx, *decodedType);
+  return textToTypeProto(ctx, ctx->getText());
 }
 
 ::substrait::proto::Type SubstraitPlanTypeVisitor::textToTypeProto(

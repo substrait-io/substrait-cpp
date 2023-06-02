@@ -23,8 +23,6 @@ class SubstraitPlanTypeVisitor : public SubstraitPlanParserBaseVisitor {
     errorListener_ = std::move(errorListener);
   }
 
-  std::any visitLiteral_specifier(
-      SubstraitPlanParser::Literal_specifierContext* ctx) override;
   std::any visitLiteral_basic_type(
       SubstraitPlanParser::Literal_basic_typeContext* ctx) override;
   std::any visitLiteral_complex_type(
