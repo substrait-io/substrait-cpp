@@ -394,9 +394,7 @@ std::any SubstraitPlanRelationVisitor::visitRelationUsesSchema(
           continue;
         }
         schema->add_names(sym.name);
-        auto typeText = ANY_CAST(std::string, sym.blob);
-        // TODO -- Use the location of the schema item for errors.
-        auto typeProto = textToTypeProto(ctx, typeText);
+        auto typeProto = ANY_CAST(::substrait::proto::Type, sym.blob);
         if (typeProto.kind_case() != ::substrait::proto::Type::KIND_NOT_SET) {
           *schema->mutable_struct_()->add_types() = typeProto;
         }

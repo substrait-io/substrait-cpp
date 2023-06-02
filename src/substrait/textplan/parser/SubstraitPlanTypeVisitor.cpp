@@ -181,6 +181,11 @@ std::any SubstraitPlanTypeVisitor::visitLiteral_complex_type(
     }
     case TypeKind::kMap: {
       auto map = reinterpret_cast<const ParameterizedMap*>(&decodedType);
+      if (map->keyType() == nullptr || map->valueType() == nullptr) {
+        errorListener_->addError(
+            ctx->getStart(), "Maps require both a key and a value type.");
+        break;
+      }
       *type.mutable_map()->mutable_key() = typeToProto(ctx, *map->keyType());
       *type.mutable_map()->mutable_value() =
           typeToProto(ctx, *map->valueType());
