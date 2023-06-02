@@ -632,13 +632,13 @@ std::vector<TestCase> getTestCases() {
                   nullability: NULLABILITY_NULLABLE } } } }
                 expressions { literal { null { list { type {
                   list { type { string {
-                    nullability: NULLABILITY_NULLABLE } } } }
+                    nullability: NULLABILITY_NULLABLE } } nullability: NULLABILITY_REQUIRED } }
                       nullability: NULLABILITY_NULLABLE } } } }
                 expressions { literal { null { list { type {
-                  list { type { string { } } } }
+                  list { type { string { nullability: NULLABILITY_REQUIRED } } nullability: NULLABILITY_REQUIRED } }
                   nullability: NULLABILITY_NULLABLE } } } }
                 expressions { literal { null { list { type {
-                  list { type { string { } } } }
+                  list { type { string { nullability: NULLABILITY_REQUIRED } } nullability: NULLABILITY_REQUIRED } }
                    nullability: NULLABILITY_NULLABLE } } } }
               } } } })"))),
       },
@@ -651,8 +651,8 @@ std::vector<TestCase> getTestCases() {
           AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
               R"(relations { root { input { project {
                 expressions { literal { map {
-                  key_values { key { i16: 42 nullable: true } value { string: "life" } }
-                  key_values { key { i16: 32 nullable: true } value { string: "everything" } }
+                  key_values { key { i16: 42 } value { string: "life" } }
+                  key_values { key { i16: 32 } value { string: "everything" } }
                 } } }
                 expressions { literal {
                   empty_map { key { fp32 { nullability: NULLABILITY_REQUIRED } } value { string {nullability: NULLABILITY_REQUIRED  } } nullability: NULLABILITY_REQUIRED} } }
