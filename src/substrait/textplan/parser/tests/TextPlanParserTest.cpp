@@ -714,18 +714,61 @@ std::vector<TestCase> getTestCases() {
               }} } })"))),
       },
       {
-          "test11-bad-literals",
+          "test11-bad-numeric-literals",
           R"(project relation literalexamples {
             expression 1;
             expression 1.5;
             expression 1_potato;
-            expression "data"_potato;
             expression null;
-            expression "ddb287e8"_uuid;
-            expression "nothex"_uuid;
             expression 42_decimal<r5,-4>;
             expression 42_decimal<r,-4>;
             expression 42_decimal<-5,-4>;
+          })",
+          HasErrors({
+              "6:34 → mismatched input 'r5' expecting NUMBER",
+              "6:36 → mismatched input ',' expecting 'FILTER'",
+              "7:34 → mismatched input 'r' expecting NUMBER",
+              "7:35 → mismatched input ',' expecting 'FILTER'",
+              "4:25 → Unable to recognize requested type.",
+              "6:26 → Failed to decode type.",
+              "7:26 → Failed to decode type.",
+              "2:23 → Literals should include a type.",
+              "3:23 → Literals should include a type.",
+              "4:25 → Unable to recognize requested type.",
+              "5:23 → Null literals require type.",
+              "6:26 → Failed to decode type.",
+              "6:34 → Best effort and post join are the only two legal filter behavior choices.  You may also not provide one which will result to the default filter behavior.",
+              "6:34 → Best effort and post join are the only two legal filter behavior choices.  You may also not provide one which will result to the default filter behavior.",
+              "6:34 → Filters are not permitted for this kind of relation.",
+              "7:26 → Failed to decode type.",
+              "7:34 → Best effort and post join are the only two legal filter behavior choices.  You may also not provide one which will result to the default filter behavior.",
+              "7:34 → Best effort and post join are the only two legal filter behavior choices.  You may also not provide one which will result to the default filter behavior.",
+              "7:34 → Filters are not permitted for this kind of relation.",
+              "8:23 → Could not parse literal as decimal.",
+          }),
+      },
+      {
+          "test11-bad-stringlike-literals",
+          R"(project relation literalexamples {
+            expression "data"_potato;
+            expression "ddb287e8"_uuid;
+            expression "nothex"_uuid;
+            expression "unknown\escape"_string;
+            expression "abcde"_fixedchar;
+          })",
+          HasErrors({
+              "2:30 → Unable to recognize requested type.",
+              "6:31 → Unable to recognize requested type.",
+              "2:30 → Unable to recognize requested type.",
+              "3:23 → UUIDs are 128 bits long and thus should be specified with exactly 32 hexadecimal digits.",
+              "4:23 → UUIDs should be be specified with hexadecimal characters with optional dashes only.",
+              "5:31 → Unknown slash escape sequence.",
+              "6:31 → Unable to recognize requested type.",
+          }),
+      },
+      {
+          "test11-bad-complex-literals",
+          R"(project relation literalexamples {
             expression {}_list<string>?;
             expression {}_struct<a>;
             expression {}_struct<>;
@@ -734,46 +777,31 @@ std::vector<TestCase> getTestCases() {
             expression {}_map<,string>;
             expression {}_map<,>;
             expression {}_list<>;
-            expression "unknown\escape"_string;
             expression {123_i8}_map<i8, bool>;
             expression {123}_map<i8, bool>;
-            expression "abcde"_fixedchar;
           })",
           HasErrors({
-              "9:34 → mismatched input 'r5' expecting NUMBER",
-              "9:36 → mismatched input ',' expecting 'FILTER'",
-              "10:34 → mismatched input 'r' expecting NUMBER",
-              "10:35 → mismatched input ',' expecting 'FILTER'",
-              "12:38 → extraneous input '?' expecting ';'",
-              "2:23 → Literals should include a type.",
-              "3:23 → Literals should include a type.",
-              "4:25 → Unable to recognize requested type.",
-              "5:30 → Unable to recognize requested type.",
-              "6:23 → Null literals require type.",
-              "7:23 → UUIDs are 128 bits long and thus should be specified with exactly 32 hexadecimal digits.",
-              "8:23 → UUIDs should be be specified with hexadecimal characters with optional dashes only.",
-              "9:26 → Failed to decode type.",
-              "9:34 → Best effort and post join are the only two legal filter behavior choices.  You may also not provide one which will result to the default filter behavior.",
-              "9:34 → Best effort and post join are the only two legal filter behavior choices.  You may also not provide one which will result to the default filter behavior.",
-              "9:34 → Filters are not permitted for this kind of relation.",
-              "10:26 → Failed to decode type.",
-              "10:34 → Best effort and post join are the only two legal filter behavior choices.  You may also not provide one which will result to the default filter behavior.",
-              "10:34 → Best effort and post join are the only two legal filter behavior choices.  You may also not provide one which will result to the default filter behavior.",
-              "10:34 → Filters are not permitted for this kind of relation.",
-              "11:23 → Could not parse literal as decimal.",
-              "13:26 → Unable to recognize requested type.",
-              "14:26 → Unable to recognize requested type.",
-              "15:26 → Maps require both a key and a value type.",
-              "15:23 → Unsupported type 0.",
-              "16:26 → Maps require both a key and a value type.",
-              "16:23 → Unsupported type 0.",
-              "17:26 → Unable to recognize requested type.",
-              "18:26 → Unable to recognize requested type.",
-              "18:26 → Unable to recognize requested type.",
-              "19:26 → Unable to recognize requested type.",
-              "20:31 → Unknown slash escape sequence.",
-              "21:23 → Map literals require pairs of values separated by colons.",
-              "22:23 → Map literals require pairs of values separated by colons.",
+              "2:38 → extraneous input '?' expecting ';'",
+              "3:26 → Unable to recognize requested type.",
+              "4:26 → Unable to recognize requested type.",
+              "5:26 → Maps require both a key and a value type.",
+              "6:26 → Maps require both a key and a value type.",
+              "7:26 → Unable to recognize requested type.",
+              "8:26 → Unable to recognize requested type.",
+              "8:26 → Unable to recognize requested type.",
+              "9:26 → Unable to recognize requested type.",
+              "3:26 → Unable to recognize requested type.",
+              "4:26 → Unable to recognize requested type.",
+              "5:26 → Maps require both a key and a value type.",
+              "5:23 → Unsupported type 0.",
+              "6:26 → Maps require both a key and a value type.",
+              "6:23 → Unsupported type 0.",
+              "7:26 → Unable to recognize requested type.",
+              "8:26 → Unable to recognize requested type.",
+              "8:26 → Unable to recognize requested type.",
+              "9:26 → Unable to recognize requested type.",
+              "10:23 → Map literals require pairs of values separated by colons.",
+              "11:23 → Map literals require pairs of values separated by colons.",
           }),
       },
       {

@@ -187,7 +187,10 @@ bool SubstraitPlanTypeVisitor::insideStructLiteralWithExternalType(
   if (ctx == nullptr) {
     return false;
   }
-  if (ctx->getRuleIndex() == SubstraitPlanParser::RuleConstant) {
+  if (ctx->getRuleIndex() == SubstraitPlanParser::RuleConstant &&
+      const_cast<SubstraitPlanParser::ConstantContext*>(
+          dynamic_cast<const SubstraitPlanParser::ConstantContext*>(ctx))
+              ->struct_literal() != nullptr) {
     return true;
   }
   return insideStructLiteralWithExternalType(
