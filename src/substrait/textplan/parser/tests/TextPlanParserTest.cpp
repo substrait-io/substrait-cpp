@@ -842,7 +842,7 @@ std::vector<TestCase> getTestCases() {
           R"(extension_space blah.yaml {
             function sum: as sum;
           })",
-          HasErrors({"Functions should have an associated type."}),
+          HasErrors({"2:12 → Functions should have an associated type."}),
       },
       {
           "test14-three-node-pipeline-with-fields",

@@ -96,6 +96,16 @@ std::any SubstraitPlanVisitor::visitFunction(
     referenceName = "";
   }
 
+  // We do not yet examine the type of functions but we look for presence.
+  if (ctx->name() != nullptr) {
+    auto colonPos = ctx->name()->getText().find_first_of(':');
+    if (colonPos == std::string::npos ||
+        ctx->name()->getText().substr(colonPos+1).empty()) {
+      errorListener_->addError(
+          ctx->getStart(), "Functions should have an associated type.");
+    }
+  }
+
   symbolTable_->defineSymbol(
       referenceName,
       Location(ctx),
@@ -125,7 +135,8 @@ std::any SubstraitPlanVisitor::visitSchema_definition(
       defaultResult(),
       defaultResult());
 
-  // Mark all of the schema items so we can find the ones related to this schema.
+  // Mark all of the schema items so we can find the ones related to this
+  // schema.
   for (const auto& item : ctx->schema_item()) {
     auto symbol = ANY_CAST(SymbolInfo*, visitSchema_item(item));
     if (symbol == nullptr) {
