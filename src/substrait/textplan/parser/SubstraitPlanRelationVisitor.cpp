@@ -1522,7 +1522,7 @@ int32_t SubstraitPlanRelationVisitor::visitSortDirection(
     return ::substrait::proto::SortField::SORT_DIRECTION_ASC_NULLS_FIRST;
   } else if (id == "ascnullslast") {
     return ::substrait::proto::SortField::SORT_DIRECTION_ASC_NULLS_LAST;
-  } else if (id == "descnullslast") {
+  } else if (id == "descnullsfirst") {
     return ::substrait::proto::SortField::SORT_DIRECTION_DESC_NULLS_FIRST;
   } else if (id == "descnullslast") {
     return ::substrait::proto::SortField::SORT_DIRECTION_DESC_NULLS_LAST;
