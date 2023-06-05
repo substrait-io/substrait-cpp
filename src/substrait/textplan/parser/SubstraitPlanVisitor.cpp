@@ -259,7 +259,8 @@ std::any SubstraitPlanVisitor::visitStruct_literal(
 
 std::any SubstraitPlanVisitor::visitConstant(
     SubstraitPlanParser::ConstantContext* ctx) {
-  return visitChildren(ctx);
+  // No need to examine these just yet, we will do this in the next pass.
+  return defaultResult();
 }
 
 std::any SubstraitPlanVisitor::visitColumn_name(
