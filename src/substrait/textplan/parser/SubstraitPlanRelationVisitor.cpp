@@ -351,10 +351,12 @@ std::any SubstraitPlanRelationVisitor::visitRelationFilter(
               "specified.");
           break;
         }
+#if 1
         if (result.type() != typeid(::substrait::proto::Expression)) {
           // MEGAHACK - expression not of the right type needs to be returned
           return defaultResult();
         }
+#endif
         *parentRelationData->relation.mutable_filter()->mutable_condition() =
             ANY_CAST(::substrait::proto::Expression, result);
       } else {
@@ -664,19 +666,31 @@ std::any SubstraitPlanRelationVisitor::visitRelationSourceReference(
   auto parentRelationData =
       ANY_CAST(std::shared_ptr<RelationData>, parentSymbol.blob);
   auto parentRelationType = ANY_CAST(RelationType, parentSymbol.subtype);
-  switch (parentRelationType) {
-    case RelationType::kRead:
-      *parentRelationData->relation.mutable_read()->mutable_base_schema() =
-          constructSchema(parentSymbol);
-      break;
-    default:
-      errorListener_->addError(
-          ctx->getStart(),
-          "Only read relations support base_schema properties.");
-      break;
+
+  if (parentRelationType == RelationType::kRead) {
+    auto sourceName = ctx->source_reference()->id()->getText();
+    auto* symbol = symbolTable_->lookupSymbolByName(sourceName);
+    if (symbol != nullptr) {
+      auto* source =
+          parentRelationData->relation.mutable_read()->mutable_named_table();
+      for (const auto& sym : *symbolTable_) {
+        if (sym.type != SymbolType::kSourceDetail) {
+          continue;
+        }
+        if (sym.location != symbol->location) {
+          continue;
+        }
+        source->add_names(sym.name);
+      }
+    }
+  } else {
+    errorListener_->addError(
+        ctx->getStart(),
+        "Source references are not defined for this kind of relation.");
   }
   return defaultResult();
 }
+
 
 std::any SubstraitPlanRelationVisitor::visitRelationSort(
     SubstraitPlanParser::RelationSortContext* ctx) {
@@ -701,19 +715,22 @@ std::any SubstraitPlanRelationVisitor::visitRelationSort(
 
 std::any SubstraitPlanRelationVisitor::visitExpression(
     SubstraitPlanParser::ExpressionContext* ctx) {
-  if (dynamic_cast<SubstraitPlanParser::ExpressionFunctionUseContext*>(ctx)) {
-    return visitExpressionFunctionUse(
-        dynamic_cast<SubstraitPlanParser::ExpressionFunctionUseContext*>(ctx));
-  } else if (dynamic_cast<SubstraitPlanParser::ExpressionConstantContext*>(
-                 ctx)) {
-    return visitExpressionConstant(
-        dynamic_cast<SubstraitPlanParser::ExpressionConstantContext*>(ctx));
-  } else if (dynamic_cast<SubstraitPlanParser::ExpressionColumnContext*>(ctx)) {
-    return visitExpressionColumn(
-        dynamic_cast<SubstraitPlanParser::ExpressionColumnContext*>(ctx));
-  } else if (dynamic_cast<SubstraitPlanParser::ExpressionCastContext*>(ctx)) {
-    return visitExpressionCast(
-        dynamic_cast<SubstraitPlanParser::ExpressionCastContext*>(ctx));
+  if (auto* funcUseCtx =
+          dynamic_cast<SubstraitPlanParser::ExpressionFunctionUseContext*>(
+              ctx)) {
+    return visitExpressionFunctionUse(funcUseCtx);
+  } else if (
+      auto* constantCtx =
+          dynamic_cast<SubstraitPlanParser::ExpressionConstantContext*>(ctx)) {
+    return visitExpressionConstant(constantCtx);
+  } else if (
+      auto* columnCtx =
+          dynamic_cast<SubstraitPlanParser::ExpressionColumnContext*>(ctx)) {
+    return visitExpressionColumn(columnCtx);
+  } else if (
+      auto* castCtx =
+          dynamic_cast<SubstraitPlanParser::ExpressionCastContext*>(ctx)) {
+    return visitExpressionCast(castCtx);
   }
   return defaultResult();
 }

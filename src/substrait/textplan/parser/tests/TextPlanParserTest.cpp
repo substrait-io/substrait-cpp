@@ -918,9 +918,9 @@ std::vector<TestCase> getTestCases() {
                                 names: "product_id"
                                 names: "count"
                                 struct {
-                                  types { i32 { } }
-                                  types { i32 { } }
-                                  types { i64 { } } }
+                                  types { i32 { nullability: NULLABILITY_REQUIRED } }
+                                  types { i32 { nullability: NULLABILITY_REQUIRED } }
+                                  types { i64 { nullability: NULLABILITY_REQUIRED } } }
                               }
                               named_table { names: "#1" }
                             }
@@ -931,8 +931,8 @@ std::vector<TestCase> getTestCases() {
                                 names: "product_id"
                                 names: "cost"
                                 struct {
-                                  types { i32 { } }
-                                  types { fp32 { } } }
+                                  types { i32 { nullability: NULLABILITY_REQUIRED } }
+                                  types { fp32 { nullability: NULLABILITY_REQUIRED } } }
                               }
                               named_table { names: "#2" }
                             }
@@ -963,8 +963,8 @@ std::vector<TestCase> getTestCases() {
                           names: "company"
                           names: "order_id"
                           struct {
-                            types { string { } }
-                            types { i32 { } }
+                            types { string { nullability: NULLABILITY_REQUIRED } }
+                            types { i32 { nullability: NULLABILITY_REQUIRED } }
                           }
                         }
                         named_table { names: "#3" }
