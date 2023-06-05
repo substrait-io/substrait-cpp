@@ -61,4 +61,12 @@ message(
   STATUS
     "test data will be here:  ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tests/data"
 )
+else()
+
+message(
+  STATUS
+    "Round trip testing is turned off.  Add SUBSTRAIT_CPP_ROUNDTRIP_TESTING=on to enable."
+)
+
 endif()
+unset(SUBSTRAIT_CPP_ROUNDTRIP_TESTING CACHE)
