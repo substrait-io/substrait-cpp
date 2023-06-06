@@ -801,10 +801,13 @@ std::vector<TestCase> getTestCases() {
               HasErrors({}),
               AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
                   R"(relations { root { input { project {
-                    expressions { cast { type { i32 {} }
+                    expressions { cast { type { i32 {
+                      nullability: NULLABILITY_REQUIRED } }
                       input { literal { i8: 123 } } } }
-                    expressions { cast { type { i64 {} }
-                      input { cast { type { i32 {} }
+                    expressions { cast { type { i64 {
+                      nullability: NULLABILITY_REQUIRED } }
+                      input { cast { type { i32 {
+                        nullability: NULLABILITY_REQUIRED } }
                         input { literal { i8: 123 } } } } } }
                   } } } })"))),
       },
