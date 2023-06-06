@@ -3,6 +3,7 @@
 #include "substrait/textplan/parser/SubstraitPlanRelationVisitor.h"
 
 #include <chrono>
+#include <limits>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -532,12 +533,13 @@ std::any SubstraitPlanRelationVisitor::visitExpressionColumn(
 
   ::substrait::proto::Expression expr;
   if (currentFieldNumber != relationData->fieldReferences.end()) {
+    int32_t fieldReference = static_cast<int32_t>(
+        (currentFieldNumber - relationData->fieldReferences.begin()) &
+        std::numeric_limits<int32_t>::max());
     expr.mutable_selection()
         ->mutable_direct_reference()
         ->mutable_struct_field()
-        ->set_field(static_cast<int32_t>(
-            (currentFieldNumber - relationData->fieldReferences.begin()) &
-            std::numeric_limits<int32_t>::max));
+        ->set_field(fieldReference);
   }
 
   visitChildren(ctx);
