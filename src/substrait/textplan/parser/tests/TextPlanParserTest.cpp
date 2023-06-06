@@ -797,11 +797,16 @@ std::vector<TestCase> getTestCases() {
             expression 123_i8 AS i32;
             expression 123_i8 AS i32 AS i64;
           })",
-          AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
-              R"(relations { root { input { project {
-                expressions { cast { type { i32 {} } input { literal { i8: 123 } } } }
-                expressions { cast { type { i64 {} } input { cast { type { i32 {} } input { literal { i8: 123 } } } } } }
-              } } } })"))),
+          AllOf(
+              HasErrors({}),
+              AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
+                  R"(relations { root { input { project {
+                    expressions { cast { type { i32 {} }
+                      input { literal { i8: 123 } } } }
+                    expressions { cast { type { i64 {} }
+                      input { cast { type { i32 {} }
+                        input { literal { i8: 123 } } } } } }
+                  } } } })"))),
       },
       {
           "test13-functions",
