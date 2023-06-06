@@ -537,7 +537,7 @@ std::any SubstraitPlanRelationVisitor::visitExpressionColumn(
         ->mutable_struct_field()
         ->set_field(static_cast<int32_t>(
             (currentFieldNumber - relationData->fieldReferences.begin()) &
-            0xffff));
+            std::numeric_limits<int32_t>::max));
   }
 
   visitChildren(ctx);

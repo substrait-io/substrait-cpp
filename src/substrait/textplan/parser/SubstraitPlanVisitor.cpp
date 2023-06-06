@@ -351,7 +351,7 @@ std::any SubstraitPlanVisitor::visitLocal_files_detail(
   for (const auto& f : ctx->file()) {
     symbolTable_->defineSymbol(
         f->getText(),
-        PARSER_LOCATION(ctx->parent->parent),
+        PARSER_LOCATION(ctx->parent->parent), // The source we belong to.
         SymbolType::kSourceDetail,
         defaultResult(),
         defaultResult());
@@ -389,7 +389,7 @@ std::any SubstraitPlanVisitor::visitNamed_table_detail(
     std::string str = s->getText();
     symbolTable_->defineSymbol(
         extractFromString(str),
-        PARSER_LOCATION(ctx->parent->parent),
+        PARSER_LOCATION(ctx->parent->parent), // The source we belong to.
         SymbolType::kSourceDetail,
         defaultResult(),
         defaultResult());
