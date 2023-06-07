@@ -14,7 +14,7 @@ class SubstraitPlanVisitor : public SubstraitPlanTypeVisitor {
   SubstraitPlanVisitor(
       const SymbolTable& symbolTable,
       std::shared_ptr<SubstraitParserErrorListener> errorListener)
-      : SubstraitPlanTypeVisitor(symbolTable, errorListener) {}
+      : SubstraitPlanTypeVisitor(symbolTable, std::move(errorListener)) {}
 
   [[nodiscard]] std::shared_ptr<const SymbolTable> getSymbolTable() const {
     return symbolTable_;
