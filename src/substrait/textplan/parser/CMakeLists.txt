@@ -10,8 +10,6 @@ add_library(
   SubstraitPlanPipelineVisitor.h
   SubstraitPlanRelationVisitor.cpp
   SubstraitPlanRelationVisitor.h
-  SubstraitPlanTypeVisitor.cpp
-  SubstraitPlanTypeVisitor.h
   ParseText.cpp
   ParseText.h
   SubstraitParserErrorListener.cpp)

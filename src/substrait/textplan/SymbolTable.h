@@ -146,7 +146,7 @@ class SymbolTable {
   [[nodiscard]] const SymbolInfo* lookupSymbolByName(
       const std::string& name) const;
 
-  [[nodiscard]] const SymbolInfo* lookupSymbolByLocation(
+  [[nodiscard]] const SymbolInfo& lookupSymbolByLocation(
       const Location& location) const;
 
   [[nodiscard]] const SymbolInfo& nthSymbolByType(uint32_t n, SymbolType type)

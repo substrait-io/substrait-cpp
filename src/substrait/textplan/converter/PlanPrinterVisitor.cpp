@@ -2,13 +2,10 @@
 
 #include "substrait/textplan/converter/PlanPrinterVisitor.h"
 
-#include <iostream>
 #include <iterator>
 #include <sstream>
 #include <string>
 
-#include "date/date.h"
-#include "fmt/format.h"
 #include "substrait/expression/DecimalLiteral.h"
 #include "substrait/proto/ProtoUtils.h"
 #include "substrait/proto/algebra.pb.h"
@@ -41,22 +38,6 @@ std::string stringEscape(std::string_view str) {
   return result.str();
 }
 
-std::string invocationToString(
-    ::substrait::proto::AggregateFunction_AggregationInvocation invocation) {
-  switch (invocation) {
-    case ::substrait::proto::
-        AggregateFunction_AggregationInvocation_AGGREGATION_INVOCATION_ALL:
-      return "all";
-    case ::substrait::proto::
-        AggregateFunction_AggregationInvocation_AGGREGATION_INVOCATION_DISTINCT:
-      return "distinct";
-    case ::substrait::proto::
-        AggregateFunction_AggregationInvocation_AGGREGATION_INVOCATION_UNSPECIFIED:
-    default:
-      return "unspecified";
-  }
-}
-
 } // namespace
 
 std::string PlanPrinterVisitor::printRelation(const SymbolInfo& symbol) {
@@ -85,11 +66,6 @@ std::string PlanPrinterVisitor::printRelation(const SymbolInfo& symbol) {
   text << "}\n";
 
   return text.str();
-}
-
-std::string PlanPrinterVisitor::typeToText(
-    const ::substrait::proto::Type& type) {
-  return ANY_CAST(std::string, visitType(type));
 }
 
 std::string PlanPrinterVisitor::lookupFieldReference(uint32_t field_reference) {
@@ -134,87 +110,62 @@ std::any PlanPrinterVisitor::visitType(const ::substrait::proto::Type& type) {
     case ::substrait::proto::Type::kBool:
       if (type.bool_().nullability() ==
           ::substrait::proto::Type::NULLABILITY_NULLABLE) {
-        return std::string("bool?");
+        return std::string("opt_bool");
       }
       return std::string("bool");
     case ::substrait::proto::Type::kI8:
       if (type.i8().nullability() ==
           ::substrait::proto::Type::NULLABILITY_NULLABLE) {
-        return std::string("i8?");
+        return std::string("opt_i8");
       }
       return std::string("i8");
     case ::substrait::proto::Type::kI16:
       if (type.i16().nullability() ==
           ::substrait::proto::Type::NULLABILITY_NULLABLE) {
-        return std::string("i16?");
+        return std::string("opt_i16");
       }
       return std::string("i16");
     case ::substrait::proto::Type::kI32:
       if (type.i32().nullability() ==
           ::substrait::proto::Type::NULLABILITY_NULLABLE) {
-        return std::string("i32?");
+        return std::string("opt_i32");
       }
       return std::string("i32");
     case ::substrait::proto::Type::kI64:
       if (type.i64().nullability() ==
           ::substrait::proto::Type::NULLABILITY_NULLABLE) {
-        return std::string("i64?");
+        return std::string("opt_i64");
       }
       return std::string("i64");
     case ::substrait::proto::Type::kFp32:
       if (type.fp32().nullability() ==
           ::substrait::proto::Type::NULLABILITY_NULLABLE) {
-        return std::string("fp32?");
+        return std::string("opt_fp32");
       }
       return std::string("fp32");
     case ::substrait::proto::Type::kFp64:
       if (type.fp64().nullability() ==
           ::substrait::proto::Type::NULLABILITY_NULLABLE) {
-        return std::string("fp64?");
+        return std::string("opt_fp64");
       }
       return std::string("fp64");
     case ::substrait::proto::Type::kString:
       if (type.string().nullability() ==
           ::substrait::proto::Type::NULLABILITY_NULLABLE) {
-        return std::string("string?");
+        return std::string("opt_string");
       }
       return std::string("string");
-    case ::substrait::proto::Type::kDecimal: {
-      std::stringstream result;
-      result << "decimal";
-      if (type.decimal().nullability() ==
+    case ::substrait::proto::Type::kDecimal:
+      if (type.string().nullability() ==
           ::substrait::proto::Type::NULLABILITY_NULLABLE) {
-        result << '?';
+        return std::string("opt_decimal");
       }
-      result << "<" << type.decimal().precision() << ",";
-      result << type.decimal().scale() << ">";
-      return result.str();
-    }
-    case ::substrait::proto::Type::kVarchar: {
-      std::stringstream result;
-      result << "varchar";
-      if (type.varchar().nullability() ==
-          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
-        result << "?";
-      }
-      result << "<" << type.varchar().length() << ">";
-      return result.str();
-    }
-    case ::substrait::proto::Type::kFixedChar: {
-      std::stringstream result;
-      result << "fixedchar";
-      if (type.fixed_char().nullability() ==
-          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
-        result << "?";
-      }
-      result << "<" << type.fixed_char().length() << ">";
-      return result.str();
-    }
+      return std::string("decimal");
+    case ::substrait::proto::Type::kVarchar:
+      return std::string("varchar");
+    case ::substrait::proto::Type::kFixedChar:
+      return std::string("fixedchar");
     case ::substrait::proto::Type::kDate:
-      if (type.date().nullability() ==
-          ::substrait::proto::Type::NULLABILITY_NULLABLE) {
-        return std::string("date?");
-      }
       return std::string("date");
     case ::substrait::proto::Type::KIND_NOT_SET:
       errorListener_->addError(
@@ -275,9 +226,12 @@ std::any PlanPrinterVisitor::visitLiteral(
       text << literal.fp64() << "_fp64";
       break;
     case ::substrait::proto::Expression::Literal ::kDate: {
-      auto refDate = date::sys_days{};
-      date::sys_days newDate = refDate + date::days{literal.date()};
-      text << '"' << date::year_month_day{newDate} << "\"_date";
+      // TODO -- Format this as a date instead of a delta since an epoch.
+      if (literal.date() >= 0) {
+        text << "\"epoch+" << literal.date() << " days\"_date";
+      } else {
+        text << "\"epoch" << literal.date() << " days\"_date";
+      }
       break;
     }
     case ::substrait::proto::Expression::Literal::kString:
@@ -291,17 +245,43 @@ std::any PlanPrinterVisitor::visitLiteral(
           literal.ShortDebugString());
       return std::string("UNSUPPORTED_LITERAL_TYPE");
     case ::substrait::proto::Expression_Literal::kIntervalYearToMonth: {
-      text << "{" << literal.interval_year_to_month().years() << "_years"
-           << ", " << literal.interval_year_to_month().months() << "_months"
-           << "}_interval_year"; // TODO - Change spec to better name.
+      text << "{";
+      bool hasPreviousText = false;
+      if (literal.interval_year_to_month().years() != 0) {
+        text << literal.interval_year_to_month().years() << "years";
+        hasPreviousText = true;
+      }
+      if (literal.interval_year_to_month().months() != 0) {
+        if (hasPreviousText) {
+          text << ", ";
+        }
+        text << literal.interval_year_to_month().months() << "months";
+      }
+      text << "}_interval_year"; // TODO - Change spec to better name.
       break;
     }
     case ::substrait::proto::Expression_Literal::kIntervalDayToSecond: {
-      text << "{" << literal.interval_day_to_second().days() << "_days"
-           << ", " << literal.interval_day_to_second().seconds() << "_seconds"
-           << ", " << literal.interval_day_to_second().microseconds()
-           << "_microseconds"
-           << "}_interval_day"; // TODO - Change spec to better name.
+      text << "{";
+      bool hasPreviousText = false;
+      if (literal.interval_day_to_second().days() != 0) {
+        text << literal.interval_day_to_second().days() << "days";
+        hasPreviousText = true;
+      }
+      if (literal.interval_day_to_second().seconds() != 0) {
+        if (hasPreviousText) {
+          text << ", ";
+        }
+        text << literal.interval_day_to_second().seconds() << "seconds";
+        hasPreviousText = true;
+      }
+      if (literal.interval_day_to_second().microseconds() != 0) {
+        if (hasPreviousText) {
+          text << ", ";
+        }
+        text << literal.interval_day_to_second().microseconds()
+             << "microseconds";
+      }
+      text << "}_interval_day"; // TODO - Change spec to better name.
       break;
     }
     case ::substrait::proto::Expression_Literal::kFixedChar:
@@ -612,6 +592,11 @@ std::any PlanPrinterVisitor::visitReferenceSegment(
 
 std::any PlanPrinterVisitor::visitExpression(
     const ::substrait::proto::Expression& expression) {
+  if (expression.rex_type_case() ==
+      ::substrait::proto::Expression::RexTypeCase::REX_TYPE_NOT_SET) {
+    // TODO -- Remove this check after expressions are finished.
+    return std::string("EXPR-NOT-YET-IMPLEMENTED");
+  }
   return BasePlanProtoVisitor::visitExpression(expression);
 }
 
@@ -628,10 +613,10 @@ std::any PlanPrinterVisitor::visitRelation(
   // Mark the current scope for any operations within this relation.
   auto previousScope = currentScope_;
   auto resetCurrentScope = finally([&]() { currentScope_ = previousScope; });
-  const SymbolInfo* symbol =
+  const SymbolInfo& symbol =
       symbolTable_->lookupSymbolByLocation(PROTO_LOCATION(relation));
-  if (symbol != nullptr) {
-    currentScope_ = symbol;
+  if (symbol != SymbolInfo::kUnknown) {
+    currentScope_ = &symbol;
   }
 
   auto result = BasePlanProtoVisitor::visitRelation(relation);
@@ -660,17 +645,17 @@ std::any PlanPrinterVisitor::visitReadRelation(
     case ::substrait::proto::ReadRel::READ_TYPE_NOT_SET:
       return "";
   }
-  const auto* symbol =
+  const auto& symbol =
       symbolTable_->lookupSymbolByLocation(PROTO_LOCATION(*msg));
-  if (symbol != nullptr) {
-    text << "  source " << symbol->name << ";\n";
+  if (symbol != SymbolInfo::kUnknown) {
+    text << "  source " << symbol.name << ";\n";
   }
 
   if (relation.has_base_schema()) {
-    const auto* schemaSymbol = symbolTable_->lookupSymbolByLocation(
+    const auto& schemaSymbol = symbolTable_->lookupSymbolByLocation(
         PROTO_LOCATION(relation.base_schema()));
-    if (schemaSymbol != nullptr) {
-      text << "  base_schema " << schemaSymbol->name << ";\n";
+    if (schemaSymbol != SymbolInfo::kUnknown) {
+      text << "  base_schema " << schemaSymbol.name << ";\n";
     }
   }
   if (relation.has_filter()) {
@@ -696,7 +681,7 @@ std::any PlanPrinterVisitor::visitFilterRelation(
     const ::substrait::proto::FilterRel& relation) {
   std::stringstream text;
   if (relation.has_condition()) {
-    text << "  filter "
+    text << "  condition "
          << ANY_CAST(std::string, visitExpression(relation.condition()))
          << ";\n";
   }
@@ -731,14 +716,9 @@ std::any PlanPrinterVisitor::visitAggregateRelation(
          << ANY_CAST(std::string, visitAggregateFunction(measure.measure()))
          << ";\n";
     if (measure.has_filter()) {
-      text << "    filter "
-           << ANY_CAST(std::string, visitExpression(measure.filter())) << ";\n";
-    }
-    if (measure.measure().invocation() !=
-        ::substrait::proto::
-            AggregateFunction_AggregationInvocation_AGGREGATION_INVOCATION_UNSPECIFIED) {
-      text << "    invocation "
-           << invocationToString(measure.measure().invocation()) << ";\n";
+      text << "    filter " +
+              ANY_CAST(std::string, visitExpression(measure.filter()))
+           << ";\n";
     }
     text << "  }\n";
   }

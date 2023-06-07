@@ -2,11 +2,10 @@
 
 #include "ParseText.h"
 
-#include <ANTLRErrorStrategy.h>
 #include <antlr4-runtime.h>
 #include <fstream>
+#include <iosfwd>
 #include <iostream>
-#include <memory>
 
 #include "SubstraitPlanLexer/SubstraitPlanLexer.h"
 #include "SubstraitPlanParser/SubstraitPlanParser.h"
@@ -38,28 +37,22 @@ antlr4::ANTLRInputStream loadTextString(std::string_view text) {
 }
 
 ParseResult parseStream(antlr4::ANTLRInputStream stream) {
-  io::substrait::textplan::SubstraitParserErrorListener errorListener;
-
   SubstraitPlanLexer lexer(&stream);
-  lexer.removeErrorListeners();
-  lexer.addErrorListener(&errorListener);
   antlr4::CommonTokenStream tokens(&lexer);
 
   tokens.fill();
 
   SubstraitPlanParser parser(&tokens);
   parser.removeErrorListeners();
-  parser.addErrorListener(&errorListener);
+  io::substrait::textplan::SubstraitParserErrorListener parserErrorListener;
+  parser.addErrorListener(&parserErrorListener);
   auto* tree = parser.plan();
 
-  SymbolTable visitorSymbolTable;
-  auto visitorErrorListener = std::make_shared<SubstraitParserErrorListener>();
-  auto visitor = std::make_shared<SubstraitPlanVisitor>(
-      visitorSymbolTable, visitorErrorListener);
+  auto visitor = std::make_shared<SubstraitPlanVisitor>();
   try {
     visitor->visitPlan(tree);
   } catch (...) {
-    errorListener.syntaxError(
+    parserErrorListener.syntaxError(
         &parser,
         nullptr,
         /*line=*/1,
@@ -73,7 +66,7 @@ ParseResult parseStream(antlr4::ANTLRInputStream stream) {
   try {
     pipelineVisitor->visitPlan(tree);
   } catch (...) {
-    errorListener.syntaxError(
+    parserErrorListener.syntaxError(
         &parser,
         nullptr,
         /*line=*/1,
@@ -86,16 +79,8 @@ ParseResult parseStream(antlr4::ANTLRInputStream stream) {
       *pipelineVisitor->getSymbolTable(), pipelineVisitor->getErrorListener());
   try {
     relationVisitor->visitPlan(tree);
-  } catch (std::invalid_argument ex) {
-    errorListener.syntaxError(
-        &parser,
-        nullptr,
-        /*line=*/1,
-        /*charPositionInLine=*/1,
-        ex.what(),
-        std::current_exception());
   } catch (...) {
-    errorListener.syntaxError(
+    parserErrorListener.syntaxError(
         &parser,
         nullptr,
         /*line=*/1,
@@ -107,7 +92,7 @@ ParseResult parseStream(antlr4::ANTLRInputStream stream) {
   auto finalSymbolTable = relationVisitor->getSymbolTable();
   return {
       *finalSymbolTable,
-      errorListener.getErrorMessages(),
+      parserErrorListener.getErrorMessages(),
       relationVisitor->getErrorListener()->getErrorMessages()};
 }
 
