@@ -6,6 +6,7 @@
 
 #include "SubstraitPlanParser/SubstraitPlanParser.h"
 #include "substrait/textplan/Any.h"
+#include "substrait/textplan/Finally.h"
 #include "substrait/textplan/Location.h"
 #include "substrait/textplan/StructuredSymbolData.h"
 
@@ -152,15 +153,22 @@ std::any SubstraitPlanVisitor::visitRelation(
     errorListener_->addError(
         ctx->getStart(),
         "Relation named " + relationName + " already defined.");
+  } else {
+    auto relationData = std::make_shared<RelationData>();
+    symbol = symbolTable_->defineSymbol(
+        relationName,
+        Location(ctx),
+        SymbolType::kRelation,
+        relType,
+        relationData);
   }
 
-  auto relationData = std::make_shared<RelationData>();
-  symbolTable_->defineSymbol(
-      relationName,
-      Location(ctx),
-      SymbolType::kRelation,
-      relType,
-      relationData);
+  // Mark the current scope for any operations within this relation.
+  auto previousScope = currentRelationScope_;
+  auto resetCurrentScope =
+      finally([&]() { currentRelationScope_ = previousScope; });
+  currentRelationScope_ = symbol;
+
   visitRelation_ref(ctx->relation_ref());
   for (const auto detail : ctx->relation_detail()) {
     visit(detail);
@@ -267,6 +275,19 @@ std::any SubstraitPlanVisitor::visitExpressionConstant(
 
 std::any SubstraitPlanVisitor::visitExpressionColumn(
     SubstraitPlanParser::ExpressionColumnContext* ctx) {
+  auto relationData =
+      ANY_CAST(std::shared_ptr<RelationData>, currentRelationScope_->blob);
+  std::string column_name = ctx->column_name()->getText();
+  auto symbol = symbolTable_->lookupSymbolByName(column_name);
+  if (symbol == nullptr) {
+    symbol = symbolTable_->defineSymbol(
+        column_name,
+        Location(ctx),
+        SymbolType::kField,
+        std::nullopt,
+        std::nullopt);
+    relationData->fieldReferences.push_back(symbol);
+  }
   return visitChildren(ctx);
 }
 
@@ -292,11 +313,6 @@ std::any SubstraitPlanVisitor::visitRelation_filter_behavior(
 
 std::any SubstraitPlanVisitor::visitRelationFilter(
     SubstraitPlanParser::RelationFilterContext* ctx) {
-  return visitChildren(ctx);
-}
-
-std::any SubstraitPlanVisitor::visitRelationProjection(
-    SubstraitPlanParser::RelationProjectionContext* ctx) {
   return visitChildren(ctx);
 }
 
@@ -335,10 +351,10 @@ std::any SubstraitPlanVisitor::visitLocal_files_detail(
   for (const auto& f : ctx->file()) {
     symbolTable_->defineSymbol(
         f->getText(),
-        Location(ctx),
+        PARSER_LOCATION(ctx->parent->parent), // The source we belong to.
         SymbolType::kSourceDetail,
         defaultResult(),
-        ctx->parent->parent);
+        defaultResult());
   }
   return nullptr;
 }
@@ -373,10 +389,10 @@ std::any SubstraitPlanVisitor::visitNamed_table_detail(
     std::string str = s->getText();
     symbolTable_->defineSymbol(
         extractFromString(str),
-        Location(ctx),
+        PARSER_LOCATION(ctx->parent->parent), // The source we belong to.
         SymbolType::kSourceDetail,
         defaultResult(),
-        ctx->parent->parent);
+        defaultResult());
   }
   return nullptr;
 }

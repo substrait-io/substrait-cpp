@@ -3,6 +3,7 @@
 #include "substrait/textplan/parser/SubstraitPlanRelationVisitor.h"
 
 #include <chrono>
+#include <limits>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -14,8 +15,10 @@
 #include "substrait/proto/algebra.pb.h"
 #include "substrait/proto/type.pb.h"
 #include "substrait/textplan/Any.h"
+#include "substrait/textplan/Finally.h"
 #include "substrait/textplan/Location.h"
 #include "substrait/textplan/StructuredSymbolData.h"
+#include "substrait/textplan/SymbolTable.h"
 #include "substrait/type/Type.h"
 
 namespace io::substrait::textplan {
@@ -146,6 +149,61 @@ void setNullable(::substrait::proto::Type* type) {
   }
 }
 
+void setRelationType(
+    RelationType relationType,
+    ::substrait::proto::Rel* relation) {
+  switch (relationType) {
+    case RelationType::kRead:
+      relation->mutable_read()->clear_common();
+      break;
+    case RelationType::kProject:
+      relation->mutable_project()->clear_common();
+      break;
+    case RelationType::kJoin:
+      relation->mutable_join()->clear_common();
+      break;
+    case RelationType::kCross:
+      relation->mutable_cross()->clear_common();
+      break;
+    case RelationType::kFetch:
+      relation->mutable_fetch()->clear_common();
+      break;
+    case RelationType::kAggregate:
+      relation->mutable_aggregate()->clear_common();
+      break;
+    case RelationType::kSort:
+      relation->mutable_sort()->clear_common();
+      break;
+    case RelationType::kFilter:
+      relation->mutable_filter()->clear_common();
+      break;
+    case RelationType::kSet:
+      relation->mutable_set()->clear_common();
+      break;
+    case RelationType::kExchange:
+    case RelationType::kDdl:
+    case RelationType::kWrite:
+      break;
+    case RelationType::kHashJoin:
+      relation->mutable_hash_join()->clear_common();
+      break;
+    case RelationType::kMergeJoin:
+      relation->mutable_merge_join()->clear_common();
+      break;
+    case RelationType::kExtensionLeaf:
+      relation->mutable_extension_leaf()->clear_common();
+      break;
+    case RelationType::kExtensionSingle:
+      relation->mutable_extension_single()->clear_common();
+      break;
+    case RelationType::kExtensionMulti:
+      relation->mutable_extension_multi()->clear_common();
+      break;
+    case RelationType::kUnknown:
+      break;
+  }
+}
+
 } // namespace
 
 std::any SubstraitPlanRelationVisitor::aggregateResult(
@@ -169,62 +227,21 @@ std::any SubstraitPlanRelationVisitor::visitRelation(
   auto relationData = ANY_CAST(std::shared_ptr<RelationData>, symbol.blob);
   ::substrait::proto::Rel relation;
 
-  // Validate that we have the right details for our type.
   auto relationType = ANY_CAST(RelationType, symbol.subtype);
-  switch (relationType) {
-    case RelationType::kRead:
-      relation.mutable_read()->clear_common();
-      break;
-    case RelationType::kProject:
-      relation.mutable_project()->clear_common();
-      break;
-    case RelationType::kJoin:
-      relation.mutable_join()->clear_common();
-      break;
-    case RelationType::kCross:
-      relation.mutable_cross()->clear_common();
-      break;
-    case RelationType::kFetch:
-      relation.mutable_fetch()->clear_common();
-      break;
-    case RelationType::kAggregate:
-      relation.mutable_aggregate()->clear_common();
-      break;
-    case RelationType::kSort:
-      relation.mutable_sort()->clear_common();
-      break;
-    case RelationType::kFilter:
-      relation.mutable_filter()->clear_common();
-      break;
-    case RelationType::kSet:
-      relation.mutable_set()->clear_common();
-      break;
-    case RelationType::kExchange:
-    case RelationType::kDdl:
-    case RelationType::kWrite:
-      break;
-    case RelationType::kHashJoin:
-      relation.mutable_hash_join()->clear_common();
-      break;
-    case RelationType::kMergeJoin:
-      relation.mutable_merge_join()->clear_common();
-      break;
-    case RelationType::kExtensionLeaf:
-      relation.mutable_extension_leaf()->clear_common();
-      break;
-    case RelationType::kExtensionSingle:
-      relation.mutable_extension_single()->clear_common();
-      break;
-    case RelationType::kExtensionMulti:
-      relation.mutable_extension_multi()->clear_common();
-      break;
-    case RelationType::kUnknown:
-      break;
-  }
+  setRelationType(relationType, &relation);
 
   relationData->relation = relation;
+  symbolTable_->updateLocation(symbol, PROTO_LOCATION(relationData->relation));
 
-  return visitChildren(ctx);
+  // Mark the current scope for any operations within this relation.
+  auto previousScope = currentRelationScope_;
+  auto resetCurrentScope =
+      finally([&]() { currentRelationScope_ = previousScope; });
+  currentRelationScope_ = &symbol;
+
+  visitChildren(ctx);
+
+  return defaultResult();
 }
 
 std::any SubstraitPlanRelationVisitor::visitRelation_filter_behavior(
@@ -346,6 +363,44 @@ std::any SubstraitPlanRelationVisitor::visitRelationFilter(
   return defaultResult();
 }
 
+std::any SubstraitPlanRelationVisitor::visitRelationUsesSchema(
+    SubstraitPlanParser::RelationUsesSchemaContext* ctx) {
+  auto parentSymbol = symbolTable_->lookupSymbolByLocation(
+      Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)));
+  auto parentRelationData =
+      ANY_CAST(std::shared_ptr<RelationData>, parentSymbol.blob);
+  auto parentRelationType = ANY_CAST(RelationType, parentSymbol.subtype);
+
+  if (parentRelationType == RelationType::kRead) {
+    auto schemaName = ctx->id()->getText();
+    auto* symbol = symbolTable_->lookupSymbolByName(schemaName);
+    if (symbol != nullptr) {
+      auto* schema =
+          parentRelationData->relation.mutable_read()->mutable_base_schema();
+      for (const auto& sym : *symbolTable_) {
+        if (sym.type != SymbolType::kSchemaColumn) {
+          continue;
+        }
+        if (sym.location != symbol->location) {
+          continue;
+        }
+        schema->add_names(sym.name);
+        auto typeText = ANY_CAST(std::string, sym.blob);
+        // TODO -- Use the location of the schema item for errors.
+        auto typeProto = textToTypeProto(ctx->getStart(), typeText);
+        if (typeProto.kind_case() != ::substrait::proto::Type::KIND_NOT_SET) {
+          *schema->mutable_struct_()->add_types() = typeProto;
+        }
+      }
+    }
+  } else {
+    errorListener_->addError(
+        ctx->getStart(),
+        "Schema references are not defined for this kind of relation.");
+  }
+  return defaultResult();
+}
+
 std::any SubstraitPlanRelationVisitor::visitRelationExpression(
     SubstraitPlanParser::RelationExpressionContext* ctx) {
   auto parentSymbol = symbolTable_->lookupSymbolByLocation(
@@ -401,6 +456,38 @@ std::any SubstraitPlanRelationVisitor::visitExpression(
   return defaultResult();
 }
 
+std::any SubstraitPlanRelationVisitor::visitRelationSourceReference(
+    SubstraitPlanParser::RelationSourceReferenceContext* ctx) {
+  auto parentSymbol = symbolTable_->lookupSymbolByLocation(
+      Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)));
+  auto parentRelationData =
+      ANY_CAST(std::shared_ptr<RelationData>, parentSymbol.blob);
+  auto parentRelationType = ANY_CAST(RelationType, parentSymbol.subtype);
+
+  if (parentRelationType == RelationType::kRead) {
+    auto sourceName = ctx->source_reference()->id()->getText();
+    auto* symbol = symbolTable_->lookupSymbolByName(sourceName);
+    if (symbol != nullptr) {
+      auto* source =
+          parentRelationData->relation.mutable_read()->mutable_named_table();
+      for (const auto& sym : *symbolTable_) {
+        if (sym.type != SymbolType::kSourceDetail) {
+          continue;
+        }
+        if (sym.location != symbol->location) {
+          continue;
+        }
+        source->add_names(sym.name);
+      }
+    }
+  } else {
+    errorListener_->addError(
+        ctx->getStart(),
+        "Source references are not defined for this kind of relation.");
+  }
+  return defaultResult();
+}
+
 std::any SubstraitPlanRelationVisitor::visitExpressionFunctionUse(
     SubstraitPlanParser::ExpressionFunctionUseContext* ctx) {
   ::substrait::proto::Expression expr;
@@ -435,7 +522,26 @@ std::any SubstraitPlanRelationVisitor::visitExpressionConstant(
 
 std::any SubstraitPlanRelationVisitor::visitExpressionColumn(
     SubstraitPlanParser::ExpressionColumnContext* ctx) {
+  auto relationData =
+      ANY_CAST(std::shared_ptr<RelationData>, currentRelationScope_->blob);
+
+  std::string symbolName = ctx->getText();
+  auto currentFieldNumber = std::find_if(
+      relationData->fieldReferences.begin(),
+      relationData->fieldReferences.end(),
+      [&](auto ref) { return (ref->name == symbolName); });
+
   ::substrait::proto::Expression expr;
+  if (currentFieldNumber != relationData->fieldReferences.end()) {
+    int32_t fieldReference = static_cast<int32_t>(
+        (currentFieldNumber - relationData->fieldReferences.begin()) &
+        std::numeric_limits<int32_t>::max());
+    expr.mutable_selection()
+        ->mutable_direct_reference()
+        ->mutable_struct_field()
+        ->set_field(fieldReference);
+  }
+
   visitChildren(ctx);
   return expr;
 }
@@ -495,26 +601,12 @@ std::any SubstraitPlanRelationVisitor::visitLiteral_specifier(
 
 std::any SubstraitPlanRelationVisitor::visitLiteral_basic_type(
     SubstraitPlanParser::Literal_basic_typeContext* ctx) {
-  std::shared_ptr<const ParameterizedType> decodedType;
-  try {
-    decodedType = Type::decode(ctx->getText());
-  } catch (...) {
-    errorListener_->addError(ctx->getStart(), "Failed to decode type.");
-    return ::substrait::proto::Type{};
-  }
-  return typeToProto(ctx->getStart(), *decodedType);
+  return textToTypeProto(ctx->getStart(), ctx->getText());
 }
 
 std::any SubstraitPlanRelationVisitor::visitLiteral_complex_type(
     SubstraitPlanParser::Literal_complex_typeContext* ctx) {
-  std::shared_ptr<const ParameterizedType> decodedType;
-  try {
-    decodedType = Type::decode(ctx->getText());
-  } catch (...) {
-    errorListener_->addError(ctx->getStart(), "Failed to decode type.");
-    return ::substrait::proto::Type{};
-  }
-  return typeToProto(ctx->getStart(), *decodedType);
+  return textToTypeProto(ctx->getStart(), ctx->getText());
 }
 
 std::any SubstraitPlanRelationVisitor::visitMap_literal(
@@ -1149,6 +1241,19 @@ SubstraitPlanRelationVisitor::visitTimestampTz(
   ::substrait::proto::Expression_Literal literal;
   literal.set_time(timeOfDay.count());
   return literal;
+}
+
+::substrait::proto::Type SubstraitPlanRelationVisitor::textToTypeProto(
+    const antlr4::Token* token,
+    const std::string& typeText) {
+  std::shared_ptr<const ParameterizedType> decodedType;
+  try {
+    decodedType = Type::decode(typeText);
+  } catch (...) {
+    errorListener_->addError(token, "Failed to decode type.");
+    return ::substrait::proto::Type{};
+  }
+  return typeToProto(token, *decodedType);
 }
 
 ::substrait::proto::Type SubstraitPlanRelationVisitor::typeToProto(

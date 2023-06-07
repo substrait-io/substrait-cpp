@@ -2,6 +2,7 @@
 
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
+#include <protobuf-matchers/protocol-buffer-matchers.h>
 
 #include "substrait/textplan/converter/LoadBinary.h"
 #include "substrait/textplan/converter/ParseBinary.h"
@@ -9,6 +10,9 @@
 
 namespace io::substrait::textplan {
 
+using ::protobuf_matchers::EqualsProto;
+using ::protobuf_matchers::Partially;
+using ::testing::AllOf;
 using ::testing::Eq;
 
 namespace {
@@ -158,7 +162,13 @@ std::vector<TestCase> getTestCases() {
                     items = [
                       {uri_file: "/mock_lineitem.orc" start: 0 length: 3719 orc: {}}
                     ]
-                  })"))),
+                  })")),
+              AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
+                  R"(relations { root { input { read {
+                    local_files
+                      { items { uri_file: "/mock_lineitem.orc" length: 3719 orc { } } }
+                    }
+                  } } })"))),
       },
       {
           "read named table",

@@ -13,6 +13,7 @@
 #include "substrait/textplan/tests/ParseResultMatchers.h"
 
 using ::protobuf_matchers::EqualsProto;
+using ::protobuf_matchers::IgnoringFieldPaths;
 using ::protobuf_matchers::Partially;
 using ::testing::AllOf;
 
@@ -217,19 +218,62 @@ std::vector<TestCase> getTestCases() {
               HasSymbolsWithTypes({"myproject"}, {SymbolType::kRelation}),
               WhenSerialized(EqSquashingWhitespace(
                   R"(project relation myproject {
-                      expression EXPR-NOT-YET-IMPLEMENTED;
-                      expression EXPR-NOT-YET-IMPLEMENTED;
-                      expression EXPR-NOT-YET-IMPLEMENTED;
-                      expression add(EXPR-NOT-YET-IMPLEMENTED, 1_i8);
-                      expression subtract(EXPR-NOT-YET-IMPLEMENTED, 1_i8);
-                      expression concat(EXPR-NOT-YET-IMPLEMENTED, EXPR-NOT-YET-IMPLEMENTED);
+                      expression r_regionkey;
+                      expression r_name;
+                      expression r_comment;
+                      expression add(r_regionkey, 1_i8);
+                      expression subtract(r_regionkey, 1_i8);
+                      expression concat(r_name, r_name);
                     }
 
                     extension_space blah.yaml {
                       function add:i8 as add;
                       function subtract:i8 as subtract;
                       function concat:str as concat;
-                    })"))),
+                    })")),
+              AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
+                  R"(relations { root { input { project {
+                    expressions {
+                      selection {
+                        direct_reference {
+                          struct_field {
+                            field: 0
+                          }
+                        }
+                      }
+                    }
+                    expressions {
+                      selection {
+                        direct_reference {
+                          struct_field {
+                            field: 1
+                          }
+                        }
+                      }
+                    }
+                    expressions {
+                      selection {
+                        direct_reference {
+                          struct_field {
+                            field: 2
+                          }
+                        }
+                      }
+                    }
+                    expressions { scalar_function {
+                      function_reference: 1 arguments { value { selection {
+                        direct_reference { struct_field { } } } } }
+                        arguments { value { literal { i8: 1 } } } } }
+                    expressions { scalar_function {
+                      function_reference: 2 arguments { value { selection {
+                        direct_reference { struct_field { } } } } }
+                        arguments { value { literal { i8: 1 } } } } }
+                    expressions { scalar_function {
+                      function_reference: 3 arguments { value { selection {
+                        direct_reference { struct_field { field: 1 } } } } }
+                        arguments { value { selection { direct_reference {
+                          struct_field { field: 1 } } } } } } }
+                  } } } })"))),
       },
       {
           "test6-read-relation",
@@ -703,8 +747,6 @@ std::vector<TestCase> getTestCases() {
           R"(project relation literalexamples {
             expression 123_i8 AS i32;
             expression 123_i8 AS i32 AS i64;
-            // TODO -- Add casts of non-constant types when supported.
-            // expression r_address AS fixedchar<23>;
           })",
           AllOf(
               HasErrors({}),
@@ -773,6 +815,7 @@ std::vector<TestCase> getTestCases() {
             type UNSPECIFIED;
             expression order_id;
           }
+
           schema schema {
             order_id i32;
             product_id i32;
@@ -806,8 +849,12 @@ std::vector<TestCase> getTestCases() {
               "#3",
             ]
           })",
-          AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
-              R"(relations: {
+          AsBinaryPlan(IgnoringFieldPaths(
+              {"relations[0].root.input.join.left.join.expression.selection.direct_reference.struct_field.field",
+               "relations[0].root.input.join.left.join.post_join_filter.selection.direct_reference.struct_field.field",
+               "relations[0].root.input.join.expression.selection.direct_reference.struct_field.field"},
+              EqualsProto<::substrait::proto::Plan>(
+                  R"(relations: {
                 root: {
                   input: {
                     join: {
@@ -815,28 +862,76 @@ std::vector<TestCase> getTestCases() {
                         join: {
                           left: {
                             read: {
+                              base_schema {
+                                names: "order_id"
+                                names: "product_id"
+                                names: "count"
+                                struct {
+                                  types { i32 { } }
+                                  types { i32 { } }
+                                  types { i64 { } } }
+                              }
+                              named_table { names: "#1" }
                             }
                           }
                           right: {
                             read: {
+                              base_schema {
+                                names: "product_id"
+                                names: "cost"
+                                struct {
+                                  types { i32 { } }
+                                  types { fp32 { } } }
+                              }
+                              named_table { names: "#2" }
                             }
                           }
                           expression: {
+                            selection: {
+                              direct_reference: {
+                                struct_field: {
+                                  field: 1
+                                }
+                              }
+                            }
                           }
                           post_join_filter: {
+                            selection: {
+                              direct_reference: {
+                                struct_field: {
+                                  field: 2
+                                }
+                              }
+                            }
                           }
                         }
                       }
                       right: {
                         read: {
+                        base_schema {
+                          names: "company"
+                          names: "order_id"
+                          struct {
+                            types { string { } }
+                            types { i32 { } }
+                          }
                         }
+                        named_table { names: "#3" }
                       }
-                      expression: {
-                      }
+                    }
+                    expression: {
+                       selection: {
+                         direct_reference: {
+                           struct_field: {
+                             field: 6
+                           }
+                         }
+                       }
+                     }
                     }
                   }
                 }
-              })")),
+              })"))),
       },
       {
           "test15-relation-without-type",

@@ -52,7 +52,7 @@ bool std::less<::io::substrait::textplan::Location>::operator()(
     const ::io::substrait::textplan::Location& rhs) const noexcept {
   if (std::holds_alternative<antlr4::ParserRuleContext*>(lhs.loc_)) {
     if (!std::holds_alternative<antlr4::ParserRuleContext*>(rhs.loc_)) {
-      // This alternative is always less than the remaining choices.
+      // This alternative is always less than the other location types.
       return true;
     }
     return std::get<antlr4::ParserRuleContext*>(lhs.loc_) <
@@ -60,8 +60,8 @@ bool std::less<::io::substrait::textplan::Location>::operator()(
   } else if (std::holds_alternative<const google::protobuf::Message*>(
                  lhs.loc_)) {
     if (!std::holds_alternative<const google::protobuf::Message*>(rhs.loc_)) {
-      // This alternative is always less than the remaining (zero) choices.
-      return true;
+      // This alternative is always more than the other location types.
+      return false;
     }
     return std::get<const google::protobuf::Message*>(lhs.loc_) <
         std::get<const google::protobuf::Message*>(rhs.loc_);

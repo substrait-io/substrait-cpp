@@ -36,7 +36,7 @@ bool continuingPipelineContains(
 void SubstraitPlanPipelineVisitor::updateRelationSymbol(
     SubstraitPlanParser::PipelineContext* ctx,
     const std::string& relationName) {
-  const auto& symbol = symbolTable_->lookupSymbolByName(relationName);
+  const auto* symbol = symbolTable_->lookupSymbolByName(relationName);
   if (symbol == nullptr) {
     // This is a reference to a missing relation so we create a stub for it.
     auto relationData = std::make_shared<RelationData>();
@@ -78,7 +78,7 @@ std::any SubstraitPlanPipelineVisitor::visitPipeline(
   }
 
   // Refetch our symbol table entry to make sure we have the latest version.
-  auto symbol = symbolTable_->lookupSymbolByName(relationName);
+  auto* symbol = symbolTable_->lookupSymbolByName(relationName);
   auto relationData = ANY_CAST(std::shared_ptr<RelationData>, symbol->blob);
 
   // Check for accidental cross-pipeline use.
