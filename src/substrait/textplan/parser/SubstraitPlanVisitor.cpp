@@ -100,7 +100,7 @@ std::any SubstraitPlanVisitor::visitFunction(
   if (ctx->name() != nullptr) {
     auto colonPos = ctx->name()->getText().find_first_of(':');
     if (colonPos == std::string::npos ||
-        ctx->name()->getText().substr(colonPos+1).empty()) {
+        ctx->name()->getText().substr(colonPos + 1).empty()) {
       errorListener_->addError(
           ctx->getStart(), "Functions should have an associated type.");
     }
