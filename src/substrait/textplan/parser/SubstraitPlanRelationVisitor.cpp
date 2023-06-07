@@ -44,8 +44,8 @@ std::string toLower(const std::string& str) {
 }
 
 // Yields true if the string 'haystack' starts with the string 'needle'.
-bool startsWith(const std::string& haystack, const std::string& needle) {
-  return strncmp(haystack.c_str(), needle.c_str(), needle.size()) == 0;
+bool startsWith(const std::string& haystack, std::string_view needle) {
+  return strncmp(haystack.c_str(), needle.data(), needle.size()) == 0;
 }
 
 void setNullable(::substrait::proto::Type* type) {
@@ -206,6 +206,27 @@ void setRelationType(
     case RelationType::kUnknown:
       break;
   }
+}
+
+std::string normalizeProtoEnum(std::string_view text, std::string_view prefix) {
+  std::string result{text};
+  // Remove non-alphabetic characters.
+  result.erase(
+      std::remove_if(
+          result.begin(),
+          result.end(),
+          [](auto const& c) -> bool { return !std::isalpha(c); }),
+      result.end());
+  // Lowercase.
+  std::transform(
+      result.begin(), result.end(), result.begin(), [](unsigned char c) {
+        return std::tolower(c);
+      });
+  // Remove the prefix if it exists.
+  if (startsWith(result, prefix)) {
+    result = result.substr(prefix.length());
+  }
+  return result;
 }
 
 } // namespace
@@ -538,26 +559,14 @@ std::any SubstraitPlanRelationVisitor::visitRelationMeasure(
 
 int32_t SubstraitPlanRelationVisitor::visitAggregationInvocation(
     SubstraitPlanParser::IdContext* ctx) {
-  std::string id = ctx->getText();
-  id.erase(
-      std::remove_if(
-          id.begin(),
-          id.end(),
-          [](auto const& c) -> bool { return !std::isalpha(c); }),
-      id.end());
-  std::transform(id.begin(), id.end(), id.begin(), [](unsigned char c) {
-    return std::tolower(c);
-  });
-  if (startsWith(id, kAggregationInvocationPrefix)) {
-    id = id.substr(kAggregationInvocationPrefix.length());
-  }
-  // TODO -- Replace this with a handcrafted function or a trie.
-  if (id == "unspecified") {
+  std::string text =
+      normalizeProtoEnum(ctx->getText(), kAggregationInvocationPrefix);
+  if (text == "unspecified") {
     return ::substrait::proto::AggregateFunction::
         AGGREGATION_INVOCATION_UNSPECIFIED;
-  } else if (id == "all") {
+  } else if (text == "all") {
     return ::substrait::proto::AggregateFunction::AGGREGATION_INVOCATION_ALL;
-  } else if (id == "distinct") {
+  } else if (text == "distinct") {
     return ::substrait::proto::AggregateFunction::
         AGGREGATION_INVOCATION_DISTINCT;
   }
@@ -570,29 +579,17 @@ int32_t SubstraitPlanRelationVisitor::visitAggregationInvocation(
 
 int32_t SubstraitPlanRelationVisitor::visitAggregationPhase(
     SubstraitPlanParser::IdContext* ctx) {
-  std::string id = ctx->getText();
-  id.erase(
-      std::remove_if(
-          id.begin(),
-          id.end(),
-          [](auto const& c) -> bool { return !std::isalpha(c); }),
-      id.end());
-  std::transform(id.begin(), id.end(), id.begin(), [](unsigned char c) {
-    return std::tolower(c);
-  });
-  if (startsWith(id, kAggregationPhasePrefix)) {
-    id = id.substr(kAggregationPhasePrefix.length());
-  }
-  // TODO -- Replace this with a handcrafted function or a trie.
-  if (id == "unspecified") {
+  std::string text =
+      normalizeProtoEnum(ctx->getText(), kAggregationPhasePrefix);
+  if (text == "unspecified") {
     return ::substrait::proto::AGGREGATION_PHASE_UNSPECIFIED;
-  } else if (id == "initialtointermediate") {
+  } else if (text == "initialtointermediate") {
     return ::substrait::proto::AGGREGATION_PHASE_INITIAL_TO_INTERMEDIATE;
-  } else if (id == "intermediatetointermediate") {
+  } else if (text == "intermediatetointermediate") {
     return ::substrait::proto::AGGREGATION_PHASE_INTERMEDIATE_TO_INTERMEDIATE;
-  } else if (id == "initialtoresult") {
+  } else if (text == "initialtoresult") {
     return ::substrait::proto::AGGREGATION_PHASE_INITIAL_TO_RESULT;
-  } else if (id == "intermediatetoresult") {
+  } else if (text == "intermediatetoresult") {
     return ::substrait::proto::AGGREGATION_PHASE_INTERMEDIATE_TO_RESULT;
   }
   this->errorListener_->addError(
@@ -1499,34 +1496,18 @@ std::any SubstraitPlanRelationVisitor::visitSort_field(
 
 int32_t SubstraitPlanRelationVisitor::visitSortDirection(
     SubstraitPlanParser::IdContext* ctx) {
-  std::string id = ctx->getText();
-#if 1
-  // MEGAHACK -- Turn this common code into a subfunction.
-  id.erase(
-      std::remove_if(
-          id.begin(),
-          id.end(),
-          [](auto const& c) -> bool { return !std::isalpha(c); }),
-      id.end());
-  std::transform(id.begin(), id.end(), id.begin(), [](unsigned char c) {
-    return std::tolower(c);
-  });
-  if (startsWith(id, kSortDirectionPrefix)) {
-    id = id.substr(kSortDirectionPrefix.length());
-  }
-#endif
-  // TODO -- Replace this with a handcrafted function or a trie.
-  if (id == "unspecified") {
+  std::string text = normalizeProtoEnum(ctx->getText(), kSortDirectionPrefix);
+  if (text == "unspecified") {
     return ::substrait::proto::SortField::SORT_DIRECTION_UNSPECIFIED;
-  } else if (id == "ascnullsfirst") {
+  } else if (text == "ascnullsfirst") {
     return ::substrait::proto::SortField::SORT_DIRECTION_ASC_NULLS_FIRST;
-  } else if (id == "ascnullslast") {
+  } else if (text == "ascnullslast") {
     return ::substrait::proto::SortField::SORT_DIRECTION_ASC_NULLS_LAST;
-  } else if (id == "descnullsfirst") {
+  } else if (text == "descnullsfirst") {
     return ::substrait::proto::SortField::SORT_DIRECTION_DESC_NULLS_FIRST;
-  } else if (id == "descnullslast") {
+  } else if (text == "descnullslast") {
     return ::substrait::proto::SortField::SORT_DIRECTION_DESC_NULLS_LAST;
-  } else if (id == "clustered") {
+  } else if (text == "clustered") {
     return ::substrait::proto::SortField::SORT_DIRECTION_CLUSTERED;
   }
   this->errorListener_->addError(
