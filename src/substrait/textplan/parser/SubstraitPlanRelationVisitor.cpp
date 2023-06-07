@@ -350,12 +350,11 @@ std::any SubstraitPlanRelationVisitor::visitRelationFilter(
               "specified.");
           break;
         }
-#if 1
         if (result.type() != typeid(::substrait::proto::Expression)) {
-          // MEGAHACK - expression not of the right type needs to be returned
+          errorListener_->addError(
+              ctx->getStart(), "Could not parse as an expression.");
           return defaultResult();
         }
-#endif
         *parentRelationData->relation.mutable_filter()->mutable_condition() =
             ANY_CAST(::substrait::proto::Expression, result);
       } else {
@@ -633,7 +632,9 @@ std::any SubstraitPlanRelationVisitor::visitMeasure_detail(
                   visitAggregationPhase(ctx->id())));
         }
       } else {
-        // MEGAHACK -- Raise an error as this is not a function use.
+        errorListener_->addError(
+            ctx->id()->getStart(),
+            "Expected an expression utilizing a function here.");
       }
 
       return measure;
@@ -752,7 +753,8 @@ std::any SubstraitPlanRelationVisitor::visitExpressionFunctionUse(
   for (const auto& exp : ctx->expression()) {
     auto result = visitExpression(exp);
     if (result.type() != typeid(::substrait::proto::Expression)) {
-      // MEGAHACK -- Add an error for a bad type.
+      errorListener_->addError(
+          ctx->id()->getStart(), "Could not parse as an expression.");
       return expr;
     }
     auto newExpr = ANY_CAST(::substrait::proto::Expression, result);

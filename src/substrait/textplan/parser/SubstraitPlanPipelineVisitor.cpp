@@ -2,10 +2,8 @@
 
 #include "substrait/textplan/parser/SubstraitPlanPipelineVisitor.h"
 
-#include <ios>
 #include <memory>
 
-#include "SubstraitPlanLexer/SubstraitPlanLexer.h"
 #include "SubstraitPlanParser/SubstraitPlanParser.h"
 #include "substrait/textplan/Any.h"
 #include "substrait/textplan/Location.h"
