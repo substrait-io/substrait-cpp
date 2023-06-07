@@ -162,8 +162,6 @@ class SubstraitPlanRelationVisitor : public SubstraitPlanTypeVisitor {
       const antlr4::tree::TerminalNode* node,
       const std::string& str);
 
-  ::substrait::proto::NamedStruct constructSchema(SymbolInfo info);
-
   const SymbolInfo* currentRelationScope_{nullptr}; // Not owned.
 };
 

@@ -1534,16 +1534,4 @@ int32_t SubstraitPlanRelationVisitor::visitSortDirection(
   return ::substrait::proto::SortField::SORT_DIRECTION_UNSPECIFIED;
 }
 
-::substrait::proto::NamedStruct SubstraitPlanRelationVisitor::constructSchema(
-    SymbolInfo info) {
-  ::substrait::proto::NamedStruct schema;
-  for (const auto& symbol : *symbolTable_) {
-    if (symbol.type != SymbolType::kSchemaColumn) {
-      continue;
-    }
-    *schema.add_names() = symbol.name;
-  }
-  return schema;
-}
-
 } // namespace io::substrait::textplan
