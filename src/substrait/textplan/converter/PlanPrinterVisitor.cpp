@@ -628,10 +628,10 @@ std::any PlanPrinterVisitor::visitRelation(
   // Mark the current scope for any operations within this relation.
   auto previousScope = currentScope_;
   auto resetCurrentScope = finally([&]() { currentScope_ = previousScope; });
-  const SymbolInfo& symbol =
+  const SymbolInfo* symbol =
       symbolTable_->lookupSymbolByLocation(PROTO_LOCATION(relation));
-  if (symbol != SymbolInfo::kUnknown) {
-    currentScope_ = &symbol;
+  if (symbol != nullptr) {
+    currentScope_ = symbol;
   }
 
   auto result = BasePlanProtoVisitor::visitRelation(relation);
@@ -660,17 +660,17 @@ std::any PlanPrinterVisitor::visitReadRelation(
     case ::substrait::proto::ReadRel::READ_TYPE_NOT_SET:
       return "";
   }
-  const auto& symbol =
+  const auto* symbol =
       symbolTable_->lookupSymbolByLocation(PROTO_LOCATION(*msg));
-  if (symbol != SymbolInfo::kUnknown) {
-    text << "  source " << symbol.name << ";\n";
+  if (symbol != nullptr) {
+    text << "  source " << symbol->name << ";\n";
   }
 
   if (relation.has_base_schema()) {
-    const auto& schemaSymbol = symbolTable_->lookupSymbolByLocation(
+    const auto* schemaSymbol = symbolTable_->lookupSymbolByLocation(
         PROTO_LOCATION(relation.base_schema()));
-    if (schemaSymbol != SymbolInfo::kUnknown) {
-      text << "  base_schema " << schemaSymbol.name << ";\n";
+    if (schemaSymbol != nullptr) {
+      text << "  base_schema " << schemaSymbol->name << ";\n";
     }
   }
   if (relation.has_filter()) {

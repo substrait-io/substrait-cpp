@@ -20,7 +20,6 @@
 #include "substrait/textplan/Location.h"
 #include "substrait/textplan/StructuredSymbolData.h"
 #include "substrait/textplan/SymbolTable.h"
-#include "substrait/type/Type.h"
 
 namespace io::substrait::textplan {
 
@@ -224,25 +223,25 @@ std::any SubstraitPlanRelationVisitor::aggregateResult(
 std::any SubstraitPlanRelationVisitor::visitRelation(
     SubstraitPlanParser::RelationContext* ctx) {
   // Create the relation before visiting our children, so they can update it.
-  auto symbol = symbolTable_->lookupSymbolByLocation(Location(ctx));
-  if (symbol == SymbolInfo::kUnknown) {
+  auto* symbol = symbolTable_->lookupSymbolByLocation(Location(ctx));
+  if (symbol == nullptr) {
     // This error has been previously dealt with thus we can safely skip it.
     return defaultResult();
   }
-  auto relationData = ANY_CAST(std::shared_ptr<RelationData>, symbol.blob);
+  auto relationData = ANY_CAST(std::shared_ptr<RelationData>, symbol->blob);
   ::substrait::proto::Rel relation;
 
-  auto relationType = ANY_CAST(RelationType, symbol.subtype);
+  auto relationType = ANY_CAST(RelationType, symbol->subtype);
   setRelationType(relationType, &relation);
 
   relationData->relation = relation;
-  symbolTable_->updateLocation(symbol, PROTO_LOCATION(relationData->relation));
+  symbolTable_->updateLocation(*symbol, PROTO_LOCATION(relationData->relation));
 
   // Mark the current scope for any operations within this relation.
   auto previousScope = currentRelationScope_;
   auto resetCurrentScope =
       finally([&]() { currentRelationScope_ = previousScope; });
-  currentRelationScope_ = &symbol;
+  currentRelationScope_ = symbol;
 
   visitChildren(ctx);
 
@@ -281,12 +280,12 @@ std::any SubstraitPlanRelationVisitor::visitRelationFilter(
         visitRelation_filter_behavior(ctx->relation_filter_behavior()));
   }
 
-  auto parentSymbol = symbolTable_->lookupSymbolByLocation(
+  auto* parentSymbol = symbolTable_->lookupSymbolByLocation(
       Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)));
   auto parentRelationData =
-      ANY_CAST(std::shared_ptr<RelationData>, parentSymbol.blob);
+      ANY_CAST(std::shared_ptr<RelationData>, parentSymbol->blob);
   auto result = SubstraitPlanRelationVisitor::visitChildren(ctx);
-  auto parentRelationType = ANY_CAST(RelationType, parentSymbol.subtype);
+  auto parentRelationType = ANY_CAST(RelationType, parentSymbol->subtype);
   switch (parentRelationType) {
     case RelationType::kRead:
       switch (behavior) {
@@ -376,11 +375,11 @@ std::any SubstraitPlanRelationVisitor::visitRelationFilter(
 
 std::any SubstraitPlanRelationVisitor::visitRelationUsesSchema(
     SubstraitPlanParser::RelationUsesSchemaContext* ctx) {
-  auto parentSymbol = symbolTable_->lookupSymbolByLocation(
+  auto* parentSymbol = symbolTable_->lookupSymbolByLocation(
       Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)));
   auto parentRelationData =
-      ANY_CAST(std::shared_ptr<RelationData>, parentSymbol.blob);
-  auto parentRelationType = ANY_CAST(RelationType, parentSymbol.subtype);
+      ANY_CAST(std::shared_ptr<RelationData>, parentSymbol->blob);
+  auto parentRelationType = ANY_CAST(RelationType, parentSymbol->subtype);
 
   if (parentRelationType == RelationType::kRead) {
     auto schemaName = ctx->id()->getText();
@@ -412,12 +411,12 @@ std::any SubstraitPlanRelationVisitor::visitRelationUsesSchema(
 
 std::any SubstraitPlanRelationVisitor::visitRelationExpression(
     SubstraitPlanParser::RelationExpressionContext* ctx) {
-  auto parentSymbol = symbolTable_->lookupSymbolByLocation(
+  auto* parentSymbol = symbolTable_->lookupSymbolByLocation(
       Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)));
   auto parentRelationData =
-      ANY_CAST(std::shared_ptr<RelationData>, parentSymbol.blob);
+      ANY_CAST(std::shared_ptr<RelationData>, parentSymbol->blob);
   auto result = SubstraitPlanRelationVisitor::visitChildren(ctx);
-  auto parentRelationType = ANY_CAST(RelationType, parentSymbol.subtype);
+  auto parentRelationType = ANY_CAST(RelationType, parentSymbol->subtype);
   switch (parentRelationType) {
     case RelationType::kJoin:
       if (parentRelationData->relation.join().has_expression()) {
@@ -445,12 +444,12 @@ std::any SubstraitPlanRelationVisitor::visitRelationExpression(
 
 std::any SubstraitPlanRelationVisitor::visitRelationGrouping(
     SubstraitPlanParser::RelationGroupingContext* ctx) {
-  auto parentSymbol = symbolTable_->lookupSymbolByLocation(
+  auto* parentSymbol = symbolTable_->lookupSymbolByLocation(
       Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)));
   auto parentRelationData =
-      ANY_CAST(std::shared_ptr<RelationData>, parentSymbol.blob);
+      ANY_CAST(std::shared_ptr<RelationData>, parentSymbol->blob);
   auto result = SubstraitPlanRelationVisitor::visitChildren(ctx);
-  auto parentRelationType = ANY_CAST(RelationType, parentSymbol.subtype);
+  auto parentRelationType = ANY_CAST(RelationType, parentSymbol->subtype);
   switch (parentRelationType) {
     case RelationType::kAggregate: {
       if (parentRelationData->relation.aggregate().groupings_size() == 0) {
@@ -519,11 +518,11 @@ std::any SubstraitPlanRelationVisitor::visitRelationMeasure(
   }
 
   // Add it to our relation.
-  auto parentSymbol = symbolTable_->lookupSymbolByLocation(
+  auto* parentSymbol = symbolTable_->lookupSymbolByLocation(
       Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)));
   auto parentRelationData =
-      ANY_CAST(std::shared_ptr<RelationData>, parentSymbol.blob);
-  auto parentRelationType = ANY_CAST(RelationType, parentSymbol.subtype);
+      ANY_CAST(std::shared_ptr<RelationData>, parentSymbol->blob);
+  auto parentRelationType = ANY_CAST(RelationType, parentSymbol->subtype);
   switch (parentRelationType) {
     case RelationType::kAggregate:
       *parentRelationData->relation.mutable_aggregate()->add_measures() =
@@ -661,11 +660,11 @@ std::any SubstraitPlanRelationVisitor::visitMeasure_detail(
 
 std::any SubstraitPlanRelationVisitor::visitRelationSourceReference(
     SubstraitPlanParser::RelationSourceReferenceContext* ctx) {
-  auto parentSymbol = symbolTable_->lookupSymbolByLocation(
+  auto* parentSymbol = symbolTable_->lookupSymbolByLocation(
       Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)));
   auto parentRelationData =
-      ANY_CAST(std::shared_ptr<RelationData>, parentSymbol.blob);
-  auto parentRelationType = ANY_CAST(RelationType, parentSymbol.subtype);
+      ANY_CAST(std::shared_ptr<RelationData>, parentSymbol->blob);
+  auto parentRelationType = ANY_CAST(RelationType, parentSymbol->subtype);
 
   if (parentRelationType == RelationType::kRead) {
     auto sourceName = ctx->source_reference()->id()->getText();
@@ -691,14 +690,13 @@ std::any SubstraitPlanRelationVisitor::visitRelationSourceReference(
   return defaultResult();
 }
 
-
 std::any SubstraitPlanRelationVisitor::visitRelationSort(
     SubstraitPlanParser::RelationSortContext* ctx) {
-  auto parentSymbol = symbolTable_->lookupSymbolByLocation(
+  auto* parentSymbol = symbolTable_->lookupSymbolByLocation(
       Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)));
   auto parentRelationData =
-      ANY_CAST(std::shared_ptr<RelationData>, parentSymbol.blob);
-  auto parentRelationType = ANY_CAST(RelationType, parentSymbol.subtype);
+      ANY_CAST(std::shared_ptr<RelationData>, parentSymbol->blob);
+  auto parentRelationType = ANY_CAST(RelationType, parentSymbol->subtype);
   switch (parentRelationType) {
     case RelationType::kSort:
       *parentRelationData->relation.mutable_sort()->add_sorts() = ANY_CAST(

@@ -70,9 +70,9 @@ std::any SubstraitPlanVisitor::visitExtensionspace(
 
   // Update the contained functions to belong in this space.
   for (auto func : ctx->function()) {
-    auto funcSymbol = symbolTable_->lookupSymbolByLocation(Location(func));
+    auto* funcSymbol = symbolTable_->lookupSymbolByLocation(Location(func));
     auto functionData =
-        ANY_CAST(std::shared_ptr<FunctionData>, funcSymbol.blob);
+        ANY_CAST(std::shared_ptr<FunctionData>, funcSymbol->blob);
     functionData->extensionUriReference = thisSpace;
   }
 
