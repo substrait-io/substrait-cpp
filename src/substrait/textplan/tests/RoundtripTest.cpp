@@ -70,24 +70,20 @@ TEST_P(RoundTripBinaryToTextFixture, RoundTrip) {
       SymbolTablePrinter::outputToText(textResult.getSymbolTable());
 
   auto stream = loadTextString(outputText);
-  try {
-    auto result = parseStream(stream);
-    auto outputBinary =
-        SymbolTablePrinter::outputToBinaryPlan(result.getSymbolTable());
+  auto result = parseStream(stream);
+  ASSERT_NO_THROW(auto outputBinary = SymbolTablePrinter::outputToBinaryPlan(
+                      result.getSymbolTable()););
 
-    ASSERT_THAT(
-        result,
-        ::testing::AllOf(
-            ParsesOk(),
-            HasErrors({}),
-            AsBinaryPlan(IgnoringFieldPaths(
-                {"extension_uris", "extensions"}, EqualsProto(plan)))))
-        << std::endl
-        << "Intermediate result:" << std::endl
-        << addLineNumbers(outputText);
-  } catch (std::invalid_argument ex) {
-    FAIL() << ex.what();
-  }
+  ASSERT_THAT(
+      result,
+      ::testing::AllOf(
+          ParsesOk(),
+          HasErrors({}),
+          AsBinaryPlan(IgnoringFieldPaths(
+              {"extension_uris", "extensions"}, EqualsProto(plan)))))
+      << std::endl
+      << "Intermediate result:" << std::endl
+      << addLineNumbers(outputText);
 }
 
 INSTANTIATE_TEST_SUITE_P(
