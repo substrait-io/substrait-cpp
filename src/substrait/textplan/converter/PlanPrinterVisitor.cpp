@@ -3,16 +3,13 @@
 #include "substrait/textplan/converter/PlanPrinterVisitor.h"
 
 #include <iostream>
-#include <iterator>
 #include <sstream>
 #include <string>
 
 #include "date/date.h"
-#include "fmt/format.h"
 #include "substrait/expression/DecimalLiteral.h"
 #include "substrait/proto/ProtoUtils.h"
 #include "substrait/proto/algebra.pb.h"
-#include "substrait/proto/plan.pb.h"
 #include "substrait/textplan/Any.h"
 #include "substrait/textplan/Finally.h"
 #include "substrait/textplan/StructuredSymbolData.h"
