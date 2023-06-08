@@ -52,8 +52,12 @@ std::string invocationToString(
       return "distinct";
     case ::substrait::proto::
         AggregateFunction_AggregationInvocation_AGGREGATION_INVOCATION_UNSPECIFIED:
-    default:
       return "unspecified";
+    case ::substrait::proto::
+        AggregateFunction_AggregationInvocation_AggregateFunction_AggregationInvocation_INT_MIN_SENTINEL_DO_NOT_USE_:
+    case ::substrait::proto::
+        AggregateFunction_AggregationInvocation_AggregateFunction_AggregationInvocation_INT_MAX_SENTINEL_DO_NOT_USE_:
+      break;
   }
 }
 

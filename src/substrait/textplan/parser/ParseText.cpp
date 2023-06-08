@@ -87,6 +87,7 @@ ParseResult parseStream(antlr4::ANTLRInputStream stream) {
   try {
     relationVisitor->visitPlan(tree);
   } catch (std::invalid_argument ex) {
+    // Catches the any_cast exception and logs a useful error message.
     errorListener.syntaxError(
         &parser,
         nullptr,

@@ -37,6 +37,10 @@ class SubstraitPlanTypeVisitor : public SubstraitPlanParserBaseVisitor {
       const antlr4::ParserRuleContext* ctx,
       const ParameterizedType& decodedType);
 
+  // Identifies whether the given context has a parent node of a constant
+  // including a struct.  This allows {3years, 1month,
+  // 2days}_interval_year_month_day to have the optional label tags which are
+  // not real types.
   bool insideStructLiteralWithExternalType(const antlr4::RuleContext* ctx);
 
   std::shared_ptr<SymbolTable> symbolTable_;
