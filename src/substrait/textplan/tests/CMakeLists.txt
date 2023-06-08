@@ -66,4 +66,3 @@ else()
   )
 
 endif()
-unset(SUBSTRAIT_CPP_ROUNDTRIP_TESTING CACHE)
