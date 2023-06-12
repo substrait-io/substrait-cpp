@@ -5,8 +5,8 @@
 #include <ANTLRErrorStrategy.h>
 #include <antlr4-runtime.h>
 #include <fstream>
-#include <sstream>
 #include <memory>
+#include <sstream>
 
 #include "SubstraitPlanLexer/SubstraitPlanLexer.h"
 #include "SubstraitPlanParser/SubstraitPlanParser.h"

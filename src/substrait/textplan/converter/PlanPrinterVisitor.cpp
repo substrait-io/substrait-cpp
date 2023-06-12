@@ -55,6 +55,8 @@ std::string invocationToString(
         AggregateFunction_AggregationInvocation_AggregateFunction_AggregationInvocation_INT_MAX_SENTINEL_DO_NOT_USE_:
       break;
   }
+  // We shouldn't reach here but return something to make the compiler happy.
+  return "unspecified";
 }
 
 } // namespace
