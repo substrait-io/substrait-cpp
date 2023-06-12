@@ -408,7 +408,7 @@ std::vector<TestCase> getTestCases() {
                      }
 
                      filter relation filter {
-                       condition functionref#4(field#2, 0.07_fp64);
+                       filter functionref#4(field#2, 0.07_fp64);
                      })"))),
       },
       {
@@ -461,7 +461,47 @@ std::vector<TestCase> getTestCases() {
                      }
 
                      filter relation filter {
-                       condition functionref#4(field#2, 0.07_fp64);
+                       filter functionref#4(field#2, 0.07_fp64);
+                     })"))),
+      },
+      {
+          "cast expression",
+          R"(relations: {
+            root: {
+              input: {
+                filter: {
+                  condition: {
+                    cast: {
+                      type: {
+                        fixed_char: {
+                          length: 10,
+                          type_variation_reference: 0,
+                          nullability: NULLABILITY_REQUIRED
+                        }
+                      },
+                      input: {
+                        literal: {
+                        fixed_char: "HOUSEHOLD",
+                          nullable: false,
+                          type_variation_reference: 0
+                        }
+                      },
+                      failure_behavior: FAILURE_BEHAVIOR_UNSPECIFIED
+                    }
+                  }
+                }
+              }
+            }
+          })",
+          AllOf(
+              HasSymbols({"filter", "root"}),
+              WhenSerialized(EqSquashingWhitespace(
+                  R"(pipelines {
+                       filter -> root;
+                     }
+
+                     filter relation filter {
+                       filter "HOUSEHOLD"_fixedchar<9> AS fixedchar<10>;
                      })"))),
       },
       {

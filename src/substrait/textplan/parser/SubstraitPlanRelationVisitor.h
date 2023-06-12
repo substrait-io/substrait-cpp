@@ -3,28 +3,26 @@
 #pragma once
 
 #include "SubstraitPlanParser/SubstraitPlanParser.h"
-#include "SubstraitPlanParser/SubstraitPlanParserBaseVisitor.h"
 #include "substrait/textplan/SymbolTable.h"
 #include "substrait/textplan/parser/SubstraitParserErrorListener.h"
-#include "substrait/type/Type.h"
+#include "substrait/textplan/parser/SubstraitPlanTypeVisitor.h"
 
 namespace substrait::proto {
 class Expression_Literal;
 class Expression_Literal_Map_KeyValue;
+class NamedStruct;
 class Type;
 class Type_Struct;
 } // namespace substrait::proto
 
 namespace io::substrait::textplan {
 
-class SubstraitPlanRelationVisitor : public SubstraitPlanParserBaseVisitor {
+class SubstraitPlanRelationVisitor : public SubstraitPlanTypeVisitor {
  public:
   SubstraitPlanRelationVisitor(
       const SymbolTable& symbolTable,
-      std::shared_ptr<SubstraitParserErrorListener> errorListener) {
-    symbolTable_ = std::make_shared<SymbolTable>(symbolTable);
-    errorListener_ = std::move(errorListener);
-  }
+      std::shared_ptr<SubstraitParserErrorListener> errorListener)
+      : SubstraitPlanTypeVisitor(symbolTable, std::move(errorListener)) {}
 
   [[nodiscard]] std::shared_ptr<const SymbolTable> getSymbolTable() const {
     return symbolTable_;
@@ -51,8 +49,24 @@ class SubstraitPlanRelationVisitor : public SubstraitPlanParserBaseVisitor {
   std::any visitRelationExpression(
       SubstraitPlanParser::RelationExpressionContext* ctx) override;
 
+  std::any visitRelationGrouping(
+      SubstraitPlanParser::RelationGroupingContext* ctx) override;
+
+  std::any visitRelationMeasure(
+      SubstraitPlanParser::RelationMeasureContext* ctx) override;
+
+  int32_t visitAggregationInvocation(SubstraitPlanParser::IdContext* ctx);
+
+  int32_t visitAggregationPhase(SubstraitPlanParser::IdContext* ctx);
+
+  std::any visitMeasure_detail(
+      SubstraitPlanParser::Measure_detailContext* ctx) override;
+
   std::any visitRelationSourceReference(
       SubstraitPlanParser::RelationSourceReferenceContext* ctx) override;
+
+  std::any visitRelationSort(
+      SubstraitPlanParser::RelationSortContext* ctx) override;
 
   // visitExpression is a new method delegating to the methods below.
   std::any visitExpression(SubstraitPlanParser::ExpressionContext* ctx);
@@ -71,15 +85,6 @@ class SubstraitPlanRelationVisitor : public SubstraitPlanParserBaseVisitor {
 
   std::any visitConstant(SubstraitPlanParser::ConstantContext* ctx) override;
 
-  std::any visitLiteral_basic_type(
-      SubstraitPlanParser::Literal_basic_typeContext* ctx) override;
-
-  std::any visitLiteral_complex_type(
-      SubstraitPlanParser::Literal_complex_typeContext* ctx) override;
-
-  std::any visitLiteral_specifier(
-      SubstraitPlanParser::Literal_specifierContext* ctx) override;
-
   std::any visitMap_literal(
       SubstraitPlanParser::Map_literalContext* ctx) override;
 
@@ -91,6 +96,9 @@ class SubstraitPlanRelationVisitor : public SubstraitPlanParserBaseVisitor {
 
   std::any visitColumn_name(
       SubstraitPlanParser::Column_nameContext* ctx) override;
+
+  std::any visitSort_field(
+      SubstraitPlanParser::Sort_fieldContext* ctx) override;
 
   ::substrait::proto::Expression_Literal visitConstantWithType(
       SubstraitPlanParser::ConstantContext* ctx,
@@ -147,21 +155,12 @@ class SubstraitPlanRelationVisitor : public SubstraitPlanParserBaseVisitor {
   ::substrait::proto::Expression_Literal visitTime(
       SubstraitPlanParser::ConstantContext* ctx);
 
+  int32_t visitSortDirection(SubstraitPlanParser::IdContext* ctx);
+
  private:
   std::string escapeText(
       const antlr4::tree::TerminalNode* node,
       const std::string& str);
-
-  ::substrait::proto::Type textToTypeProto(
-      const antlr4::Token* token,
-      const std::string& typeText);
-
-  ::substrait::proto::Type typeToProto(
-      const antlr4::Token* token,
-      const ParameterizedType& decodedType);
-
-  std::shared_ptr<SymbolTable> symbolTable_;
-  std::shared_ptr<SubstraitParserErrorListener> errorListener_;
 
   const SymbolInfo* currentRelationScope_{nullptr}; // Not owned.
 };

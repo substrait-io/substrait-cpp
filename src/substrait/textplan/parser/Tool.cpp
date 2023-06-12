@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include <getopt.h>
-#include <iostream>
+#include <sstream>
 
 #include "substrait/textplan/SymbolTablePrinter.h"
 #include "substrait/textplan/parser/ParseText.h"

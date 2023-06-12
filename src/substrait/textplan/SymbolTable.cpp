@@ -132,13 +132,13 @@ const SymbolInfo* SymbolTable::lookupSymbolByName(
   return symbols_[itr->second].get();
 }
 
-const SymbolInfo& SymbolTable::lookupSymbolByLocation(
+const SymbolInfo* SymbolTable::lookupSymbolByLocation(
     const Location& location) const {
   auto itr = symbolsByLocation_.find(location);
   if (itr == symbolsByLocation_.end()) {
-    return SymbolInfo::kUnknown;
+    return nullptr;
   }
-  return *symbols_[itr->second];
+  return symbols_[itr->second].get();
 }
 
 const SymbolInfo& SymbolTable::nthSymbolByType(uint32_t n, SymbolType type)

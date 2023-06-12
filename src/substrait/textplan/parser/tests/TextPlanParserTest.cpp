@@ -161,9 +161,9 @@ std::vector<TestCase> getTestCases() {
       {
           "test3-schema",
           R"(schema schema {
-            r_regionkey UNKNOWN;
-            r_name nullable UNKNOWN;
-            r_comment UNKNOWN;
+            r_regionkey i32;
+            r_name string?;
+            r_comment string;
           })",
           AllOf(
               HasSymbols({"schema", "r_regionkey", "r_name", "r_comment"}),
@@ -232,7 +232,24 @@ std::vector<TestCase> getTestCases() {
                       function concat:str as concat;
                     })")),
               AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
-                  R"(relations { root { input { project {
+                  R"(extension_uris {
+                    extension_uri_anchor: 1 uri: "blah.yaml"
+                  }
+                  extensions {
+                    extension_function {
+                      extension_uri_reference: 1 name: "add:i8" }
+                  }
+                  extensions {
+                    extension_function {
+                      extension_uri_reference: 1 function_anchor: 1
+                      name: "subtract:i8" }
+                  }
+                  extensions {
+                    extension_function {
+                      extension_uri_reference: 1 function_anchor: 2
+                      name: "concat:str" }
+                  }
+                  relations { root { input { project {
                     expressions {
                       selection {
                         direct_reference {
@@ -261,15 +278,15 @@ std::vector<TestCase> getTestCases() {
                       }
                     }
                     expressions { scalar_function {
+                      function_reference: 0 arguments { value { selection {
+                        direct_reference { struct_field { } } } } }
+                        arguments { value { literal { i8: 1 } } } } }
+                    expressions { scalar_function {
                       function_reference: 1 arguments { value { selection {
                         direct_reference { struct_field { } } } } }
                         arguments { value { literal { i8: 1 } } } } }
                     expressions { scalar_function {
                       function_reference: 2 arguments { value { selection {
-                        direct_reference { struct_field { } } } } }
-                        arguments { value { literal { i8: 1 } } } } }
-                    expressions { scalar_function {
-                      function_reference: 3 arguments { value { selection {
                         direct_reference { struct_field { field: 1 } } } } }
                         arguments { value { selection { direct_reference {
                           struct_field { field: 1 } } } } } } }
@@ -290,6 +307,16 @@ std::vector<TestCase> getTestCases() {
             source mynamedtable;
           })",
           AllOf(HasSymbols({"myread"}), ParsesOk()),
+      },
+      {
+          "test7-bad-filter-relation",
+          R"(filter relation filter {
+            condition true_bool;
+          })",
+          HasErrors(
+              {"2:22 → missing 'FILTER' at 'true'",
+               "2:12 → Best effort and post join are the only two legal filter behavior choices.  You may also not provide one which will result to the default filter behavior.",
+               "2:12 → Best effort and post join are the only two legal filter behavior choices.  You may also not provide one which will result to the default filter behavior."}),
       },
       {
           "test10-literals-boolean",
@@ -414,8 +441,10 @@ std::vector<TestCase> getTestCases() {
             expression "two\nlines with \"escapes\""_varchar<80>;
             expression "abcde"_fixedchar<5>;
           })",
-          AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
-              R"(relations { root { input { project {
+          AllOf(
+              HasErrors({}),
+              AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
+                  R"(relations { root { input { project {
                 expressions { literal { string: "simple text" } }
                 expressions { literal { string: "123" } }
                 expressions { literal {
@@ -434,7 +463,7 @@ std::vector<TestCase> getTestCases() {
                   var_char: { value: "two\nlines with \"escapes\""
                               length: 80 } } }
                 expressions { literal { fixed_char: "abcde" } }
-              } } } })"))),
+              } } } })")))),
       },
       {
           "test10-literals-strings-nulls",
@@ -554,7 +583,7 @@ std::vector<TestCase> getTestCases() {
           R"(project relation literalexamples {
             expression {"a", "b", "c"}_list<string>;
             expression {null, "a", "b"}_list<string?>;
-            expression {{"a", "b"}, {"1", "2"}}_list<list<string>>?;
+            expression {{"a", "b"}, {"1", "2"}}_list?<list<string>>;
             expression {}_list<string>;
             expression {}_list<string?>;
             expression {}_list?<string>;
@@ -578,10 +607,14 @@ std::vector<TestCase> getTestCases() {
                   values { string: "1" }
                   values { string: "2" }
                 } } } } }
-                expressions { literal { empty_list { type { string { } } } } }
                 expressions { literal { empty_list { type { string {
-                  nullability: NULLABILITY_NULLABLE } } } } }
-                expressions { literal { empty_list { type { string { } }
+                    nullability: NULLABILITY_REQUIRED } }
+                  nullability: NULLABILITY_REQUIRED } } }
+                expressions { literal { empty_list { type { string {
+                    nullability: NULLABILITY_NULLABLE } }
+                  nullability: NULLABILITY_REQUIRED } } }
+                expressions { literal { empty_list { type { string {
+                    nullability: NULLABILITY_REQUIRED } }
                   nullability: NULLABILITY_NULLABLE } } }
               } } } })")),
       },
@@ -595,17 +628,17 @@ std::vector<TestCase> getTestCases() {
           })",
           AsBinaryPlan((EqualsProto<::substrait::proto::Plan>(
               R"(relations { root { input { project {
-                expressions { literal { null { list { type { string { } }
+                expressions { literal { null { list { type { string { nullability: NULLABILITY_REQUIRED } }
                   nullability: NULLABILITY_NULLABLE } } } }
                 expressions { literal { null { list { type {
                   list { type { string {
-                    nullability: NULLABILITY_NULLABLE } } } }
+                    nullability: NULLABILITY_NULLABLE } } nullability: NULLABILITY_REQUIRED } }
                       nullability: NULLABILITY_NULLABLE } } } }
                 expressions { literal { null { list { type {
-                  list { type { string { } } } }
+                  list { type { string { nullability: NULLABILITY_REQUIRED } } nullability: NULLABILITY_REQUIRED } }
                   nullability: NULLABILITY_NULLABLE } } } }
                 expressions { literal { null { list { type {
-                  list { type { string { } } } }
+                  list { type { string { nullability: NULLABILITY_REQUIRED } } nullability: NULLABILITY_REQUIRED } }
                    nullability: NULLABILITY_NULLABLE } } } }
               } } } })"))),
       },
@@ -622,7 +655,7 @@ std::vector<TestCase> getTestCases() {
                   key_values { key { i16: 32 } value { string: "everything" } }
                 } } }
                 expressions { literal {
-                  empty_map { key { fp32 {} } value { string { } } } } }
+                  empty_map { key { fp32 { nullability: NULLABILITY_REQUIRED } } value { string {nullability: NULLABILITY_REQUIRED  } } nullability: NULLABILITY_REQUIRED} } }
               } } } })")),
       },
       {
@@ -681,18 +714,56 @@ std::vector<TestCase> getTestCases() {
               }} } })"))),
       },
       {
-          "test11-bad-literals",
+          "test11-bad-numeric-literals",
           R"(project relation literalexamples {
             expression 1;
             expression 1.5;
             expression 1_potato;
-            expression "data"_potato;
             expression null;
-            expression "ddb287e8"_uuid;
-            expression "nothex"_uuid;
             expression 42_decimal<r5,-4>;
             expression 42_decimal<r,-4>;
             expression 42_decimal<-5,-4>;
+          })",
+          HasErrors({
+              "6:34 → mismatched input 'r5' expecting NUMBER",
+              "6:36 → mismatched input ',' expecting 'FILTER'",
+              "7:34 → mismatched input 'r' expecting NUMBER",
+              "7:35 → mismatched input ',' expecting 'FILTER'",
+              "2:23 → Literals should include a type.",
+              "3:23 → Literals should include a type.",
+              "4:25 → Unable to recognize requested type.",
+              "5:23 → Null literals require type.",
+              "6:26 → Failed to decode type.",
+              "6:34 → Best effort and post join are the only two legal filter behavior choices.  You may also not provide one which will result to the default filter behavior.",
+              "6:34 → Best effort and post join are the only two legal filter behavior choices.  You may also not provide one which will result to the default filter behavior.",
+              "6:34 → Filters are not permitted for this kind of relation.",
+              "7:26 → Failed to decode type.",
+              "7:34 → Best effort and post join are the only two legal filter behavior choices.  You may also not provide one which will result to the default filter behavior.",
+              "7:34 → Best effort and post join are the only two legal filter behavior choices.  You may also not provide one which will result to the default filter behavior.",
+              "7:34 → Filters are not permitted for this kind of relation.",
+              "8:23 → Could not parse literal as decimal.",
+          }),
+      },
+      {
+          "test11-bad-stringlike-literals",
+          R"(project relation literalexamples {
+            expression "data"_potato;
+            expression "ddb287e8"_uuid;
+            expression "nothex"_uuid;
+            expression "unknown\escape"_string;
+            expression "abcde"_fixedchar;
+          })",
+          HasErrors({
+              "2:30 → Unable to recognize requested type.",
+              "3:23 → UUIDs are 128 bits long and thus should be specified with exactly 32 hexadecimal digits.",
+              "4:23 → UUIDs should be be specified with hexadecimal characters with optional dashes only.",
+              "5:31 → Unknown slash escape sequence.",
+              "6:31 → Unable to recognize requested type.",
+          }),
+      },
+      {
+          "test11-bad-complex-literals",
+          R"(project relation literalexamples {
             expression {}_list<string>?;
             expression {}_struct<a>;
             expression {}_struct<>;
@@ -701,45 +772,23 @@ std::vector<TestCase> getTestCases() {
             expression {}_map<,string>;
             expression {}_map<,>;
             expression {}_list<>;
-            expression "unknown\escape"_string;
             expression {123_i8}_map<i8, bool>;
             expression {123}_map<i8, bool>;
           })",
           HasErrors({
-              "9:34 → mismatched input 'r5' expecting NUMBER",
-              "9:36 → mismatched input ',' expecting 'FILTER'",
-              "10:34 → mismatched input 'r' expecting NUMBER",
-              "10:35 → mismatched input ',' expecting 'FILTER'",
-              "12:38 → extraneous input '?' expecting ';'",
-              "2:23 → Literals should include a type.",
-              "3:23 → Literals should include a type.",
-              "4:25 → Unable to recognize requested type.",
-              "5:30 → Unable to recognize requested type.",
-              "6:23 → Null literals require type.",
-              "7:23 → UUIDs are 128 bits long and thus should be specified with exactly 32 hexadecimal digits.",
-              "8:23 → UUIDs should be be specified with hexadecimal characters with optional dashes only.",
-              "9:26 → Failed to decode type.",
-              "9:34 → Best effort and post join are the only two legal filter behavior choices.  You may also not provide one which will result to the default filter behavior.",
-              "9:34 → Best effort and post join are the only two legal filter behavior choices.  You may also not provide one which will result to the default filter behavior.",
-              "9:34 → Filters are not permitted for this kind of relation.",
-              "10:26 → Failed to decode type.",
-              "10:34 → Best effort and post join are the only two legal filter behavior choices.  You may also not provide one which will result to the default filter behavior.",
-              "10:34 → Best effort and post join are the only two legal filter behavior choices.  You may also not provide one which will result to the default filter behavior.",
-              "10:34 → Filters are not permitted for this kind of relation.",
-              "11:23 → Could not parse literal as decimal.",
-              "13:26 → Unable to recognize requested type.",
-              "14:26 → Unable to recognize requested type.",
-              "15:26 → Maps require both a key and a value type.",
-              "15:23 → Unsupported type 0.",
-              "16:26 → Maps require both a key and a value type.",
-              "16:23 → Unsupported type 0.",
-              "17:26 → Unable to recognize requested type.",
-              "18:26 → Unable to recognize requested type.",
-              "18:26 → Unable to recognize requested type.",
-              "19:26 → Unable to recognize requested type.",
-              "20:31 → Unknown slash escape sequence.",
-              "21:23 → Map literals require pairs of values separated by colons.",
-              "22:23 → Map literals require pairs of values separated by colons.",
+              "2:38 → extraneous input '?' expecting ';'",
+              "3:26 → Unable to recognize requested type.",
+              "4:26 → Unable to recognize requested type.",
+              "5:26 → Maps require both a key and a value type.",
+              "5:23 → Unsupported type 0.",
+              "6:26 → Maps require both a key and a value type.",
+              "6:23 → Unsupported type 0.",
+              "7:26 → Unable to recognize requested type.",
+              "8:26 → Unable to recognize requested type.",
+              "8:26 → Unable to recognize requested type.",
+              "9:26 → Unable to recognize requested type.",
+              "10:23 → Map literals require pairs of values separated by colons.",
+              "11:23 → Map literals require pairs of values separated by colons.",
           }),
       },
       {
@@ -752,10 +801,13 @@ std::vector<TestCase> getTestCases() {
               HasErrors({}),
               AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
                   R"(relations { root { input { project {
-                    expressions { cast { type { i32 {} }
+                    expressions { cast { type { i32 {
+                      nullability: NULLABILITY_REQUIRED } }
                       input { literal { i8: 123 } } } }
-                    expressions { cast { type { i64 {} }
-                      input { cast { type { i32 {} }
+                    expressions { cast { type { i64 {
+                      nullability: NULLABILITY_REQUIRED } }
+                      input { cast { type { i32 {
+                        nullability: NULLABILITY_REQUIRED } }
                         input { literal { i8: 123 } } } } } }
                   } } } })"))),
       },
@@ -771,14 +823,21 @@ std::vector<TestCase> getTestCases() {
           })",
           AsBinaryPlan(Partially(EqualsProto<::substrait::proto::Plan>(
               R"(relations { root { input { project {
-                expressions { scalar_function { function_reference: 1
-                  arguments { value { scalar_function { function_reference: 2
+                expressions { scalar_function { function_reference: 0
+                  arguments { value { scalar_function { function_reference: 1
                     arguments { value { literal { i32: 1 } } }
                     arguments { value { literal { i32: -2 } } }
                   } } }
                   arguments { value { literal { string: "foo" } } }
                 } }
               } } } })"))),
+      },
+      {
+          "test13-bad-functions",
+          R"(extension_space blah.yaml {
+            function sum: as sum;
+          })",
+          HasErrors({"2:12 → Functions should have an associated type."}),
       },
       {
           "test14-three-node-pipeline-with-fields",
@@ -867,9 +926,9 @@ std::vector<TestCase> getTestCases() {
                                 names: "product_id"
                                 names: "count"
                                 struct {
-                                  types { i32 { } }
-                                  types { i32 { } }
-                                  types { i64 { } } }
+                                  types { i32 { nullability: NULLABILITY_REQUIRED } }
+                                  types { i32 { nullability: NULLABILITY_REQUIRED } }
+                                  types { i64 { nullability: NULLABILITY_REQUIRED } } }
                               }
                               named_table { names: "#1" }
                             }
@@ -880,8 +939,8 @@ std::vector<TestCase> getTestCases() {
                                 names: "product_id"
                                 names: "cost"
                                 struct {
-                                  types { i32 { } }
-                                  types { fp32 { } } }
+                                  types { i32 { nullability: NULLABILITY_REQUIRED } }
+                                  types { fp32 { nullability: NULLABILITY_REQUIRED } } }
                               }
                               named_table { names: "#2" }
                             }
@@ -912,8 +971,8 @@ std::vector<TestCase> getTestCases() {
                           names: "company"
                           names: "order_id"
                           struct {
-                            types { string { } }
-                            types { i32 { } }
+                            types { string { nullability: NULLABILITY_REQUIRED } }
+                            types { i32 { nullability: NULLABILITY_REQUIRED } }
                           }
                         }
                         named_table { names: "#3" }
@@ -941,7 +1000,8 @@ std::vector<TestCase> getTestCases() {
           HasErrors({
               "1:0 → extraneous input 'relation' expecting {<EOF>, "
               "'EXTENSION_SPACE', 'SCHEMA', 'PIPELINES', 'FILTER', "
-              "'SOURCE', IDENTIFIER}",
+              "'GROUPING', 'MEASURE', 'SORT', 'COUNT', 'TYPE', 'SOURCE', "
+              "'NULL', IDENTIFIER}",
               "1:24 → mismatched input '{' expecting 'RELATION'",
               "1:9 → Unrecognized relation type: notyperelation",
           }),

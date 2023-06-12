@@ -31,6 +31,7 @@ class PlanPrinterVisitor : public BasePlanProtoVisitor {
   };
 
   std::string printRelation(const SymbolInfo& symbol);
+  std::string typeToText(const ::substrait::proto::Type& type);
 
  private:
   std::string lookupFieldReference(uint32_t field_reference);

@@ -2,8 +2,7 @@
 
 #include "substrait/textplan/ParseResult.h"
 
-#include <iosfwd>
-#include <iostream>
+#include <sstream>
 
 namespace io::substrait::textplan {
 

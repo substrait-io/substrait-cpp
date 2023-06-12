@@ -267,12 +267,12 @@ std::any InitialPlanProtoVisitor::visitNamedStruct(
 void InitialPlanProtoVisitor::addFieldsToRelation(
     const std::shared_ptr<RelationData>& relationData,
     const ::substrait::proto::Rel& relation) {
-  auto symbol = symbolTable_->lookupSymbolByLocation(PROTO_LOCATION(relation));
-  if (symbol == SymbolInfo::kUnknown || symbol.type != SymbolType::kRelation) {
+  auto* symbol = symbolTable_->lookupSymbolByLocation(PROTO_LOCATION(relation));
+  if (symbol == nullptr || symbol->type != SymbolType::kRelation) {
     return;
   }
   auto symbolRelationData =
-      ANY_CAST(std::shared_ptr<RelationData>, symbol.blob);
+      ANY_CAST(std::shared_ptr<RelationData>, symbol->blob);
   for (const auto& field : symbolRelationData->fieldReferences) {
     relationData->fieldReferences.push_back(field);
   }

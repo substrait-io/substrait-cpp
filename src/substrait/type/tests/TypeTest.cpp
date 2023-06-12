@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 
+#include <memory>
 #include "substrait/type/Type.h"
 
 using namespace io::substrait;
@@ -145,6 +146,14 @@ TEST_F(TypeTest, decodeTest) {
         ASSERT_EQ(typePtr->signature(), "dec<18,2>");
         ASSERT_EQ(typePtr->precision(), 18);
         ASSERT_EQ(typePtr->scale(), 2);
+      });
+
+  testDecode<Decimal, false>(
+      "decimal?<18,2>", [](const std::shared_ptr<const Decimal>& typePtr) {
+        ASSERT_EQ(typePtr->signature(), "dec<18,2>");
+        ASSERT_EQ(typePtr->precision(), 18);
+        ASSERT_EQ(typePtr->scale(), 2);
+        ASSERT_TRUE(typePtr->nullable());
       });
 
   testDecode<ParameterizedStruct>(

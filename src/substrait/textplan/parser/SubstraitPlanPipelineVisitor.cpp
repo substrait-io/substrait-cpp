@@ -2,10 +2,8 @@
 
 #include "substrait/textplan/parser/SubstraitPlanPipelineVisitor.h"
 
-#include <ios>
 #include <memory>
 
-#include "SubstraitPlanLexer/SubstraitPlanLexer.h"
 #include "SubstraitPlanParser/SubstraitPlanParser.h"
 #include "substrait/textplan/Any.h"
 #include "substrait/textplan/Location.h"
@@ -95,13 +93,13 @@ std::any SubstraitPlanPipelineVisitor::visitPipeline(
   const SymbolInfo* leftSymbol = &SymbolInfo::kUnknown;
   if (ctx->pipeline() != nullptr) {
     leftSymbol =
-        &symbolTable_->lookupSymbolByLocation(PARSER_LOCATION(ctx->pipeline()));
+        symbolTable_->lookupSymbolByLocation(PARSER_LOCATION(ctx->pipeline()));
   }
   const SymbolInfo* rightSymbol = &SymbolInfo::kUnknown;
   if (dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)->getRuleIndex() ==
       SubstraitPlanParser::RulePipeline) {
     rightSymbol =
-        &symbolTable_->lookupSymbolByLocation(PARSER_LOCATION(ctx->parent));
+        symbolTable_->lookupSymbolByLocation(PARSER_LOCATION(ctx->parent));
   }
   const SymbolInfo* rightmostSymbol = rightSymbol;
   if (*rightSymbol != SymbolInfo::kUnknown) {

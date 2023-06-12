@@ -2,14 +2,14 @@
 
 #include "ParseText.h"
 
+#include <ANTLRErrorStrategy.h>
 #include <antlr4-runtime.h>
 #include <fstream>
-#include <iosfwd>
-#include <iostream>
+#include <memory>
+#include <sstream>
 
 #include "SubstraitPlanLexer/SubstraitPlanLexer.h"
 #include "SubstraitPlanParser/SubstraitPlanParser.h"
-#include "substrait/textplan/Any.h"
 #include "substrait/textplan/StructuredSymbolData.h"
 #include "substrait/textplan/parser/SubstraitParserErrorListener.h"
 #include "substrait/textplan/parser/SubstraitPlanPipelineVisitor.h"
@@ -37,22 +37,28 @@ antlr4::ANTLRInputStream loadTextString(std::string_view text) {
 }
 
 ParseResult parseStream(antlr4::ANTLRInputStream stream) {
+  io::substrait::textplan::SubstraitParserErrorListener errorListener;
+
   SubstraitPlanLexer lexer(&stream);
+  lexer.removeErrorListeners();
+  lexer.addErrorListener(&errorListener);
   antlr4::CommonTokenStream tokens(&lexer);
 
   tokens.fill();
 
   SubstraitPlanParser parser(&tokens);
   parser.removeErrorListeners();
-  io::substrait::textplan::SubstraitParserErrorListener parserErrorListener;
-  parser.addErrorListener(&parserErrorListener);
+  parser.addErrorListener(&errorListener);
   auto* tree = parser.plan();
 
-  auto visitor = std::make_shared<SubstraitPlanVisitor>();
+  SymbolTable visitorSymbolTable;
+  auto visitorErrorListener = std::make_shared<SubstraitParserErrorListener>();
+  auto visitor = std::make_shared<SubstraitPlanVisitor>(
+      visitorSymbolTable, visitorErrorListener);
   try {
     visitor->visitPlan(tree);
   } catch (...) {
-    parserErrorListener.syntaxError(
+    errorListener.syntaxError(
         &parser,
         nullptr,
         /*line=*/1,
@@ -66,7 +72,7 @@ ParseResult parseStream(antlr4::ANTLRInputStream stream) {
   try {
     pipelineVisitor->visitPlan(tree);
   } catch (...) {
-    parserErrorListener.syntaxError(
+    errorListener.syntaxError(
         &parser,
         nullptr,
         /*line=*/1,
@@ -79,8 +85,17 @@ ParseResult parseStream(antlr4::ANTLRInputStream stream) {
       *pipelineVisitor->getSymbolTable(), pipelineVisitor->getErrorListener());
   try {
     relationVisitor->visitPlan(tree);
+  } catch (std::invalid_argument ex) {
+    // Catches the any_cast exception and logs a useful error message.
+    errorListener.syntaxError(
+        &parser,
+        nullptr,
+        /*line=*/1,
+        /*charPositionInLine=*/1,
+        ex.what(),
+        std::current_exception());
   } catch (...) {
-    parserErrorListener.syntaxError(
+    errorListener.syntaxError(
         &parser,
         nullptr,
         /*line=*/1,
@@ -92,7 +107,7 @@ ParseResult parseStream(antlr4::ANTLRInputStream stream) {
   auto finalSymbolTable = relationVisitor->getSymbolTable();
   return {
       *finalSymbolTable,
-      parserErrorListener.getErrorMessages(),
+      errorListener.getErrorMessages(),
       relationVisitor->getErrorListener()->getErrorMessages()};
 }
 

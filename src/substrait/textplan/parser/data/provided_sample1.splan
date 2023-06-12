@@ -19,7 +19,7 @@ read relation read {
 schema schema {
   r_regionkey i32;
   r_name string;
-  r_comment string;
+  r_comment string?;
 }
 
 source named_table named {

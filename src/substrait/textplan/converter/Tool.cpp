@@ -4,7 +4,7 @@
 #include <glob.h>
 #endif
 
-#include <iostream>
+#include <sstream>
 
 #include "substrait/textplan/SymbolTablePrinter.h"
 #include "substrait/textplan/converter/LoadBinary.h"
