@@ -65,6 +65,38 @@ std::string visitEnumArgument(const std::string& str) {
   return text.str();
 }
 
+int32_t expressionCount(const ::substrait::proto::Rel& relation) {
+  switch (relation.rel_type_case()) {
+    case ::substrait::proto::Rel::kProject:
+      return relation.project().expressions().size();
+    default:
+      // No support for any other types besides project at the moment.
+      break;
+  }
+  return 0;
+}
+
+const ::substrait::proto::Expression* getExpressionByNumber(
+    const ::substrait::proto::Rel& relation,
+    int num) {
+  switch (relation.rel_type_case()) {
+    case ::substrait::proto::Rel::kProject:
+      return &relation.project().expressions(num);
+    default:
+      // No support for any other types besides project at the moment.
+      break;
+  }
+  return nullptr;
+}
+
+bool isDirectFieldReference(const ::substrait::proto::Expression& expr) {
+  if (expr.selection().reference_type_case() ==
+      ::substrait::proto::Expression::FieldReference::kDirectReference) {
+    return expr.selection().direct_reference().has_struct_field();
+  }
+  return false;
+}
+
 } // namespace
 
 std::string PlanPrinterVisitor::printRelation(const SymbolInfo& symbol) {
@@ -100,18 +132,40 @@ std::string PlanPrinterVisitor::typeToText(
   return ANY_CAST(std::string, visitType(type));
 }
 
-std::string PlanPrinterVisitor::lookupFieldReference(uint32_t field_reference) {
-  if (*currentScope_ != SymbolInfo::kUnknown) {
-    auto relationData =
-        ANY_CAST(std::shared_ptr<RelationData>, currentScope_->blob);
-    if (field_reference < relationData->fieldReferences.size()) {
-      return relationData->fieldReferences[field_reference]->name;
-    }
+// TODO -- Refactor this to return the symbol for later display decisions.
+std::string PlanPrinterVisitor::lookupFieldReference(
+    uint32_t field_reference,
+    bool needFullyQualified) {
+  if (*currentScope_ == SymbolInfo::kUnknown) {
+    errorListener_->addError(
+        "Field number " + std::to_string(field_reference) +
+        " mysteriously requested outside of a relation.");
+    return "field#" + std::to_string(field_reference);
   }
-  errorListener_->addError(
-      "Field number " + std::to_string(field_reference) +
-      " referenced but not defined.");
-  return "field#" + std::to_string(field_reference);
+  auto relationData =
+      ANY_CAST(std::shared_ptr<RelationData>, currentScope_->blob);
+  auto fieldReferencesSize = relationData->fieldReferences.size();
+  const SymbolInfo* symbol{nullptr};
+  if (field_reference < fieldReferencesSize) {
+    symbol = relationData->fieldReferences[field_reference];
+  } else if (
+      field_reference <
+      fieldReferencesSize + relationData->generatedFieldReferences.size()) {
+    symbol =
+        relationData
+            ->generatedFieldReferences[field_reference - fieldReferencesSize];
+  } else {
+    errorListener_->addError(
+        "Encountered field reference out of range: " +
+        std::to_string(field_reference));
+    return "field#" + std::to_string(field_reference);
+  }
+  if (!symbol->alias.empty()) {
+    return symbol->alias;
+  } else if (needFullyQualified && symbol->schema != nullptr) {
+    return symbol->schema->name + "." + symbol->name;
+  }
+  return symbol->name;
 }
 
 std::string PlanPrinterVisitor::lookupFunctionReference(
@@ -357,8 +411,9 @@ std::any PlanPrinterVisitor::visitFieldReference(
   // TODO -- Move this logic into visitDirectReference and visitMaskedReference.
   switch (ref.reference_type_case()) {
     case ::substrait::proto::Expression::FieldReference::kDirectReference:
+      // TODO -- Figure out when fully qualified names aren't needed.
       return lookupFieldReference(
-          ref.direct_reference().struct_field().field());
+          ref.direct_reference().struct_field().field(), true);
     case ::substrait::proto::Expression::FieldReference::kMaskedReference:
       errorListener_->addError(
           "Masked reference not yet supported: " + ref.ShortDebugString());
@@ -421,15 +476,17 @@ std::any PlanPrinterVisitor::visitScalarFunction(
     text << ANY_CAST(std::string, visitExpression(arg));
     hasPreviousText = true;
   }
-  // TODO -- Determine if the output type can be automatically determined.
-  // text << "->" << visitType(function.output_type());
-
   if (!hasPreviousText) {
     errorListener_->addError(
         "Function encountered without any arguments: " +
         function.ShortDebugString());
   }
+
   text << ")";
+
+  // TODO -- Determine if the output type can be automatically determined.
+  text << "->" << typeToText(function.output_type());
+
   return text.str();
 }
 
@@ -577,6 +634,18 @@ std::any PlanPrinterVisitor::visitFileOrFiles(
   return std::string("FORF_NOT_YET_IMPLEMENTED");
 }
 
+std::any PlanPrinterVisitor::visitRelationCommon(
+    const ::substrait::proto::RelCommon& common) {
+  std::stringstream text;
+  if (common.emit().output_mapping_size() > 0) {
+    text << "\n";
+  }
+  for (const auto& mapping : common.emit().output_mapping()) {
+    text << "  emit " << lookupFieldReference(mapping, true) << ";\n";
+  }
+  return text.str();
+}
+
 std::any PlanPrinterVisitor::visitAggregateFunction(
     const ::substrait::proto::AggregateFunction& function) {
   std::stringstream text;
@@ -627,6 +696,7 @@ std::any PlanPrinterVisitor::visitAggregateFunction(
   }
   text << "->" << ANY_CAST(std::string, visitType(function.output_type()));
   // TODO -- Emit the requested sort behavior here.
+  // TODO -- Consider removing the AGGREGATION_PHASE_ prefix.
   text << "@" << ::substrait::proto::AggregationPhase_Name(function.phase());
   return text.str();
 }
@@ -657,8 +727,8 @@ std::any PlanPrinterVisitor::visitRelation(
   // Mark the current scope for any operations within this relation.
   auto previousScope = currentScope_;
   auto resetCurrentScope = finally([&]() { currentScope_ = previousScope; });
-  const SymbolInfo* symbol =
-      symbolTable_->lookupSymbolByLocation(PROTO_LOCATION(relation));
+  const SymbolInfo* symbol = symbolTable_->lookupSymbolByLocationAndType(
+      PROTO_LOCATION(relation), SymbolType::kRelation);
   if (symbol != nullptr) {
     currentScope_ = symbol;
   }
@@ -689,15 +759,18 @@ std::any PlanPrinterVisitor::visitReadRelation(
     case ::substrait::proto::ReadRel::READ_TYPE_NOT_SET:
       return "";
   }
-  const auto* symbol =
-      symbolTable_->lookupSymbolByLocation(PROTO_LOCATION(*msg));
-  if (symbol != nullptr) {
-    text << "  source " << symbol->name << ";\n";
+
+  auto mainSymbol = symbolTable_->lookupSymbolByLocationAndType(PROTO_LOCATION(relation), SymbolType::kRelation);
+
+  auto symbols = symbolTable_->lookupSymbolsByLocation(
+      PROTO_LOCATION(*msg));
+  if (!symbols.empty()) {
+    text << "  source " << symbols[0]->name << ";\n";
   }
 
   if (relation.has_base_schema()) {
-    const auto* schemaSymbol = symbolTable_->lookupSymbolByLocation(
-        PROTO_LOCATION(relation.base_schema()));
+    const auto* schemaSymbol = symbolTable_->lookupSymbolByLocationAndType(
+        PROTO_LOCATION(relation.base_schema()), SymbolType::kSchema);
     if (schemaSymbol != nullptr) {
       text << "  base_schema " << schemaSymbol->name << ";\n";
     }
@@ -753,12 +826,18 @@ std::any PlanPrinterVisitor::visitAggregateRelation(
   }
   for (const auto& measure : relation.measures()) {
     if (!measure.has_measure()) {
+      errorListener_->addError("Encountered aggregate measure without a measure function.");
       continue;
     }
     text << "  measure {\n";
     text << "    measure "
-         << ANY_CAST(std::string, visitAggregateFunction(measure.measure()))
-         << ";\n";
+         << ANY_CAST(std::string, visitAggregateFunction(measure.measure()));
+    auto symbol = symbolTable_->lookupSymbolByLocationAndType(
+        PROTO_LOCATION(measure), SymbolType::kMeasure);
+    if (symbol != nullptr) {
+      text << " NAMED " << symbol->name;
+    }
+    text << ";\n";
     if (measure.has_filter()) {
       text << "    filter "
            << ANY_CAST(std::string, visitExpression(measure.filter())) << ";\n";
@@ -824,16 +903,37 @@ std::any PlanPrinterVisitor::visitSortRelation(
 std::any PlanPrinterVisitor::visitProjectRelation(
     const ::substrait::proto::ProjectRel& relation) {
   std::stringstream text;
+  auto relationData =
+      ANY_CAST(std::shared_ptr<RelationData>, currentScope_->blob);
+  int exprNum = 0;
   for (const auto& expr : relation.expressions()) {
-    text << "  expression " << ANY_CAST(std::string, visitExpression(expr))
-         << ";\n";
+    text << "  expression ";
+    if (relationData->generatedFieldReferenceAlternativeExpression.find(
+            exprNum) !=
+        relationData->generatedFieldReferenceAlternativeExpression.end()) {
+      text << relationData
+                  ->generatedFieldReferenceAlternativeExpression[exprNum];
+    } else if (
+        exprNum < relationData->generatedFieldReferences.size() &&
+        !relationData->generatedFieldReferences[exprNum]->alias.empty()) {
+      text << ANY_CAST(std::string, visitExpression(expr));
+      text << " NAMED "
+           << relationData->generatedFieldReferences[exprNum]->alias;
+    } else {
+      text << ANY_CAST(std::string, visitExpression(expr));
+    }
+
+    text << ";\n";
+    exprNum++;
   }
+  text << ANY_CAST(std::string, visitRelationCommon(relation.common()));
   return text.str();
 }
 
 std::any PlanPrinterVisitor::visitJoinRelation(
     const ::substrait::proto::JoinRel& relation) {
   std::stringstream text;
+  // TODO -- Consider removing the JOIN_TYPE_ prefix.
   text << "  type "
        << ::substrait::proto::JoinRel_JoinType_Name(relation.type()) << ";\n";
   if (relation.has_expression()) {
@@ -847,6 +947,12 @@ std::any PlanPrinterVisitor::visitJoinRelation(
          << ";\n";
   }
   return text.str();
+}
+
+std::any PlanPrinterVisitor::visitCrossRelation(
+    const ::substrait::proto::CrossRel& relation) {
+  // There are no custom details in a cross relation.
+  return std::string{""};
 }
 
 } // namespace io::substrait::textplan

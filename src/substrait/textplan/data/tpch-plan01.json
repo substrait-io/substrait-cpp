@@ -56,7 +56,7 @@
     "extensionFunction": {
       "extensionUriReference": 3,
       "functionAnchor": 7,
-      "name": "count:"
+      "name": "count:any"
     }
   }],
   "relations": [{

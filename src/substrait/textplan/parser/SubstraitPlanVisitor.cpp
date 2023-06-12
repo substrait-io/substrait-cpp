@@ -8,13 +8,16 @@
 #include "substrait/textplan/Any.h"
 #include "substrait/textplan/Finally.h"
 #include "substrait/textplan/Location.h"
+#include "substrait/textplan/StringManipulation.h"
 #include "substrait/textplan/StructuredSymbolData.h"
 #include "substrait/textplan/SymbolTable.h"
-#include "substrait/type/Type.h"
 
 namespace io::substrait::textplan {
 
+namespace {
+
 const std::string kRootName{"root"};
+const std::string kRootNames{"root.names"};
 
 // Removes leading and trailing quotation marks.
 std::string extractFromString(std::string s) {
@@ -30,12 +33,70 @@ std::string extractFromString(std::string s) {
   return s;
 }
 
+uint64_t parseUnsignedInteger(const std::string& text) {
+  return std::stoul(text);
+}
+
+std::string parseString(std::string text) {
+  // First remove the surrounding quote marks.
+  std::string str;
+  if (startsWith(text, "```")) {
+    str = text.substr(3, text.length() - 6);
+  } else if (startsWith(text, "``")) {
+    str = text.substr(2, text.length() - 4);
+  } else if (text[0] == '"' || text[0] == '`') {
+    str = text.substr(1, text.length() - 2);
+  } else {
+    str = text;
+  }
+
+  // Perform escapes if necessary.
+  std::string resultStr;
+  if (startsWith(text, "`")) {
+    // Don't perform escapes on raw strings.
+    resultStr = str;
+  } else {
+    // TODO -- Escape the text as in SubstraitPlanRelationVisitor::escapeText.
+    resultStr = str;
+  }
+
+  return resultStr;
+}
+
+} // namespace
+
 // NOLINTBEGIN(readability-identifier-naming)
 // NOLINTBEGIN(readability-convert-member-functions-to-static)
 
 std::any SubstraitPlanVisitor::visitPlan(
     SubstraitPlanParser::PlanContext* ctx) {
-  return visitChildren(ctx);
+  // First visit the schema, source, and extension space definitions.
+  for (auto detail : ctx->plan_detail()) {
+    if (detail->schema_definition() != nullptr ||
+        detail->source_definition() != nullptr ||
+        detail->extensionspace() != nullptr) {
+      visitPlan_detail(detail);
+    }
+  }
+  // Then visit the pipelines.
+  for (auto detail : ctx->plan_detail()) {
+    if (detail->pipelines() != nullptr) {
+      visitPlan_detail(detail);
+    }
+  }
+  // Next visit the relations.
+  for (auto detail : ctx->plan_detail()) {
+    if (detail->relation() != nullptr) {
+      visitPlan_detail(detail);
+    }
+  }
+  // And finally visit the root.
+  for (auto detail : ctx->plan_detail()) {
+    if (detail->root_relation() != nullptr) {
+      visitPlan_detail(detail);
+    }
+  }
+  return defaultResult();
 }
 
 std::any SubstraitPlanVisitor::visitPlan_detail(
@@ -73,7 +134,8 @@ std::any SubstraitPlanVisitor::visitExtensionspace(
 
   // Update the contained functions to belong in this space.
   for (auto func : ctx->function()) {
-    auto* funcSymbol = symbolTable_->lookupSymbolByLocation(Location(func));
+    auto* funcSymbol = symbolTable_->lookupSymbolByLocationAndType(
+        Location(func), SymbolType::kFunction);
     auto functionData =
         ANY_CAST(std::shared_ptr<FunctionData>, funcSymbol->blob);
     functionData->extensionUriReference = thisSpace;
@@ -131,20 +193,21 @@ std::any SubstraitPlanVisitor::visitSignature(
 
 std::any SubstraitPlanVisitor::visitSchema_definition(
     SubstraitPlanParser::Schema_definitionContext* ctx) {
-  symbolTable_->defineSymbol(
+  auto schemaSymbol = symbolTable_->defineSymbol(
       ctx->id()->getText(),
       Location(ctx),
       SymbolType::kSchema,
       defaultResult(),
       defaultResult());
 
-  // Mark all of the schema items so we can find the ones related to this
+  // Mark all the schema items so that we can find the ones related to this
   // schema.
   for (const auto& item : ctx->schema_item()) {
     auto symbol = ANY_CAST(SymbolInfo*, visitSchema_item(item));
     if (symbol == nullptr) {
       continue;
     }
+    symbol->schema = schemaSymbol;
     symbol->location = Location(ctx);
   }
 
@@ -153,33 +216,45 @@ std::any SubstraitPlanVisitor::visitSchema_definition(
 
 std::any SubstraitPlanVisitor::visitSchema_item(
     SubstraitPlanParser::Schema_itemContext* ctx) {
-  return symbolTable_->defineSymbol(
-      ctx->id()->getText(),
+  auto symbol = symbolTable_->defineSymbol(
+      ctx->id(0)->getText(),
       Location(ctx),
       SymbolType::kSchemaColumn,
       defaultResult(),
       visitLiteral_complex_type(ctx->literal_complex_type()));
+  return symbol;
 }
 
 std::any SubstraitPlanVisitor::visitRoot_relation(
     SubstraitPlanParser::Root_relationContext* ctx) {
-  auto prevRoot = symbolTable_->lookupSymbolByName(kRootName);
-  if (prevRoot != nullptr) {
-    if (prevRoot->type == SymbolType::kRoot) {
-      errorListener_->addError(
-          ctx->getStart(), "A root relation was already defined.");
-    } else {
-      errorListener_->addError(
-          ctx->getStart(), "A relation named root was already defined.");
-    }
+  if (symbolTable_->lookupSymbolByName(kRootNames) != nullptr) {
+    errorListener_->addError(
+        ctx->getStart(), "A root relation was already defined.");
     return nullptr;
   }
+  auto prevRoot = symbolTable_->lookupSymbolByName(kRootName);
+  if (prevRoot != nullptr) {
+    errorListener_->addError(
+        ctx->getStart(), "A relation named root was already defined.");
+    return nullptr;
+  }
+
+  // First creation the relation information for this node.
+  auto relationData = std::make_shared<RelationData>();
+  symbolTable_->defineSymbol(
+      kRootName,
+      Location(ctx),
+      SymbolType::kRelation,
+      SymbolType::kRoot,
+      relationData);
+
+  // Now create the name related information.
   std::vector<std::string> names;
   for (const auto& id : ctx->id()) {
     names.push_back(id->getText());
   }
   symbolTable_->defineSymbol(
-      kRootName, Location(ctx), SymbolType::kRoot, SourceType::kUnknown, names);
+      kRootNames, Location(ctx), SymbolType::kRoot, SourceType::kUnknown, names);
   return nullptr;
 }
 
@@ -251,13 +326,30 @@ std::any SubstraitPlanVisitor::visitRelation_type(
   return RelationType::kUnknown;
 }
 
+SourceType getSourceType(SubstraitPlanParser::Read_typeContext* ctx) {
+  if (dynamic_cast<SubstraitPlanParser::LocalFilesContext*>(ctx) != nullptr) {
+    return SourceType::kLocalFiles;
+  } else if (
+      dynamic_cast<SubstraitPlanParser::VirtualTableContext*>(ctx) != nullptr) {
+    return SourceType::kVirtualTable;
+  } else if (
+      dynamic_cast<SubstraitPlanParser::NamedTableContext*>(ctx) != nullptr) {
+    return SourceType::kNamedTable;
+  } else if (
+      dynamic_cast<SubstraitPlanParser::ExtensionTableContext*>(ctx) !=
+      nullptr) {
+    return SourceType::kExtensionTable;
+  }
+  return SourceType::kUnknown;
+}
+
 std::any SubstraitPlanVisitor::visitSource_definition(
     SubstraitPlanParser::Source_definitionContext* ctx) {
   symbolTable_->defineSymbol(
       ctx->read_type()->children[1]->getText(),
       Location(ctx),
       SymbolType::kSource,
-      defaultResult(),
+      getSourceType(ctx->read_type()),
       defaultResult());
   return visitChildren(ctx);
 }
@@ -310,19 +402,6 @@ std::any SubstraitPlanVisitor::visitExpressionConstant(
 
 std::any SubstraitPlanVisitor::visitExpressionColumn(
     SubstraitPlanParser::ExpressionColumnContext* ctx) {
-  auto relationData =
-      ANY_CAST(std::shared_ptr<RelationData>, currentRelationScope_->blob);
-  std::string column_name = ctx->column_name()->getText();
-  auto symbol = symbolTable_->lookupSymbolByName(column_name);
-  if (symbol == nullptr) {
-    symbol = symbolTable_->defineSymbol(
-        column_name,
-        Location(ctx),
-        SymbolType::kField,
-        std::nullopt,
-        std::nullopt);
-    relationData->fieldReferences.push_back(symbol);
-  }
   return visitChildren(ctx);
 }
 
@@ -399,12 +478,37 @@ std::any SubstraitPlanVisitor::visitRelationJoinType(
 
 std::any SubstraitPlanVisitor::visitFile_location(
     SubstraitPlanParser::File_locationContext* ctx) {
+  auto symbol =
+      symbolTable_->lookupSymbolByName(ctx->parent->parent->getText());
+  auto item = ANY_CAST(
+      std::shared_ptr<::substrait::proto::ReadRel_LocalFiles_FileOrFiles>,
+      symbol->blob);
+  if (ctx->URI_FILE() != nullptr) {
+    item->set_uri_file(parseString(ctx->STRING()->getText()));
+  }
+  // symbol->blob.swap(item);
   return visitChildren(ctx);
 }
 
 std::any SubstraitPlanVisitor::visitFile_detail(
     SubstraitPlanParser::File_detailContext* ctx) {
-  return visitChildren(ctx);
+  auto symbol = symbolTable_->lookupSymbolByName(ctx->parent->getText());
+  auto item = ANY_CAST(
+      std::shared_ptr<::substrait::proto::ReadRel_LocalFiles_FileOrFiles>,
+      symbol->blob);
+  if (ctx->PARTITION_INDEX() != nullptr) {
+    item->set_partition_index(parseUnsignedInteger(ctx->NUMBER()->getText()));
+  } else if (ctx->START() != nullptr) {
+    item->set_start(parseUnsignedInteger(ctx->NUMBER()->getText()));
+  } else if (ctx->LENGTH() != nullptr) {
+    item->set_length(parseUnsignedInteger(ctx->NUMBER()->getText()));
+  } else if (ctx->ORC() != nullptr) {
+    item->mutable_orc();
+  } else {
+    return visitChildren(ctx);
+  }
+  // symbol->blob.swap(item);
+  return defaultResult();
 }
 
 std::any SubstraitPlanVisitor::visitFile(
@@ -415,37 +519,36 @@ std::any SubstraitPlanVisitor::visitFile(
 std::any SubstraitPlanVisitor::visitLocal_files_detail(
     SubstraitPlanParser::Local_files_detailContext* ctx) {
   for (const auto& f : ctx->file()) {
+    ::substrait::proto::ReadRel_LocalFiles_FileOrFiles item;
     symbolTable_->defineSymbol(
-        f->getText(),
+        f->getText(), // We use all the details to create a unique name.
         PARSER_LOCATION(ctx->parent->parent), // The source we belong to.
         SymbolType::kSourceDetail,
         defaultResult(),
-        defaultResult());
+        std::make_shared<::substrait::proto::ReadRel_LocalFiles_FileOrFiles>(
+            item));
+    visitFile(f);
   }
   return nullptr;
 }
 
 std::any SubstraitPlanVisitor::visitLocalFiles(
     SubstraitPlanParser::LocalFilesContext* ctx) {
-  // TODO -- Once we switch over to SourceData update our parent's subtype.
   return visitChildren(ctx);
 }
 
 std::any SubstraitPlanVisitor::visitVirtualTable(
     SubstraitPlanParser::VirtualTableContext* ctx) {
-  // TODO -- Once we switch over to SourceData update our parent's subtype.
   return visitChildren(ctx);
 }
 
 std::any SubstraitPlanVisitor::visitNamedTable(
     SubstraitPlanParser::NamedTableContext* ctx) {
-  // TODO -- Once we switch over to SourceData update our parent's subtype.
   return visitChildren(ctx);
 }
 
 std::any SubstraitPlanVisitor::visitExtensionTable(
     SubstraitPlanParser::ExtensionTableContext* ctx) {
-  // TODO -- Once we switch over to SourceData update our parent's subtype.
   return visitChildren(ctx);
 }
 

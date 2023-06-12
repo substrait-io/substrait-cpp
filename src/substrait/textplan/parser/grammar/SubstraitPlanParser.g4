@@ -64,28 +64,29 @@ relation_filter_behavior
 // TODO -- Can the type be determined automatically from the function definition?
 // TODO -- Consider moving the run phase to an optional third detail line.
 measure_detail
-   : MEASURE expression (ARROW literal_complex_type)? (ATSIGN id)? SEMICOLON
+   : MEASURE expression (ARROW literal_complex_type)? (ATSIGN id)? (NAMED id)? SEMICOLON
    | FILTER expression SEMICOLON
    | INVOCATION id SEMICOLON
    | sort_field
    ;
 
 relation_detail
-   : COMMON SEMICOLON                                           # relationCommon
-   | BASE_SCHEMA id SEMICOLON                                   # relationUsesSchema
-   | relation_filter_behavior? FILTER expression SEMICOLON      # relationFilter
-   | EXPRESSION expression SEMICOLON (AS id)? # relationExpression
-   | ADVANCED_EXTENSION SEMICOLON    # relationAdvancedExtension
-   | source_reference SEMICOLON      # relationSourceReference
-   | GROUPING expression SEMICOLON   # relationGrouping
-   | MEASURE LEFTBRACE measure_detail* RIGHTBRACE # relationMeasure
-   | sort_field                      # relationSort
-   | COUNT NUMBER SEMICOLON          # relationCount
-   | TYPE id SEMICOLON               # relationJoinType
+   : COMMON SEMICOLON                                       # relationCommon
+   | BASE_SCHEMA id SEMICOLON                               # relationUsesSchema
+   | relation_filter_behavior? FILTER expression SEMICOLON  # relationFilter
+   | EXPRESSION expression (NAMED id)? SEMICOLON            # relationExpression
+   | ADVANCED_EXTENSION SEMICOLON                           # relationAdvancedExtension
+   | source_reference SEMICOLON                             # relationSourceReference
+   | GROUPING expression SEMICOLON                          # relationGrouping
+   | MEASURE LEFTBRACE measure_detail* RIGHTBRACE           # relationMeasure
+   | sort_field                                             # relationSort
+   | COUNT NUMBER SEMICOLON                                 # relationCount
+   | TYPE id SEMICOLON                                      # relationJoinType
+   | EMIT column_name SEMICOLON                             # relationEmit
    ;
 
 expression
-   : id LEFTPAREN (expression COMMA?)* RIGHTPAREN  # expressionFunctionUse
+   : id LEFTPAREN (expression COMMA?)* RIGHTPAREN (ARROW literal_complex_type)? # expressionFunctionUse
    | constant                                      # expressionConstant
    | column_name                                   # expressionColumn
    | expression AS literal_complex_type            # expressionCast
@@ -131,7 +132,7 @@ struct_literal
    ;
 
 column_name
-   : id
+   : (id PERIOD)? id
    ;
 
 source_reference
@@ -172,7 +173,7 @@ schema_definition
    ;
 
 schema_item
-   : id literal_complex_type SEMICOLON
+   : id literal_complex_type (NAMED id)? SEMICOLON
    ;
 
 source_definition
@@ -206,11 +207,11 @@ signature
    : id
    ;
 
-// List keywords here to make them not reserved.
 id
    : simple_id (UNDERSCORE+ simple_id)*
    ;
 
+// List keywords here to make them not reserved.
 simple_id
    : IDENTIFIER
    | FILTER
@@ -223,4 +224,6 @@ simple_id
    | GROUPING
    | COUNT
    | TYPE
+   | EMIT
+   | NAMED
    ;

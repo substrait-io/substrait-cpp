@@ -1,0 +1,73 @@
+pipelines {
+  read -> filter -> project -> aggregate -> root;
+}
+
+read relation read {
+  source local;
+  base_schema schema;
+  filter and(
+    and(
+      and(
+        and(
+          and(
+            and(
+              and(
+                is_not_null(l_shipdate_new)->bool?,
+                is_not_null(l_discount)->bool?)->bool?,
+              is_not_null(l_quantity)->bool?)->bool?,
+            gte(l_shipdate_new, 8766_fp64)->bool?)->bool?,
+          lt(l_shipdate_new, 9131_fp64)->bool?)->bool?,
+        gte(l_discount, 0.05_fp64)->bool?)->bool?,
+      lte(l_discount, 0.07_fp64)->bool?)->bool?,
+    lt(l_quantity, 24_fp64)->bool?)->bool?;
+}
+
+filter relation filter {
+  filter and(
+    and(
+      and(
+        and(
+          gte(l_shipdate_new, 8766_fp64)->bool?,
+          lt(l_shipdate_new, 9131_fp64)->bool?)->bool?,
+        gte(l_discount, 0.05_fp64)->bool?)->bool?,
+      lte(l_discount, 0.07_fp64)->bool?)->bool?,
+    lt(l_quantity, 24_fp64)->bool?)->bool?;
+}
+
+project relation project {
+  expression l_extendedprice;
+  expression l_discount;
+
+  emit l_extendedprice;
+  emit l_discount;
+}
+
+aggregate relation aggregate {
+  measure {
+    measure sum(
+    multiply(l_extendedprice, l_discount)->fp64?)->fp64?@AGGREGATION_PHASE_INITIAL_TO_INTERMEDIATE;
+  }
+}
+
+schema schema {
+  l_quantity fp64?;
+  l_extendedprice fp64?;
+  l_discount fp64?;
+  l_shipdate_new fp64?;
+}
+
+source local_files local {
+  items = [
+    {uri_file: "/mock_lineitem.orc" start: 0 length: 3719 orc: {}}
+  ]
+}
+
+extension_space {
+  function and:bool_bool as and;
+  function gte:fp64_fp64 as gte;
+  function is_not_null:fp64 as is_not_null;
+  function lt:fp64_fp64 as lt;
+  function lte:fp64_fp64 as lte;
+  function multiply:opt_fp64_fp64 as multiply;
+  function sum:opt_fp64 as sum;
+}

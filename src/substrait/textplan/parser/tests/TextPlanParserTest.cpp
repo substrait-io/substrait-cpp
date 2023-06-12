@@ -210,20 +210,21 @@ std::vector<TestCase> getTestCases() {
             expression r_regionkey;
             expression r_name;
             expression r_comment;
-            expression add(r_regionkey, 1_i8);
-            expression subtract(r_regionkey, 1_i8);
-            expression concat(r_name, r_name);
+            expression add(r_regionkey, 1_i8)->i8;
+            expression subtract(r_regionkey, 1_i8)->i8;
+            expression concat(r_name, r_name)->str;
           })",
           AllOf(
               HasSymbolsWithTypes({"myproject"}, {SymbolType::kRelation}),
+              HasErrors({}),
               WhenSerialized(EqSquashingWhitespace(
                   R"(project relation myproject {
                       expression r_regionkey;
                       expression r_name;
                       expression r_comment;
-                      expression add(r_regionkey, 1_i8);
-                      expression subtract(r_regionkey, 1_i8);
-                      expression concat(r_name, r_name);
+                      expression add(r_regionkey, 1_i8)->i8;
+                      expression subtract(r_regionkey, 1_i8)->i8;
+                      expression concat(r_name, r_name)->string;
                     }
 
                     extension_space blah.yaml {
@@ -250,6 +251,7 @@ std::vector<TestCase> getTestCases() {
                       name: "concat:str" }
                   }
                   relations { root { input { project {
+                    common { direct { } }
                     expressions {
                       selection {
                         direct_reference {
@@ -280,16 +282,22 @@ std::vector<TestCase> getTestCases() {
                     expressions { scalar_function {
                       function_reference: 0 arguments { value { selection {
                         direct_reference { struct_field { } } } } }
-                        arguments { value { literal { i8: 1 } } } } }
+                        arguments { value { literal { i8: 1 } } }
+                        output_type {
+                          i8 { nullability: NULLABILITY_REQUIRED} } } }
                     expressions { scalar_function {
                       function_reference: 1 arguments { value { selection {
                         direct_reference { struct_field { } } } } }
-                        arguments { value { literal { i8: 1 } } } } }
+                        arguments { value { literal { i8: 1 } } }
+                        output_type {
+                          i8 { nullability: NULLABILITY_REQUIRED } } } }
                     expressions { scalar_function {
                       function_reference: 2 arguments { value { selection {
                         direct_reference { struct_field { field: 1 } } } } }
                         arguments { value { selection { direct_reference {
-                          struct_field { field: 1 } } } } } } }
+                          struct_field { field: 1 } } } } }
+                        output_type {
+                          string { nullability: NULLABILITY_REQUIRED } } } }
                   } } } })"))),
       },
       {
@@ -535,6 +543,7 @@ std::vector<TestCase> getTestCases() {
           })",
           AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
               R"(relations { root { input { project {
+                common { direct { } }
                 expressions { literal { timestamp: 946684800 } }
                 expressions { literal { timestamp: 946684800 } }
                 expressions { literal { date: 18616 } }
@@ -590,6 +599,7 @@ std::vector<TestCase> getTestCases() {
           })",
           AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
               R"(relations { root { input { project {
+                common { direct { } }
                 expressions { literal { list {
                   values { string: "a" }
                   values { string: "b" }
@@ -623,20 +633,17 @@ std::vector<TestCase> getTestCases() {
           R"(project relation literalexamples {
             expression null_list<string>;
             expression null_list<list<string?>>;
-            expression null_list<list<string>>?;
             expression null_list?<list<string>>;
           })",
           AsBinaryPlan((EqualsProto<::substrait::proto::Plan>(
               R"(relations { root { input { project {
+                common { direct { } }
                 expressions { literal { null { list { type { string { nullability: NULLABILITY_REQUIRED } }
                   nullability: NULLABILITY_NULLABLE } } } }
                 expressions { literal { null { list { type {
                   list { type { string {
                     nullability: NULLABILITY_NULLABLE } } nullability: NULLABILITY_REQUIRED } }
                       nullability: NULLABILITY_NULLABLE } } } }
-                expressions { literal { null { list { type {
-                  list { type { string { nullability: NULLABILITY_REQUIRED } } nullability: NULLABILITY_REQUIRED } }
-                  nullability: NULLABILITY_NULLABLE } } } }
                 expressions { literal { null { list { type {
                   list { type { string { nullability: NULLABILITY_REQUIRED } } nullability: NULLABILITY_REQUIRED } }
                    nullability: NULLABILITY_NULLABLE } } } }
@@ -650,6 +657,7 @@ std::vector<TestCase> getTestCases() {
           })",
           AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
               R"(relations { root { input { project {
+                common { direct { } }
                 expressions { literal { map {
                   key_values { key { i16: 42 } value { string: "life" } }
                   key_values { key { i16: 32 } value { string: "everything" } }
@@ -676,6 +684,7 @@ std::vector<TestCase> getTestCases() {
           })",
           AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
               R"(relations { root { input { project {
+                common { direct { } }
                 expressions { literal { struct {
                   fields { string: "a" }
                   fields { struct {
@@ -801,6 +810,7 @@ std::vector<TestCase> getTestCases() {
               HasErrors({}),
               AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
                   R"(relations { root { input { project {
+                    common { direct { } }
                     expressions { cast { type { i32 {
                       nullability: NULLABILITY_REQUIRED } }
                       input { literal { i8: 123 } } } }
@@ -836,8 +846,14 @@ std::vector<TestCase> getTestCases() {
           "test13-bad-functions",
           R"(extension_space blah.yaml {
             function sum: as sum;
+            function sum as sum;
+            function sum;
           })",
-          HasErrors({"2:12 → Functions should have an associated type."}),
+          HasErrors({
+              "3:25 → missing ':' at 'as'",
+              "4:24 → missing ':' at ';'",
+              "2:12 → Functions should have an associated type.",
+          }),
       },
       {
           "test14-three-node-pipeline-with-fields",
@@ -917,10 +933,13 @@ std::vector<TestCase> getTestCases() {
                 root: {
                   input: {
                     join: {
+                      common { direct { } }
                       left: {
                         join: {
+                          common { direct { } }
                           left: {
                             read: {
+                              common { direct { } }
                               base_schema {
                                 names: "order_id"
                                 names: "product_id"
@@ -928,19 +947,23 @@ std::vector<TestCase> getTestCases() {
                                 struct {
                                   types { i32 { nullability: NULLABILITY_REQUIRED } }
                                   types { i32 { nullability: NULLABILITY_REQUIRED } }
-                                  types { i64 { nullability: NULLABILITY_REQUIRED } } }
+                                  types { i64 { nullability: NULLABILITY_REQUIRED } }
+                                  nullability: NULLABILITY_REQUIRED }
                               }
                               named_table { names: "#1" }
                             }
                           }
                           right: {
                             read: {
+                              common { direct { } }
                               base_schema {
                                 names: "product_id"
                                 names: "cost"
                                 struct {
                                   types { i32 { nullability: NULLABILITY_REQUIRED } }
-                                  types { fp32 { nullability: NULLABILITY_REQUIRED } } }
+                                  types { fp32 { nullability: NULLABILITY_REQUIRED } }
+                                  nullability: NULLABILITY_REQUIRED
+                                }
                               }
                               named_table { names: "#2" }
                             }
@@ -967,12 +990,14 @@ std::vector<TestCase> getTestCases() {
                       }
                       right: {
                         read: {
+                        common { direct { } }
                         base_schema {
                           names: "company"
                           names: "order_id"
                           struct {
                             types { string { nullability: NULLABILITY_REQUIRED } }
                             types { i32 { nullability: NULLABILITY_REQUIRED } }
+                            nullability: NULLABILITY_REQUIRED
                           }
                         }
                         named_table { names: "#3" }
@@ -1000,8 +1025,8 @@ std::vector<TestCase> getTestCases() {
           HasErrors({
               "1:0 → extraneous input 'relation' expecting {<EOF>, "
               "'EXTENSION_SPACE', 'SCHEMA', 'PIPELINES', 'FILTER', "
-              "'GROUPING', 'MEASURE', 'SORT', 'COUNT', 'TYPE', 'SOURCE', "
-              "'ROOT', 'NULL', IDENTIFIER}",
+              "'GROUPING', 'MEASURE', 'SORT', 'COUNT', 'TYPE', 'EMIT', "
+              "'LOCAL', 'SOURCE', 'ROOT', 'NULL', IDENTIFIER}",
               "1:24 → mismatched input '{' expecting 'RELATION'",
               "1:9 → Unrecognized relation type: notyperelation",
           }),
@@ -1052,6 +1077,57 @@ std::vector<TestCase> getTestCases() {
               R"(relations: {
                 root { names: "apple" }
               })")),
+      },
+      {
+          "test19-emit",
+          R"(pipelines {
+            root -> project -> read;
+          }
+
+          read relation read {
+            base_schema schemaone;
+          }
+
+          schema schemaone {
+            r_region_key i32;
+          }
+
+          project relation project {
+            expression r_regionkey;
+
+            emit r_regionkey;
+            emit local 1;
+          })",
+          AllOf(
+              HasSymbolsWithTypes(
+                  {"read", "project", "root"}, {SymbolType::kRelation}),
+              HasErrors({}),
+              AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(R"(
+                relations {
+                  root {
+                    input {
+                      project {
+                        common {
+                          emit {
+                            output_mapping: 0
+                            output_mapping: 1
+                          }
+                        }
+                        input {
+                        }
+                        expressions {
+                          selection {
+                            direct_reference {
+                              struct_field {
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+                )"))),
       },
   };
   return cases;

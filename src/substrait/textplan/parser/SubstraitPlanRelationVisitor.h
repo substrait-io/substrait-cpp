@@ -18,6 +18,8 @@ class Type_Struct;
 
 namespace io::substrait::textplan {
 
+class RelationData;
+
 class SubstraitPlanRelationVisitor : public SubstraitPlanTypeVisitor {
  public:
   SubstraitPlanRelationVisitor(
@@ -38,6 +40,10 @@ class SubstraitPlanRelationVisitor : public SubstraitPlanTypeVisitor {
 
   std::any visitRelation(SubstraitPlanParser::RelationContext* ctx) override;
 
+  // visitRelationDetail is a new method delegating to the methods below.
+  std::any visitRelationDetail(
+      SubstraitPlanParser::Relation_detailContext* ctx);
+
   std::any visitRelation_filter_behavior(
       SubstraitPlanParser::Relation_filter_behaviorContext* ctx) override;
 
@@ -56,6 +62,12 @@ class SubstraitPlanRelationVisitor : public SubstraitPlanTypeVisitor {
   std::any visitRelationMeasure(
       SubstraitPlanParser::RelationMeasureContext* ctx) override;
 
+  std::any visitRelationJoinType(
+      SubstraitPlanParser::RelationJoinTypeContext* ctx) override;
+
+  std::any visitRelationEmit(
+      SubstraitPlanParser::RelationEmitContext* ctx) override;
+
   int32_t visitAggregationInvocation(SubstraitPlanParser::IdContext* ctx);
 
   int32_t visitAggregationPhase(SubstraitPlanParser::IdContext* ctx);
@@ -68,6 +80,9 @@ class SubstraitPlanRelationVisitor : public SubstraitPlanTypeVisitor {
 
   std::any visitRelationSort(
       SubstraitPlanParser::RelationSortContext* ctx) override;
+
+  std::any visitRelationCount(
+      SubstraitPlanParser::RelationCountContext* ctx) override;
 
   // visitExpression is a new method delegating to the methods below.
   std::any visitExpression(SubstraitPlanParser::ExpressionContext* ctx);
@@ -166,6 +181,20 @@ class SubstraitPlanRelationVisitor : public SubstraitPlanTypeVisitor {
   std::string escapeText(
       const antlr4::tree::TerminalNode* node,
       const std::string& str);
+
+  void addExpressionsToSchema(std::shared_ptr<RelationData>& relationData);
+
+  void applyOutputMappingToSchema(
+      antlr4::Token* token,
+      RelationType relationType,
+      std::shared_ptr<RelationData>& relationData);
+
+  std::string fullyQualifiedReference(const SymbolInfo* fieldReference);
+
+  int findFieldReferenceByName(
+      antlr4::Token* token,
+      std::shared_ptr<RelationData>& relationData,
+      const std::string& name);
 
   const SymbolInfo* currentRelationScope_{nullptr}; // Not owned.
 };

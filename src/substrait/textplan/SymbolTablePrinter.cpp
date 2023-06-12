@@ -204,11 +204,6 @@ std::string outputSchemaSection(const SymbolTable& symbolTable) {
       continue;
     }
 
-    if (info.blob.type() != typeid(const ::substrait::proto::NamedStruct*)) {
-      // TODO -- Implement schemas for text plans.
-      continue;
-    }
-
     if (hasPreviousText) {
       text << "\n";
     }
@@ -240,10 +235,6 @@ std::string outputSourcesSection(const SymbolTable& symbolTable) {
 
     if (hasPreviousText) {
       text << "\n";
-    }
-    if (info.subtype.type() != typeid(SourceType)) {
-      // TODO -- Implement sources for text plans.
-      continue;
     }
     auto subtype = ANY_CAST(SourceType, info.subtype);
     switch (subtype) {
@@ -300,6 +291,7 @@ std::string outputFunctionsSection(const SymbolTable& symbolTable) {
     }
     return spaceNames.at(a) < spaceNames.at(b);
   };
+  // Sorted by name if we have one, otherwise by space id.
   std::set<uint32_t, decltype(cmp)> usedSpaces(cmp);
 
   // Look at the existing spaces.
@@ -352,8 +344,8 @@ std::string outputFunctionsSection(const SymbolTable& symbolTable) {
       functionsToOutput.emplace_back(info.name, functionData->name);
     }
     std::sort(functionsToOutput.begin(), functionsToOutput.end());
-    for (const auto& item : functionsToOutput) {
-      text << "  function " << item.second << " as " << item.first << ";\n";
+    for (auto [shortName, canonicalName] : functionsToOutput) {
+      text << "  function " << canonicalName << " as " << shortName << ";\n";
     }
     text << "}\n";
     hasPreviousOutput = true;
@@ -446,6 +438,7 @@ void outputFunctionsToBinaryPlan(
 
 } // namespace
 
+// TODO -- Update so that errors occurring during printing are captured.
 std::string SymbolTablePrinter::outputToText(const SymbolTable& symbolTable) {
   std::stringstream text;
   bool hasPreviousText = false;

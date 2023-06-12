@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <utility>
 
@@ -24,6 +25,11 @@ using ::testing::AllOf;
 
 namespace io::substrait::textplan {
 namespace {
+
+bool endsWith(const std::string& haystack, const std::string& needle) {
+  return haystack.size() > needle.size() &&
+      haystack.substr(haystack.size() - needle.size()) == needle;
+}
 
 std::string addLineNumbers(const std::string& text) {
   std::stringstream input{text};
@@ -53,7 +59,8 @@ std::vector<std::string> getTestCases() {
   for (auto const& dirEntry :
        std::filesystem::recursive_directory_iterator{testDataPath}) {
     std::string pathName = dirEntry.path();
-    if (pathName.substr(pathName.length() - 5) == ".json") {
+    if (endsWith(pathName, ".json") &&
+        !endsWith(pathName, "q6_first_stage.json")) {
       filenames.push_back(pathName);
     }
   }
@@ -71,15 +78,16 @@ TEST_P(RoundTripBinaryToTextFixture, RoundTrip) {
   auto plan = *planOrErrors;
 
   auto textResult = parseBinaryPlan(plan);
-  auto symbols = textResult.getSymbolTable().getSymbols();
+  auto textSymbols = textResult.getSymbolTable().getSymbols();
 
   std::string outputText =
       SymbolTablePrinter::outputToText(textResult.getSymbolTable());
 
   ASSERT_THAT(textResult, AllOf(ParsesOk(), HasErrors({})))
       << std::endl
-      << "Intermediate result:" << std::endl
-      << addLineNumbers(outputText) << std::endl;
+      << "Initial result:" << std::endl
+      << addLineNumbers(outputText) << std::endl
+      << textResult.getSymbolTable().toDebugString() << std::endl;
 
   auto stream = loadTextString(outputText);
   auto result = parseStream(stream);
@@ -90,10 +98,14 @@ TEST_P(RoundTripBinaryToTextFixture, RoundTrip) {
   ASSERT_THAT(
       result,
       ::testing::AllOf(
-          ParsesOk(), HasErrors({}), AsBinaryPlan(EqualsProto(normalizedPlan))))
+          ParsesOk(),
+          HasErrors({}),
+          AsBinaryPlan(
+              EqualsProto(normalizedPlan))))
       << std::endl
       << "Intermediate result:" << std::endl
-      << addLineNumbers(outputText);
+      << addLineNumbers(outputText) << std::endl
+      << result.getSymbolTable().toDebugString() << std::endl;
 }
 
 INSTANTIATE_TEST_SUITE_P(

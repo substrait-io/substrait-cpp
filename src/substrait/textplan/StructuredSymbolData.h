@@ -37,6 +37,20 @@ struct RelationData {
   // Column name for each field known to this relation (in field order).  Used
   // to determine what fields are coming in as well and fields are going out.
   std::vector<const SymbolInfo*> fieldReferences;
+
+  // Each field reference here was generated within the current relation.
+  std::vector<const SymbolInfo*> generatedFieldReferences;
+
+  // Local aliases for field references in this relation.
+  std::map<size_t, std::string> generatedFieldReferenceAlternativeExpression;
+
+  // If populated, supersedes the combination of fieldReferences and
+  // generatedFieldReferences for the field symbols exposed by this relation.
+  std::vector<const SymbolInfo*> outputFieldReferences;
+
+  // Contains the field reference names seen so far along with the id of the
+  // first occurrence.
+  std::map<std::string, size_t> seenFieldReferenceNames;
 };
 
 // Used by Schema symbols to keep track of assigned values.

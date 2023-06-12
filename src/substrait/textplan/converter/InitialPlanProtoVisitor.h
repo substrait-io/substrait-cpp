@@ -59,7 +59,12 @@ class InitialPlanProtoVisitor : public BasePlanProtoVisitor {
 
   void updateLocalSchema(
       const std::shared_ptr<RelationData>& relationData,
-      const ::substrait::proto::Rel& relation);
+      const ::substrait::proto::Rel& relation,
+      const ::substrait::proto::Rel& internalRelation);
+
+  static void addFieldToRelation(
+      const std::shared_ptr<RelationData>& relationData,
+      const SymbolInfo* field);
 
   void addFieldsToRelation(
       const std::shared_ptr<RelationData>& relationData,
@@ -78,6 +83,10 @@ class InitialPlanProtoVisitor : public BasePlanProtoVisitor {
       addFieldsToRelation(relationData, rel);
     }
   };
+
+  void addGroupingToRelation(
+      const std::shared_ptr<RelationData>& relationData,
+      const ::substrait::proto::AggregateRel_Grouping& grouping);
 
   std::shared_ptr<SymbolTable> symbolTable_;
   std::shared_ptr<SubstraitErrorListener> errorListener_;

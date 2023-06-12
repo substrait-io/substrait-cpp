@@ -8,7 +8,9 @@
 #include <string>
 
 #include "substrait/common/Exceptions.h"
+#include "substrait/textplan/Any.h"
 #include "substrait/textplan/Location.h"
+#include "substrait/textplan/StructuredSymbolData.h"
 
 namespace io::substrait::textplan {
 
@@ -123,6 +125,12 @@ void SymbolTable::updateLocation(
   symbolsByLocation_.insert(std::make_pair(location, index));
 }
 
+void SymbolTable::addAlias(const std::string& alias, const SymbolInfo* symbol) {
+  auto index = findSymbolIndex(*symbol);
+  symbols_[index]->alias = alias;
+  symbolsByName_.insert(std::make_pair(alias, index));
+}
+
 const SymbolInfo* SymbolTable::lookupSymbolByName(
     const std::string& name) const {
   auto itr = symbolsByName_.find(name);
@@ -132,13 +140,33 @@ const SymbolInfo* SymbolTable::lookupSymbolByName(
   return symbols_[itr->second].get();
 }
 
-const SymbolInfo* SymbolTable::lookupSymbolByLocation(
+std::vector<const SymbolInfo*> SymbolTable::lookupSymbolsByLocation(
     const Location& location) const {
-  auto itr = symbolsByLocation_.find(location);
-  if (itr == symbolsByLocation_.end()) {
-    return nullptr;
+  std::vector<const SymbolInfo*> symbols;
+  auto [begin, end] = symbolsByLocation_.equal_range(location);
+  for (auto itr = begin; itr != end; ++itr) {
+    symbols.push_back(symbols_[itr->second].get());
   }
-  return symbols_[itr->second].get();
+  return symbols;
+}
+
+const SymbolInfo* SymbolTable::lookupSymbolByLocationAndType(
+    const Location& location,
+    SymbolType type) const {
+  return lookupSymbolByLocationAndTypes(location, {type});
+}
+
+const SymbolInfo* SymbolTable::lookupSymbolByLocationAndTypes(
+    const Location& location,
+    std::unordered_set<SymbolType> types) const {
+  auto [begin, end] = symbolsByLocation_.equal_range(location);
+  for (auto itr = begin; itr != end; ++itr) {
+    auto symbol = symbols_[itr->second].get();
+    if (types.find(symbol->type) != types.end()) {
+      return symbol;
+    }
+  }
+  return nullptr;
 }
 
 const SymbolInfo& SymbolTable::nthSymbolByType(uint32_t n, SymbolType type)
@@ -160,6 +188,69 @@ SymbolTableIterator SymbolTable::begin() const {
 
 SymbolTableIterator SymbolTable::end() const {
   return {this, symbols_.size()};
+}
+
+std::string SymbolTable::toDebugString() const {
+  std::stringstream result;
+  bool textAlreadyWritten = false;
+  int32_t relationCount = 0;
+  for (const auto& symbol : symbols_) {
+    if (symbol->type != SymbolType::kRelation) {
+      continue;
+    }
+    auto relationData = ANY_CAST(std::shared_ptr<RelationData>, symbol->blob);
+    result << std::left << std::setw(4) << relationCount++;
+    result << std::left << std::setw(20) << symbol->name << std::endl;
+
+    int32_t fieldNum = 0;
+    for (const auto& field : relationData->fieldReferences) {
+      result << "    " << std::setw(4) << fieldNum++ << "  ";
+      if (field->schema != nullptr) {
+        result << field->schema->name << ".";
+      }
+      result << field->name;
+      if (!field->alias.empty()) {
+        result << " " << field->alias;
+      }
+      result << std::endl;
+    }
+
+    for (const auto& field : relationData->generatedFieldReferences) {
+      result << "   g" << std::setw(4) << fieldNum++ << "  ";
+      if (field->schema != nullptr) {
+        result << field->schema->name << ".";
+      }
+      result << field->name;
+      if (relationData->generatedFieldReferenceAlternativeExpression.find(
+              fieldNum) !=
+          relationData->generatedFieldReferenceAlternativeExpression.end()) {
+        result << " "
+               << relationData
+                      ->generatedFieldReferenceAlternativeExpression[fieldNum];
+      } else if (!field->alias.empty()) {
+        result << " " << field->alias;
+      }
+      result << std::endl;
+    }
+
+    int32_t outputFieldNum = 0;
+    for (const auto& field : relationData->outputFieldReferences) {
+      result << "   o" << std::setw(4) << outputFieldNum++ << "  ";
+      if (field->schema != nullptr) {
+        result << field->schema->name << ".";
+      }
+      result << field->name;
+      if (!field->alias.empty()) {
+        result << " " << field->alias;
+      }
+      result << std::endl;
+    }
+    textAlreadyWritten = true;
+  }
+  if (textAlreadyWritten) {
+    result << std::endl;
+  }
+  return result.str();
 }
 
 } // namespace io::substrait::textplan

@@ -47,7 +47,7 @@
     "extensionFunction": {
       "extensionUriReference": 4,
       "functionAnchor": 5,
-      "name": "count:"
+      "name": "count:any"
     }
   }],
   "relations": [{
