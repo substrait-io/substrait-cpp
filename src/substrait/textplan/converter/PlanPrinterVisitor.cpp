@@ -2,7 +2,6 @@
 
 #include "substrait/textplan/converter/PlanPrinterVisitor.h"
 
-#include <iostream>
 #include <sstream>
 #include <string>
 

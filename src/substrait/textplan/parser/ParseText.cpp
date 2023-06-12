@@ -5,12 +5,11 @@
 #include <ANTLRErrorStrategy.h>
 #include <antlr4-runtime.h>
 #include <fstream>
-#include <iostream>
+#include <sstream>
 #include <memory>
 
 #include "SubstraitPlanLexer/SubstraitPlanLexer.h"
 #include "SubstraitPlanParser/SubstraitPlanParser.h"
-#include "substrait/textplan/Any.h"
 #include "substrait/textplan/StructuredSymbolData.h"
 #include "substrait/textplan/parser/SubstraitParserErrorListener.h"
 #include "substrait/textplan/parser/SubstraitPlanPipelineVisitor.h"
