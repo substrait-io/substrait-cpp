@@ -10,6 +10,7 @@
 
 #include "SubstraitPlanParser/SubstraitPlanParser.h"
 #include "SubstraitPlanTypeVisitor.h"
+#include "absl/strings/ascii.h"
 #include "absl/strings/numbers.h"
 #include "date/tz.h"
 #include "substrait/expression/DecimalLiteral.h"
@@ -731,10 +732,39 @@ std::any SubstraitPlanRelationVisitor::visitExpression(
   return defaultResult();
 }
 
+::substrait::proto::Expression
+SubstraitPlanRelationVisitor::visitExpressionIfThenUse(
+    SubstraitPlanParser::ExpressionFunctionUseContext* ctx) {
+  ::substrait::proto::Expression expr;
+  size_t currExprNum = 0;
+  size_t totalExprCount = ctx->expression().size();
+  while (currExprNum + 2 <= totalExprCount) {
+    // Peel off an if/then pair.
+    auto ifThen = expr.mutable_if_then()->add_ifs();
+    *ifThen->mutable_if_() = ANY_CAST(
+        ::substrait::proto::Expression,
+        visitExpression(ctx->expression(currExprNum)));
+    *ifThen->mutable_then() = ANY_CAST(
+        ::substrait::proto::Expression,
+        visitExpression(ctx->expression(currExprNum + 1)));
+    currExprNum += 2;
+  }
+  if (currExprNum + 1 <= totalExprCount) {
+    // Use the last expression as the else clause.
+    *expr.mutable_if_then()->mutable_else_() = ANY_CAST(
+        ::substrait::proto::Expression,
+        visitExpression(ctx->expression(currExprNum)));
+  }
+  return expr;
+}
+
 std::any SubstraitPlanRelationVisitor::visitExpressionFunctionUse(
     SubstraitPlanParser::ExpressionFunctionUseContext* ctx) {
   ::substrait::proto::Expression expr;
   std::string funcName = ctx->id()->getText();
+  if (absl::AsciiStrToLower(funcName) == "ifthen") {
+    return visitExpressionIfThenUse(ctx);
+  }
   uint32_t funcReference = 0;
   auto symbol = symbolTable_->lookupSymbolByName(funcName);
   if (symbol == nullptr || symbol->type != SymbolType::kFunction) {
