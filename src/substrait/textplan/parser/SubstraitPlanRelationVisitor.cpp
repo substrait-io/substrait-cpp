@@ -11,6 +11,7 @@
 #include "SubstraitPlanParser/SubstraitPlanParser.h"
 #include "SubstraitPlanTypeVisitor.h"
 #include "absl/strings/numbers.h"
+#include "absl/strings/strip.h"
 #include "date/tz.h"
 #include "substrait/expression/DecimalLiteral.h"
 #include "substrait/proto/algebra.pb.h"
@@ -46,6 +47,12 @@ std::string toLower(const std::string& str) {
 // Yields true if the string 'haystack' starts with the string 'needle'.
 bool startsWith(const std::string& haystack, std::string_view needle) {
   return strncmp(haystack.c_str(), needle.data(), needle.size()) == 0;
+}
+
+// Returns true if the string 'haystack' ends with the string 'needle'.
+bool endsWith(const std::string& haystack, const std::string& needle) {
+  return haystack.size() > needle.size() &&
+      haystack.substr(haystack.size() - needle.size()) == needle;
 }
 
 void setNullable(::substrait::proto::Type* type) {
@@ -748,6 +755,13 @@ std::any SubstraitPlanRelationVisitor::visitExpressionFunctionUse(
 
   expr.mutable_scalar_function()->set_function_reference(funcReference);
   for (const auto& exp : ctx->expression()) {
+    if (endsWith(exp->getText(), "_enum")) {
+      auto str = exp->getText();
+      str = absl::StripSuffix(str, "_enum");
+      expr.mutable_scalar_function()->add_arguments()->set_enum_(str);
+      continue;
+    }
+
     auto result = visitExpression(exp);
     if (result.type() != typeid(::substrait::proto::Expression)) {
       errorListener_->addError(

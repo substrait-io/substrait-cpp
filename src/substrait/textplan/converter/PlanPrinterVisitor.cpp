@@ -59,6 +59,12 @@ std::string invocationToString(
   return "unspecified";
 }
 
+std::string visitEnumArgument(const std::string& str) {
+  std::stringstream text;
+  text << str << "_enum";
+  return text.str();
+}
+
 } // namespace
 
 std::string PlanPrinterVisitor::printRelation(const SymbolInfo& symbol) {
@@ -393,10 +399,7 @@ std::any PlanPrinterVisitor::visitScalarFunction(
     }
     switch (arg.arg_type_case()) {
       case ::substrait::proto::FunctionArgument::kEnum:
-        errorListener_->addError(
-            "Enum arguments not yet supported in scalar functions: " +
-            arg.ShortDebugString());
-        text << "ENUM_NOT_SUPPORTED";
+        text << visitEnumArgument(arg.enum_());
         break;
       case ::substrait::proto::FunctionArgument::kType:
         text << ANY_CAST(std::string, visitType(arg.type()));
@@ -500,8 +503,9 @@ std::any PlanPrinterVisitor::visitNested(
 std::any PlanPrinterVisitor::visitEnum(
     const ::substrait::proto::Expression_Enum& value) {
   errorListener_->addError(
-      "Enum expressions are not yet supported: " + value.ShortDebugString());
-  return std::string("ENUM_NOT_YET_IMPLEMENTED");
+      "Enum expressions are deprecated and not supported: " +
+      value.ShortDebugString());
+  return std::string("ENUM_EXPRESSION_DEPRECATED");
 }
 
 std::any PlanPrinterVisitor::visitStructSelect(
@@ -569,7 +573,7 @@ std::any PlanPrinterVisitor::visitAggregateFunction(
     }
     switch (arg.arg_type_case()) {
       case ::substrait::proto::FunctionArgument::kEnum:
-        text << "ENUM_NOT_SUPPORTED";
+        text << visitEnumArgument(arg.enum_());
         break;
       case ::substrait::proto::FunctionArgument::kType:
         text << ANY_CAST(std::string, visitType(arg.type()));
