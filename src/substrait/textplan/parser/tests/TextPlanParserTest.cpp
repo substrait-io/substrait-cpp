@@ -228,8 +228,8 @@ std::vector<TestCase> getTestCases() {
 
                     extension_space blah.yaml {
                       function add:i8 as add;
-                      function subtract:i8 as subtract;
                       function concat:str as concat;
+                      function subtract:i8 as subtract;
                     })")),
               AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
                   R"(extension_uris {
