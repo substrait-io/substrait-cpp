@@ -38,8 +38,7 @@ std::string addLineNumbers(const std::string& text) {
 
 ::substrait::proto::Plan normalizePlan(const ::substrait::proto::Plan& plan) {
   ::substrait::proto::Plan newPlan = plan;
-  ReferenceNormalizer normalizer;
-  normalizer.normalize(&newPlan);
+  ReferenceNormalizer::normalize(&newPlan);
   return newPlan;
 }
 
