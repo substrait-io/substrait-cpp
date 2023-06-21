@@ -33,12 +33,9 @@ add_executable(planconverter Tool.cpp)
 
 target_link_libraries(planconverter substrait_textplan_converter)
 
-set(NORMALIZER_SRCS
-    ReferenceNormalizer.cpp
-    ReferenceNormalizer.h)
+set(NORMALIZER_SRCS ReferenceNormalizer.cpp ReferenceNormalizer.h)
 
 add_library(substrait_textplan_normalizer ${NORMALIZER_SRCS})
 
-target_link_libraries(
-  substrait_textplan_normalizer
-  substrait_textplan_converter)
+target_link_libraries(substrait_textplan_normalizer
+                      substrait_textplan_converter)
