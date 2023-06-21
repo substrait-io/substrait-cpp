@@ -254,7 +254,15 @@ std::string outputFunctionsSection(const SymbolTable& symbolTable) {
   std::stringstream text;
 
   std::map<uint32_t, std::string> spaceNames;
-  std::set<uint32_t> usedSpaces;
+  auto cmp = [&](uint32_t a, uint32_t b) {
+    if (spaceNames.find(a) == spaceNames.end()) {
+      return spaceNames.find(b) != spaceNames.end();
+    } else if (spaceNames.find(b) == spaceNames.end()) {
+      return false;
+    }
+    return spaceNames.at(a) < spaceNames.at(b);
+  };
+  std::set<uint32_t, decltype(cmp)> usedSpaces(cmp);
 
   // Look at the existing spaces.
   for (const SymbolInfo& info : symbolTable) {
@@ -278,7 +286,7 @@ std::string outputFunctionsSection(const SymbolTable& symbolTable) {
     usedSpaces.insert(extension->extensionUriReference.value());
   }
 
-  // Finally output the extensions by space in the order they were encountered.
+  // Finally output the extensions by space in alphabetical order.
   bool hasPreviousOutput = false;
   for (const uint32_t space : usedSpaces) {
     if (hasPreviousOutput) {
@@ -291,6 +299,7 @@ std::string outputFunctionsSection(const SymbolTable& symbolTable) {
       text << "extension_space " << spaceNames[space] << " {\n";
     }
 
+    std::vector<std::pair<std::string, std::string>> functionsToOutput;
     for (const SymbolInfo& info : symbolTable) {
       if (info.type != SymbolType::kFunction) {
         continue;
@@ -302,8 +311,11 @@ std::string outputFunctionsSection(const SymbolTable& symbolTable) {
         continue;
       }
 
-      text << "  function " << functionData->name << " as " << info.name
-           << ";\n";
+      functionsToOutput.emplace_back(info.name, functionData->name);
+    }
+    std::sort(functionsToOutput.begin(), functionsToOutput.end());
+    for (const auto& item : functionsToOutput) {
+      text << "  function " << item.second << " as " << item.first << ";\n";
     }
     text << "}\n";
     hasPreviousOutput = true;

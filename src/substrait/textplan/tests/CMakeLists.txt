@@ -30,6 +30,7 @@ if(${SUBSTRAIT_CPP_ROUNDTRIP_TESTING})
     EXTRA_LINK_LIBS
     substrait_textplan_converter
     substrait_textplan_loader
+    substrait_textplan_normalizer
     substrait_common
     substrait_proto
     parse_result_matchers

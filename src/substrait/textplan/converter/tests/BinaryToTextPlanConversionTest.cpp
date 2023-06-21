@@ -119,13 +119,13 @@ std::vector<TestCase> getTestCases() {
           })",
           WhenSerialized(EqSquashingWhitespace(
               R"(extension_space {
-                   function lte:fp64_fp64 as lte;
-                   function sum:fp64_fp64 as sum;
-                   function lt:fp64_fp64 as lt;
-                   function is_not_null:fp64 as is_not_null;
                    function and:bool_bool as and;
                    function gte:fp64_fp64 as gte;
+                   function is_not_null:fp64 as is_not_null;
+                   function lt:fp64_fp64 as lt;
+                   function lte:fp64_fp64 as lte;
                    function multiply:opt_fp64_fp64 as multiply;
+                   function sum:fp64_fp64 as sum;
                  })")),
       },
       {

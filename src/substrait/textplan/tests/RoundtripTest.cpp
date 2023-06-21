@@ -15,6 +15,7 @@
 #include "substrait/textplan/SymbolTablePrinter.h"
 #include "substrait/textplan/converter/LoadBinary.h"
 #include "substrait/textplan/converter/ParseBinary.h"
+#include "substrait/textplan/converter/ReferenceNormalizer.h"
 #include "substrait/textplan/parser/ParseText.h"
 #include "substrait/textplan/tests/ParseResultMatchers.h"
 
@@ -33,6 +34,12 @@ std::string addLineNumbers(const std::string& text) {
     result << std::setw(4) << ++lineNum << " " << sp << std::endl;
   }
   return result.str();
+}
+
+::substrait::proto::Plan normalizePlan(const ::substrait::proto::Plan& plan) {
+  ::substrait::proto::Plan newPlan = plan;
+  ReferenceNormalizer::normalize(&newPlan);
+  return newPlan;
 }
 
 class RoundTripBinaryToTextFixture
@@ -79,13 +86,11 @@ TEST_P(RoundTripBinaryToTextFixture, RoundTrip) {
   ASSERT_NO_THROW(auto outputBinary = SymbolTablePrinter::outputToBinaryPlan(
                       result.getSymbolTable()););
 
+  auto normalizedPlan = normalizePlan(plan);
   ASSERT_THAT(
       result,
       ::testing::AllOf(
-          ParsesOk(),
-          HasErrors({}),
-          AsBinaryPlan(IgnoringFieldPaths(
-              {"extension_uris", "extensions"}, EqualsProto(plan)))))
+          ParsesOk(), HasErrors({}), AsBinaryPlan(EqualsProto(normalizedPlan))))
       << std::endl
       << "Intermediate result:" << std::endl
       << addLineNumbers(outputText);
