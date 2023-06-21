@@ -465,6 +465,38 @@ std::vector<TestCase> getTestCases() {
                      })"))),
       },
       {
+          "ifthen expression missing then",
+          R"(relations: {
+            root: {
+              input: {
+                filter: {
+                  condition: {
+                    if_then: {
+                      ifs: {
+                        if: {
+                          literal: {
+                            nullable: false,
+                            fp64: 0.07
+                          }
+                        }
+                      }
+                      else: {
+                        literal: {
+                          nullable: false,
+                          fp64: 0.07
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          })",
+          HasErrors(
+              {"If then clauses require both an if and a then expression: "
+               "if { literal { fp64: 0.07 } }"}),
+      },
+      {
           "cast expression",
           R"(relations: {
             root: {

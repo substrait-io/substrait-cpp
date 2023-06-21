@@ -8,6 +8,7 @@
 #include "substrait/textplan/parser/SubstraitPlanTypeVisitor.h"
 
 namespace substrait::proto {
+class Expression;
 class Expression_Literal;
 class Expression_Literal_Map_KeyValue;
 class NamedStruct;
@@ -70,6 +71,10 @@ class SubstraitPlanRelationVisitor : public SubstraitPlanTypeVisitor {
 
   // visitExpression is a new method delegating to the methods below.
   std::any visitExpression(SubstraitPlanParser::ExpressionContext* ctx);
+
+  // visitExpressionIfThenUse handles the built-in IFTHEN function-like syntax.
+  ::substrait::proto::Expression visitExpressionIfThenUse(
+      SubstraitPlanParser::ExpressionFunctionUseContext* ctx);
 
   std::any visitExpressionFunctionUse(
       SubstraitPlanParser::ExpressionFunctionUseContext* ctx) override;

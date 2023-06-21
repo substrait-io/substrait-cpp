@@ -69,6 +69,11 @@ TEST_P(RoundTripBinaryToTextFixture, RoundTrip) {
   std::string outputText =
       SymbolTablePrinter::outputToText(textResult.getSymbolTable());
 
+  ASSERT_THAT(textResult, AllOf(ParsesOk(), HasErrors({})))
+      << std::endl
+      << "Intermediate result:" << std::endl
+      << addLineNumbers(outputText) << std::endl;
+
   auto stream = loadTextString(outputText);
   auto result = parseStream(stream);
   ASSERT_NO_THROW(auto outputBinary = SymbolTablePrinter::outputToBinaryPlan(

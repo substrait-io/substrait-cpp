@@ -442,10 +442,33 @@ std::any PlanPrinterVisitor::visitWindowFunction(
 
 std::any PlanPrinterVisitor::visitIfThen(
     const ::substrait::proto::Expression::IfThen& ifthen) {
-  errorListener_->addError(
-      "If then expressions are not yet supported: " +
-      ifthen.ShortDebugString());
-  return std::string("IFTHEN_NOT_YET_IMPLEMENTED");
+  std::stringstream text;
+  text << "IFTHEN(";
+  bool hasPreviousText = false;
+  for (const auto& clause : ifthen.ifs()) {
+    if (!clause.has_if_() || !clause.has_then()) {
+      errorListener_->addError(
+          "If then clauses require both an if and a then expression: " +
+          clause.ShortDebugString());
+      continue;
+    }
+    if (hasPreviousText) {
+      text << ", ";
+    }
+    text << ANY_CAST(std::string, visitExpression(clause.if_()));
+    text << ", ";
+    text << ANY_CAST(std::string, visitExpression(clause.then()));
+    hasPreviousText = true;
+  }
+  if (ifthen.has_else_()) {
+    if (hasPreviousText) {
+      text << ", ";
+    }
+    text << ANY_CAST(std::string, visitExpression(ifthen.else_()));
+  }
+
+  text << ")";
+  return text.str();
 }
 
 std::any PlanPrinterVisitor::visitSwitchExpression(
