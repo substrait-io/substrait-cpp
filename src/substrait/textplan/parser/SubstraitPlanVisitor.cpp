@@ -161,36 +161,30 @@ std::any SubstraitPlanVisitor::visitSchema_item(
       visitLiteral_complex_type(ctx->literal_complex_type()));
 }
 
+std::any SubstraitPlanVisitor::visitRoot_relation(
+    SubstraitPlanParser::Root_relationContext* ctx) {
+  auto prevRoot = symbolTable_->lookupSymbolByName(kRootName);
+  if (prevRoot != nullptr) {
+    if (prevRoot->type == SymbolType::kRoot) {
+      errorListener_->addError(
+          ctx->getStart(), "A root relation was already defined.");
+    } else {
+      errorListener_->addError(
+          ctx->getStart(), "A relation named root was already defined.");
+    }
+    return nullptr;
+  }
+  std::vector<std::string> names;
+  for (const auto& id : ctx->id()) {
+    names.push_back(id->getText());
+  }
+  symbolTable_->defineSymbol(
+      kRootName, Location(ctx), SymbolType::kRoot, SourceType::kUnknown, names);
+  return nullptr;
+}
+
 std::any SubstraitPlanVisitor::visitRelation(
     SubstraitPlanParser::RelationContext* ctx) {
-  if (!ctx->id().empty()) {
-    auto prevRoot = symbolTable_->lookupSymbolByName(kRootName);
-    if (prevRoot != nullptr) {
-      if (prevRoot->type == SymbolType::kRoot) {
-        errorListener_->addError(
-            ctx->getStart(), "A root relation was already defined.");
-      } else {
-        errorListener_->addError(
-            ctx->getStart(), "A relation named root was already defined.");
-      }
-      return nullptr;
-    }
-    std::vector<std::string> names;
-    for (const auto& id : ctx->id()) {
-      names.push_back(id->getText());
-    }
-    symbolTable_->defineSymbol(
-        kRootName,
-        Location(ctx),
-        SymbolType::kRoot,
-        SourceType::kUnknown,
-        names);
-    return nullptr;
-  }
-  if (ctx->relation_type() == nullptr) {
-    errorListener_->addError(ctx->getStart(), "Could not parse this relation.");
-    return nullptr;
-  }
   auto relType =
       ANY_CAST(RelationType, visitRelation_type(ctx->relation_type()));
   if (ctx->relation_ref() == nullptr) {

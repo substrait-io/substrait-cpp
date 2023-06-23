@@ -40,6 +40,8 @@ class SubstraitPlanVisitor : public SubstraitPlanTypeVisitor {
   std::any visitSchema_item(
       SubstraitPlanParser::Schema_itemContext* ctx) override;
   std::any visitRelation(SubstraitPlanParser::RelationContext* ctx) override;
+  std::any visitRoot_relation(
+      SubstraitPlanParser::Root_relationContext* ctx) override;
   std::any visitRelation_type(
       SubstraitPlanParser::Relation_typeContext* ctx) override;
   std::any visitSource_definition(
