@@ -25,6 +25,7 @@ enum class SymbolType {
   kSource = 7,
   kSourceDetail = 8,
   kField = 9,
+  kRoot = 10,
 
   kUnknown = -1,
 };

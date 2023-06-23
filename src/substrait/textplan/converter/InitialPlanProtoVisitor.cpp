@@ -167,6 +167,15 @@ std::any InitialPlanProtoVisitor::visitRelation(
 
 std::any InitialPlanProtoVisitor::visitRelationRoot(
     const ::substrait::proto::RelRoot& relation) {
+  auto uniqueName = symbolTable_->getUniqueName("root");
+  std::vector<std::string> names;
+  names.insert(names.end(), relation.names().begin(), relation.names().end());
+  symbolTable_->defineSymbol(
+      uniqueName,
+      PROTO_LOCATION(relation),
+      SymbolType::kRoot,
+      SourceType::kUnknown,
+      names);
   BasePlanProtoVisitor::visitRelationRoot(relation);
   return std::nullopt;
 }

@@ -40,6 +40,7 @@ pipeline
 // TODO -- Make the token order involving ids consistent between relations and other top-level entities.
 relation
    : relation_type RELATION relation_ref LEFTBRACE relation_detail* RIGHTBRACE
+   | ROOT LEFTBRACE NAMES EQUAL LEFTBRACKET id (COMMA id)* COMMA? RIGHTBRACKET RIGHTBRACE
    ;
 
 relation_type
@@ -209,6 +210,8 @@ id
 simple_id
    : IDENTIFIER
    | FILTER
+   | ROOT
+   | SOURCE
    | SCHEMA
    | NULLVAL
    | SORT

@@ -258,6 +258,9 @@ std::any SubstraitPlanRelationVisitor::visitRelation(
     // This error has been previously dealt with thus we can safely skip it.
     return defaultResult();
   }
+  if (symbol->type == SymbolType::kRoot) {
+    return defaultResult();
+  }
   auto relationData = ANY_CAST(std::shared_ptr<RelationData>, symbol->blob);
   ::substrait::proto::Rel relation;
 
