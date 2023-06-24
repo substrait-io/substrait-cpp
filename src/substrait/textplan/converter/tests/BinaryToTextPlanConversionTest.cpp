@@ -148,7 +148,7 @@ std::vector<TestCase> getTestCases() {
             }
           })",
           AllOf(
-              HasSymbols({"local", "read", "root"}),
+              HasSymbols({"rootnames", "local", "read", "root"}),
               WhenSerialized(EqSquashingWhitespace(
                   R"(pipelines {
                     read -> root;
@@ -190,7 +190,14 @@ std::vector<TestCase> getTestCases() {
           })",
           AllOf(
               HasSymbols(
-                  {"schema", "cost", "count", "named", "#2", "read", "root"}),
+                  {"rootnames",
+                   "schema",
+                   "cost",
+                   "count",
+                   "named",
+                   "#2",
+                   "read",
+                   "root"}),
               WhenSerialized(EqSquashingWhitespace(
                   R"(pipelines {
                         read -> root;
@@ -401,7 +408,7 @@ std::vector<TestCase> getTestCases() {
             }
           })",
           AllOf(
-              HasSymbols({"filter", "root"}),
+              HasSymbols({"rootnames", "filter", "root"}),
               WhenSerialized(EqSquashingWhitespace(
                   R"(pipelines {
                        filter -> root;
@@ -454,7 +461,7 @@ std::vector<TestCase> getTestCases() {
             }
           })",
           AllOf(
-              HasSymbols({"filter", "root"}),
+              HasSymbols({"rootnames", "filter", "root"}),
               WhenSerialized(EqSquashingWhitespace(
                   R"(pipelines {
                        filter -> root;
@@ -526,7 +533,7 @@ std::vector<TestCase> getTestCases() {
             }
           })",
           AllOf(
-              HasSymbols({"filter", "root"}),
+              HasSymbols({"rootnames", "filter", "root"}),
               WhenSerialized(EqSquashingWhitespace(
                   R"(pipelines {
                        filter -> root;
@@ -539,7 +546,7 @@ std::vector<TestCase> getTestCases() {
       {
           "single three node pipeline",
           "relations: { root: { input: { project: { input { read: { local_files {} } } } } } }",
-          HasSymbols({"local", "read", "project", "root"}),
+          HasSymbols({"rootnames", "local", "read", "project", "root"}),
       },
       {
           "two identical three node pipelines",
@@ -547,10 +554,12 @@ std::vector<TestCase> getTestCases() {
           "relations: { root: { input: { project: { input { read: { local_files {} } } } } } }",
           AllOf(
               HasSymbols(
-                  {"local",
+                  {"rootnames",
+                   "local",
                    "read",
                    "project",
                    "root",
+                   "rootnames2",
                    "local2",
                    "read2",
                    "project2",
@@ -566,7 +575,13 @@ std::vector<TestCase> getTestCases() {
           "relations: { root: { input: { hash_join: { left { read: { local_files {} } } right { read: { local_files {} } } } } } }",
           AllOf(
               HasSymbols(
-                  {"local", "read", "local2", "read2", "hashjoin", "root"}),
+                  {"rootnames",
+                   "local",
+                   "read",
+                   "local2",
+                   "read2",
+                   "hashjoin",
+                   "root"}),
               WhenSerialized(::testing::HasSubstr("pipelines {\n"
                                                   "  read -> hashjoin;\n"
                                                   "  read2 -> hashjoin;\n"

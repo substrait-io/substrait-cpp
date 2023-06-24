@@ -19,6 +19,8 @@ namespace io::substrait::textplan {
 
 namespace {
 
+const std::string kRootNames{"rootnames"};
+
 std::string shortName(std::string str) {
   auto loc = str.find(':');
   if (loc != std::string::npos) {
@@ -167,15 +169,16 @@ std::any InitialPlanProtoVisitor::visitRelation(
 
 std::any InitialPlanProtoVisitor::visitRelationRoot(
     const ::substrait::proto::RelRoot& relation) {
-  auto uniqueName = symbolTable_->getUniqueName("root");
   std::vector<std::string> names;
   names.insert(names.end(), relation.names().begin(), relation.names().end());
+  auto uniqueName = symbolTable_->getUniqueName(kRootNames);
   symbolTable_->defineSymbol(
       uniqueName,
       PROTO_LOCATION(relation),
       SymbolType::kRoot,
       SourceType::kUnknown,
       names);
+
   BasePlanProtoVisitor::visitRelationRoot(relation);
   return std::nullopt;
 }
