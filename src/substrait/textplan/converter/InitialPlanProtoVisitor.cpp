@@ -19,7 +19,7 @@ namespace io::substrait::textplan {
 
 namespace {
 
-const std::string kRootNames{"rootnames"};
+const std::string kRootNames{"root.names"};
 
 std::string shortName(std::string str) {
   auto loc = str.find(':');
