@@ -14,27 +14,19 @@ namespace {
 bool compareExtensionFunctions(
     const ::substrait::proto::extensions::SimpleExtensionDeclaration& a,
     const ::substrait::proto::extensions::SimpleExtensionDeclaration& b) {
-  // First sort so that extension functions proceed any other kind of extension.
-  if (a.has_extension_function() && !b.has_extension_function()) {
-    return true;
-  } else if (!a.has_extension_function() && b.has_extension_function()) {
-    // Extension functions always come first.
-    return false;
-  } else if (!a.has_extension_function() && !b.has_extension_function()) {
-    // Both are not extension functions, no difference in ordering.
-    return false;
-  }
-  // Now sort by space.
-  if (a.extension_function().extension_uri_reference() <
-      b.extension_function().extension_uri_reference()) {
-    return true;
-  } else if (
-      a.extension_function().extension_uri_reference() >
-      b.extension_function().extension_uri_reference()) {
-    return false;
-  }
-  // Finally sort by name within a space.
-  return a.extension_function().name() < b.extension_function().name();
+  auto ord = [](const auto& decl) {
+    return make_tuple(
+        // First sort so that extension functions precede any other kind of
+        // extension.
+        not decl.has_extension_function(),
+        // Next sort by space.
+        decl.extension_function().extension_uri_reference(),
+        // Finally sort by name within a space.
+        decl.extension_function().name());
+  };
+
+  // Now let the default tuple compare do the rest of the work.
+  return ord(a) > ord(b);
 }
 
 void normalizeFunctionsForExpression(
