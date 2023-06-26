@@ -20,9 +20,9 @@ bool compareExtensionFunctions(
         // extension.
         not decl.has_extension_function(),
         // Next sort by space.
-        decl.extension_function().extension_uri_reference(),
+        std::string_view{decl.extension_function().extension_uri_reference()},
         // Finally sort by name within a space.
-        decl.extension_function().name());
+        std::string_view{decl.extension_function().name()});
   };
 
   // Now let the default tuple compare do the rest of the work.
