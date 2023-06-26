@@ -20,7 +20,7 @@ bool compareExtensionFunctions(
         // extension.
         not decl.has_extension_function(),
         // Next sort by space.
-        std::string_view{decl.extension_function().extension_uri_reference()},
+        decl.extension_function().extension_uri_reference(),
         // Finally sort by name within a space.
         std::string_view{decl.extension_function().name()});
   };
