@@ -1030,6 +1030,28 @@ std::vector<TestCase> getTestCases() {
               HasSymbolsWithTypes(
                   {"read", "project", "root"}, {SymbolType::kRelation}),
               ParsesOk()),
+
+      },
+      {
+          "test18-root-and-read",
+          R"(pipelines {
+            root -> read;
+          }
+
+          read relation read {
+            base_schema schemaone;
+            source mynamedtable;
+          }
+
+          root {
+            names = [
+              apple,
+            ]
+          })",
+          AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
+              R"(relations: {
+                root { names: "apple" }
+              })")),
       },
   };
   return cases;

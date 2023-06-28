@@ -77,6 +77,9 @@ std::any SubstraitPlanPipelineVisitor::visitPipeline(
 
   // Refetch our symbol table entry to make sure we have the latest version.
   auto* symbol = symbolTable_->lookupSymbolByName(relationName);
+  if (symbol->blob.type() != typeid(std::shared_ptr<RelationData>)) {
+    return defaultResult();
+  }
   auto relationData = ANY_CAST(std::shared_ptr<RelationData>, symbol->blob);
 
   // Check for accidental cross-pipeline use.
@@ -103,6 +106,9 @@ std::any SubstraitPlanPipelineVisitor::visitPipeline(
   }
   const SymbolInfo* rightmostSymbol = rightSymbol;
   if (*rightSymbol != SymbolInfo::kUnknown) {
+    if (rightSymbol->blob.type() != typeid(std::shared_ptr<RelationData>)) {
+errorListener_->addError(ctx->getStart(), "blah");
+    }
     auto rightRelationData =
         ANY_CAST(std::shared_ptr<RelationData>, rightSymbol->blob);
     if (rightRelationData->pipelineStart != nullptr) {

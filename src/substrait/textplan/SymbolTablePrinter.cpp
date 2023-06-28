@@ -715,14 +715,17 @@ void SymbolTablePrinter::addInputsToRelation(
     if (relationData->newPipelines.empty()) {
       *relation->mutable_root()->mutable_input() = relationData->relation;
     } else {
-      // This is a root node, copy the first node in before iterating.
-      auto inputRelationData = ANY_CAST(
-          std::shared_ptr<RelationData>, relationData->newPipelines[0]->blob);
-      *relation->mutable_root()->mutable_input() = inputRelationData->relation;
+      if (relationData->newPipelines[0]->type != SymbolType::kRoot) {
+        // This is a root node, copy the first node in before iterating.
+        auto inputRelationData = ANY_CAST(
+            std::shared_ptr<RelationData>, relationData->newPipelines[0]->blob);
+        *relation->mutable_root()->mutable_input() =
+            inputRelationData->relation;
 
-      addInputsToRelation(
-          *relationData->newPipelines[0],
-          relation->mutable_root()->mutable_input());
+        addInputsToRelation(
+            *relationData->newPipelines[0],
+            relation->mutable_root()->mutable_input());
+      }
 
       const auto& rootSymbol =
           symbolTable.nthSymbolByType(0, SymbolType::kRoot);
