@@ -9,9 +9,12 @@
 #include "substrait/textplan/Finally.h"
 #include "substrait/textplan/Location.h"
 #include "substrait/textplan/StructuredSymbolData.h"
+#include "substrait/textplan/SymbolTable.h"
 #include "substrait/type/Type.h"
 
 namespace io::substrait::textplan {
+
+const std::string kRootName{"root"};
 
 // Removes leading and trailing quotation marks.
 std::string extractFromString(std::string s) {
@@ -156,6 +159,28 @@ std::any SubstraitPlanVisitor::visitSchema_item(
       SymbolType::kSchemaColumn,
       defaultResult(),
       visitLiteral_complex_type(ctx->literal_complex_type()));
+}
+
+std::any SubstraitPlanVisitor::visitRoot_relation(
+    SubstraitPlanParser::Root_relationContext* ctx) {
+  auto prevRoot = symbolTable_->lookupSymbolByName(kRootName);
+  if (prevRoot != nullptr) {
+    if (prevRoot->type == SymbolType::kRoot) {
+      errorListener_->addError(
+          ctx->getStart(), "A root relation was already defined.");
+    } else {
+      errorListener_->addError(
+          ctx->getStart(), "A relation named root was already defined.");
+    }
+    return nullptr;
+  }
+  std::vector<std::string> names;
+  for (const auto& id : ctx->id()) {
+    names.push_back(id->getText());
+  }
+  symbolTable_->defineSymbol(
+      kRootName, Location(ctx), SymbolType::kRoot, SourceType::kUnknown, names);
+  return nullptr;
 }
 
 std::any SubstraitPlanVisitor::visitRelation(

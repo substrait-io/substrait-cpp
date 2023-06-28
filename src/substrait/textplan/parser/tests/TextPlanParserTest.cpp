@@ -1001,7 +1001,7 @@ std::vector<TestCase> getTestCases() {
               "1:0 → extraneous input 'relation' expecting {<EOF>, "
               "'EXTENSION_SPACE', 'SCHEMA', 'PIPELINES', 'FILTER', "
               "'GROUPING', 'MEASURE', 'SORT', 'COUNT', 'TYPE', 'SOURCE', "
-              "'NULL', IDENTIFIER}",
+              "'ROOT', 'NULL', IDENTIFIER}",
               "1:24 → mismatched input '{' expecting 'RELATION'",
               "1:9 → Unrecognized relation type: notyperelation",
           }),
@@ -1030,6 +1030,28 @@ std::vector<TestCase> getTestCases() {
               HasSymbolsWithTypes(
                   {"read", "project", "root"}, {SymbolType::kRelation}),
               ParsesOk()),
+
+      },
+      {
+          "test18-root-and-read",
+          R"(pipelines {
+            root -> read;
+          }
+
+          read relation read {
+            base_schema schemaone;
+            source mynamedtable;
+          }
+
+          root {
+            names = [
+              apple,
+            ]
+          })",
+          AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
+              R"(relations: {
+                root { names: "apple" }
+              })")),
       },
   };
   return cases;

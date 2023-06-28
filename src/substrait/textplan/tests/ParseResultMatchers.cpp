@@ -160,7 +160,7 @@ class HasSymbolsMatcher {
           extraSymbols.begin());
       extraSymbols.resize(end - extraSymbols.begin());
       if (!extraSymbols.empty()) {
-        *listener << std::endl << "          with missing symbols: ";
+        *listener << std::endl << "          with extra symbols: ";
         for (const auto& symbol : extraSymbols) {
           *listener << " \"" << symbol << "\"";
         }
@@ -176,9 +176,9 @@ class HasSymbolsMatcher {
       missingSymbols.resize(end - missingSymbols.begin());
       if (!missingSymbols.empty()) {
         if (!extraSymbols.empty()) {
-          *listener << ", and extra symbols: ";
+          *listener << ", and missing symbols: ";
         } else {
-          *listener << " with extra symbols: ";
+          *listener << " with missing symbols: ";
         }
         for (const auto& symbol : missingSymbols) {
           *listener << " \"" << symbol << "\"";

@@ -71,6 +71,15 @@ ParseResult parseStream(antlr4::ANTLRInputStream stream) {
       *visitor->getSymbolTable(), visitor->getErrorListener());
   try {
     pipelineVisitor->visitPlan(tree);
+  } catch (std::invalid_argument ex) {
+    // Catches the any_cast exception and logs a useful error message.
+    errorListener.syntaxError(
+        &parser,
+        nullptr,
+        /*line=*/1,
+        /*charPositionInLine=*/1,
+        ex.what(),
+        std::current_exception());
   } catch (...) {
     errorListener.syntaxError(
         &parser,

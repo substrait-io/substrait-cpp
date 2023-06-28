@@ -19,7 +19,6 @@ std::shared_ptr<RelationData> PipelineVisitor::getRelationData(
 std::any PipelineVisitor::visitRelation(
     const ::substrait::proto::Rel& relation) {
   auto relationData = getRelationData(relation);
-
   switch (relation.rel_type_case()) {
     case ::substrait::proto::Rel::RelTypeCase::kRead:
       // No relations beyond this one.

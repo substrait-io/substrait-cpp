@@ -158,6 +158,44 @@ std::string outputRelationsSection(const SymbolTable& symbolTable) {
   return text.str();
 }
 
+std::string outputRootSection(const SymbolTable& symbolTable) {
+  std::stringstream text;
+  bool hasPreviousText = false;
+  for (const SymbolInfo& info : symbolTable) {
+    if (info.type != SymbolType::kRoot) {
+      continue;
+    }
+    auto names = ANY_CAST(std::vector<std::string>, info.blob);
+    if (names.empty()) {
+      // No point in printing an empty section.
+      continue;
+    }
+    if (hasPreviousText) {
+      text << "\n";
+    }
+    text << "root {"
+         << "\n";
+    text << "  names = [";
+    bool hadName = false;
+    for (const auto& name : names) {
+      if (hadName) {
+        text << ",\n";
+      } else {
+        text << "\n";
+      }
+      text << "    " << name;
+      hadName = true;
+    }
+    if (hadName) {
+      text << "\n";
+    }
+    text << "  ]\n";
+    text << "}\n";
+    hasPreviousText = true;
+  }
+  return text.str();
+}
+
 std::string outputSchemaSection(const SymbolTable& symbolTable) {
   std::stringstream text;
   bool hasPreviousText = false;
@@ -427,6 +465,15 @@ std::string SymbolTablePrinter::outputToText(const SymbolTable& symbolTable) {
     hasPreviousText = true;
   }
 
+  newText = outputRootSection(symbolTable);
+  if (!newText.empty()) {
+    if (hasPreviousText) {
+      text << "\n";
+    }
+    text << newText;
+    hasPreviousText = true;
+  }
+
   newText = outputSchemaSection(symbolTable);
   if (!newText.empty()) {
     if (hasPreviousText) {
@@ -668,14 +715,27 @@ void SymbolTablePrinter::addInputsToRelation(
     if (relationData->newPipelines.empty()) {
       *relation->mutable_root()->mutable_input() = relationData->relation;
     } else {
-      // This is a root node, copy the first node in before iterating.
-      auto inputRelationData = ANY_CAST(
-          std::shared_ptr<RelationData>, relationData->newPipelines[0]->blob);
-      *relation->mutable_root()->mutable_input() = inputRelationData->relation;
+      if (relationData->newPipelines[0]->type != SymbolType::kRoot) {
+        // This is a root node, copy the first node in before iterating.
+        auto inputRelationData = ANY_CAST(
+            std::shared_ptr<RelationData>, relationData->newPipelines[0]->blob);
+        *relation->mutable_root()->mutable_input() =
+            inputRelationData->relation;
 
-      addInputsToRelation(
-          *relationData->newPipelines[0],
-          relation->mutable_root()->mutable_input());
+        addInputsToRelation(
+            *relationData->newPipelines[0],
+            relation->mutable_root()->mutable_input());
+      }
+
+      const auto& rootSymbol =
+          symbolTable.nthSymbolByType(0, SymbolType::kRoot);
+      if (rootSymbol != SymbolInfo::kUnknown) {
+        const auto& rootNames =
+            ANY_CAST(std::vector<std::string>, rootSymbol.blob);
+        for (const auto& name : rootNames) {
+          relation->mutable_root()->add_names(name);
+        }
+      }
     }
   }
 

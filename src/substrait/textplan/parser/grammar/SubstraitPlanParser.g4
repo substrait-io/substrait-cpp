@@ -23,6 +23,7 @@ plan
 plan_detail
    : pipelines
    | relation
+   | root_relation
    | schema_definition
    | source_definition
    | extensionspace
@@ -40,6 +41,10 @@ pipeline
 // TODO -- Make the token order involving ids consistent between relations and other top-level entities.
 relation
    : relation_type RELATION relation_ref LEFTBRACE relation_detail* RIGHTBRACE
+   ;
+
+root_relation
+   : ROOT LEFTBRACE NAMES EQUAL LEFTBRACKET id (COMMA id)* COMMA? RIGHTBRACKET RIGHTBRACE
    ;
 
 relation_type
@@ -209,6 +214,8 @@ id
 simple_id
    : IDENTIFIER
    | FILTER
+   | ROOT
+   | SOURCE
    | SCHEMA
    | NULLVAL
    | SORT
