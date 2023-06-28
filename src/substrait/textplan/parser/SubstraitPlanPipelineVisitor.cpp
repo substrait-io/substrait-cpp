@@ -107,7 +107,8 @@ std::any SubstraitPlanPipelineVisitor::visitPipeline(
   const SymbolInfo* rightmostSymbol = rightSymbol;
   if (*rightSymbol != SymbolInfo::kUnknown) {
     if (rightSymbol->blob.type() != typeid(std::shared_ptr<RelationData>)) {
-errorListener_->addError(ctx->getStart(), "blah");
+      errorListener_->addError(
+          ctx->getStart(), "Encountered that should be a relation but isn't.");
     }
     auto rightRelationData =
         ANY_CAST(std::shared_ptr<RelationData>, rightSymbol->blob);
