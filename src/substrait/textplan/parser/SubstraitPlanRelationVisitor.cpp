@@ -1953,10 +1953,9 @@ int SubstraitPlanRelationVisitor::findFieldReferenceByName(
     auto fieldPlacement =
         generatedField - relationData->generatedFieldReferences.rbegin();
     return static_cast<int32_t>(
-               (relationData->generatedFieldReferences.size() -
-                fieldPlacement) &
-               std::numeric_limits<int32_t>::max()) -
-        1 + fieldReferencesSize;
+        (fieldReferencesSize + relationData->generatedFieldReferences.size() -
+         fieldPlacement - 1) &
+        std::numeric_limits<int32_t>::max());
   }
 
   auto field = std::find_if(
@@ -1971,9 +1970,8 @@ int SubstraitPlanRelationVisitor::findFieldReferenceByName(
   if (field != relationData->fieldReferences.rend()) {
     auto fieldPlacement = field - relationData->fieldReferences.rbegin();
     return static_cast<int32_t>(
-               (fieldReferencesSize - fieldPlacement) &
-               std::numeric_limits<int32_t>::max()) -
-        1;
+        (fieldReferencesSize - fieldPlacement - 1) &
+        std::numeric_limits<int32_t>::max());
   }
 
   errorListener_->addError(token, "Reference " + name + " does not exist.");
