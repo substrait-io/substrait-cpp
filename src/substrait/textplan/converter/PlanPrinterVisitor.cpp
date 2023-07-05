@@ -760,12 +760,10 @@ std::any PlanPrinterVisitor::visitReadRelation(
       return "";
   }
 
-  auto mainSymbol = symbolTable_->lookupSymbolByLocationAndType(
-      PROTO_LOCATION(relation), SymbolType::kRelation);
-
-  auto symbols = symbolTable_->lookupSymbolsByLocation(PROTO_LOCATION(*msg));
-  if (!symbols.empty()) {
-    text << "  source " << symbols[0]->name << ";\n";
+  auto source = symbolTable_->lookupSymbolByLocationAndType(
+      PROTO_LOCATION(*msg), SymbolType::kSource);
+  if (source != nullptr) {
+    text << "  source " << source->name << ";\n";
   }
 
   if (relation.has_base_schema()) {
