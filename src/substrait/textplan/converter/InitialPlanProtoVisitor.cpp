@@ -466,9 +466,9 @@ void InitialPlanProtoVisitor::updateLocalSchema(
               }
             }
             if (field->alias.empty()) {
-              relationData->seenFieldReferenceNames.insert(std::make_tuple(
-                  field->name,
-                  relationData->generatedFieldReferences.size() - 1));
+              size_t fieldRefNum = relationData->generatedFieldReferences.size() - 1;
+              relationData->seenFieldReferenceNames.insert(
+                  std::make_tuple(field->name, fieldRefNum));
             }
           } else {
             ::substrait::proto::Rel sanitizedRelation = *currentRelationScope_;
