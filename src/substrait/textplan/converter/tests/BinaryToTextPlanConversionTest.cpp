@@ -196,6 +196,8 @@ std::vector<TestCase> getTestCases() {
                    "count",
                    "named",
                    "#2",
+                   "cost",
+                   "count",
                    "read",
                    "root"}),
               WhenSerialized(EqSquashingWhitespace(
@@ -321,8 +323,8 @@ std::vector<TestCase> getTestCases() {
 
               join relation join {
                 type JOIN_TYPE_UNSPECIFIED;
-                expression product_id;
-                post_join count;
+                expression schema.product_id;
+                post_join schema.count;
               }
 
               read relation read3 {
@@ -332,7 +334,7 @@ std::vector<TestCase> getTestCases() {
 
               join relation join2 {
                 type JOIN_TYPE_UNSPECIFIED;
-                expression order_id;
+                expression schema3.order_id;
               }
 
               schema schema {
