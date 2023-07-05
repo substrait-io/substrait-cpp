@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <optional>
+
 #include "substrait/textplan/ParseResult.h"
 #include "substrait/textplan/SymbolTable.h"
 #include "substrait/textplan/parser/SubstraitPlanVisitor.h"
