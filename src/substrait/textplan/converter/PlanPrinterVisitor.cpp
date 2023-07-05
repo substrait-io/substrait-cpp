@@ -760,10 +760,10 @@ std::any PlanPrinterVisitor::visitReadRelation(
       return "";
   }
 
-  auto mainSymbol = symbolTable_->lookupSymbolByLocationAndType(PROTO_LOCATION(relation), SymbolType::kRelation);
+  auto mainSymbol = symbolTable_->lookupSymbolByLocationAndType(
+      PROTO_LOCATION(relation), SymbolType::kRelation);
 
-  auto symbols = symbolTable_->lookupSymbolsByLocation(
-      PROTO_LOCATION(*msg));
+  auto symbols = symbolTable_->lookupSymbolsByLocation(PROTO_LOCATION(*msg));
   if (!symbols.empty()) {
     text << "  source " << symbols[0]->name << ";\n";
   }
@@ -826,7 +826,8 @@ std::any PlanPrinterVisitor::visitAggregateRelation(
   }
   for (const auto& measure : relation.measures()) {
     if (!measure.has_measure()) {
-      errorListener_->addError("Encountered aggregate measure without a measure function.");
+      errorListener_->addError(
+          "Encountered aggregate measure without a measure function.");
       continue;
     }
     text << "  measure {\n";

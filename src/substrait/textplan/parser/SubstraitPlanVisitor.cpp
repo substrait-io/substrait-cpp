@@ -254,7 +254,11 @@ std::any SubstraitPlanVisitor::visitRoot_relation(
     names.push_back(id->getText());
   }
   symbolTable_->defineSymbol(
-      kRootNames, Location(ctx), SymbolType::kRoot, SourceType::kUnknown, names);
+      kRootNames,
+      Location(ctx),
+      SymbolType::kRoot,
+      SourceType::kUnknown,
+      names);
   return nullptr;
 }
 

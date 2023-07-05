@@ -12,4 +12,4 @@ bool startsWith(std::string_view haystack, std::string_view needle);
 // Returns true if the string 'haystack' ends with the string 'needle'.
 bool endsWith(std::string_view haystack, std::string_view needle);
 
-}  // namespace io::substrait::textplan
+} // namespace io::substrait::textplan

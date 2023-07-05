@@ -98,10 +98,7 @@ TEST_P(RoundTripBinaryToTextFixture, RoundTrip) {
   ASSERT_THAT(
       result,
       ::testing::AllOf(
-          ParsesOk(),
-          HasErrors({}),
-          AsBinaryPlan(
-              EqualsProto(normalizedPlan))))
+          ParsesOk(), HasErrors({}), AsBinaryPlan(EqualsProto(normalizedPlan))))
       << std::endl
       << "Intermediate result:" << std::endl
       << addLineNumbers(outputText) << std::endl

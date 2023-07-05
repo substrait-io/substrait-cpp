@@ -16,4 +16,4 @@ bool endsWith(std::string_view haystack, std::string_view needle) {
       haystack.substr(haystack.size() - needle.size(), needle.size()) == needle;
 }
 
-}  // namespace io::substrait::textplan
+} // namespace io::substrait::textplan
