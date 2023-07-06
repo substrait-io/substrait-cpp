@@ -2,6 +2,11 @@ pipelines {
   read -> project -> root;
 }
 
+read relation read {
+  base_schema schema;
+  source named;
+}
+
 project relation project {
   expression r_regionkey;
   expression r_name;
@@ -9,11 +14,6 @@ project relation project {
   expression add(r_regionkey, 1_i32);
   expression subtract(r_regionkey, 1_i32);
   expression concat(r_name, r_name);
-}
-
-read relation read {
-  base_schema schema;
-  source named;
 }
 
 schema schema {

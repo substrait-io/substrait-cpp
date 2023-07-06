@@ -203,6 +203,9 @@ std::string outputSchemaSection(const SymbolTable& symbolTable) {
     if (info.type != SymbolType::kSchema) {
       continue;
     }
+    if (!info.blob.has_value()) {
+      continue;
+    }
 
     if (hasPreviousText) {
       text << "\n";

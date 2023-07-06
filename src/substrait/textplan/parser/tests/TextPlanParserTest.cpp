@@ -200,10 +200,18 @@ std::vector<TestCase> getTestCases() {
       },
       {
           "test5-project-relation",
-          R"(extension_space blah.yaml {
+          R"(pipelines {
+            read -> myproject -> root;
+          }
+
+          extension_space blah.yaml {
             function add:i8 as add;
             function subtract:i8 AS subtract;
             function concat:str AS concat;
+          }
+
+          read relation read {
+            base_schema schema;
           }
 
           project relation myproject {
@@ -213,25 +221,36 @@ std::vector<TestCase> getTestCases() {
             expression add(r_regionkey, 1_i8)->i8;
             expression subtract(r_regionkey, 1_i8)->i8;
             expression concat(r_name, r_name)->str;
+          }
+
+          schema schema {
+            r_regionkey i32;
+            r_name string;
+            r_comment string?;
           })",
           AllOf(
-              HasSymbolsWithTypes({"myproject"}, {SymbolType::kRelation}),
+              HasSymbolsWithTypes(
+                  {"read", "myproject", "root"}, {SymbolType::kRelation}),
               HasErrors({}),
               WhenSerialized(EqSquashingWhitespace(
-                  R"(project relation myproject {
-                      expression r_regionkey;
-                      expression r_name;
-                      expression r_comment;
-                      expression add(r_regionkey, 1_i8)->i8;
-                      expression subtract(r_regionkey, 1_i8)->i8;
-                      expression concat(r_name, r_name)->string;
-                    }
+                  R"(pipelines {
+                    read -> myproject -> root;
+                  }
 
-                    extension_space blah.yaml {
-                      function add:i8 as add;
-                      function concat:str as concat;
-                      function subtract:i8 as subtract;
-                    })")),
+                  project relation myproject {
+                    expression schema.r_regionkey;
+                    expression schema.r_name;
+                    expression schema.r_comment;
+                    expression add(schema.r_regionkey, 1_i8)->i8;
+                    expression subtract(schema.r_regionkey, 1_i8)->i8;
+                    expression concat(schema.r_name, schema.r_name)->string;
+                  }
+
+                  extension_space blah.yaml {
+                    function add:i8 as add;
+                    function concat:str as concat;
+                    function subtract:i8 as subtract;
+                  })")),
               AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
                   R"(extension_uris {
                     extension_uri_anchor: 1 uri: "blah.yaml"
@@ -252,6 +271,18 @@ std::vector<TestCase> getTestCases() {
                   }
                   relations { root { input { project {
                     common { direct { } }
+                    input {
+                      read { common { direct { } }
+                      base_schema {
+                        names: "r_regionkey"
+                        names: "r_name"
+                        names: "r_comment"
+                        struct { types { i32 {
+                          nullability: NULLABILITY_REQUIRED } }
+                          types { string { nullability: NULLABILITY_REQUIRED } }
+                          types { string { nullability: NULLABILITY_NULLABLE } }
+                          nullability: NULLABILITY_REQUIRED } } }
+                    }
                     expressions {
                       selection {
                         direct_reference {
@@ -259,6 +290,7 @@ std::vector<TestCase> getTestCases() {
                             field: 0
                           }
                         }
+                        root_reference: { }
                       }
                     }
                     expressions {
@@ -267,7 +299,7 @@ std::vector<TestCase> getTestCases() {
                           struct_field {
                             field: 1
                           }
-                        }
+                        } root_reference: { }
                       }
                     }
                     expressions {
@@ -276,26 +308,26 @@ std::vector<TestCase> getTestCases() {
                           struct_field {
                             field: 2
                           }
-                        }
+                        } root_reference: { }
                       }
                     }
                     expressions { scalar_function {
                       function_reference: 0 arguments { value { selection {
-                        direct_reference { struct_field { } } } } }
+                        direct_reference { struct_field { } } root_reference: { } } } }
                         arguments { value { literal { i8: 1 } } }
                         output_type {
                           i8 { nullability: NULLABILITY_REQUIRED} } } }
                     expressions { scalar_function {
                       function_reference: 1 arguments { value { selection {
-                        direct_reference { struct_field { } } } } }
+                        direct_reference { struct_field { } } root_reference: { } } } }
                         arguments { value { literal { i8: 1 } } }
                         output_type {
                           i8 { nullability: NULLABILITY_REQUIRED } } } }
                     expressions { scalar_function {
                       function_reference: 2 arguments { value { selection {
-                        direct_reference { struct_field { field: 1 } } } } }
+                        direct_reference { struct_field { field: 1 } } root_reference: { } } } }
                         arguments { value { selection { direct_reference {
-                          struct_field { field: 1 } } } } }
+                          struct_field { field: 1 } } root_reference: { } } } }
                         output_type {
                           string { nullability: NULLABILITY_REQUIRED } } } }
                   } } } })"))),
@@ -785,7 +817,7 @@ std::vector<TestCase> getTestCases() {
             expression {123}_map<i8, bool>;
           })",
           HasErrors({
-              "2:38 → extraneous input '?' expecting ';'",
+              "2:38 → extraneous input '?' expecting {'NAMED', ';'}",
               "3:26 → Unable to recognize requested type.",
               "4:26 → Unable to recognize requested type.",
               "5:26 → Maps require both a key and a value type.",
@@ -975,6 +1007,7 @@ std::vector<TestCase> getTestCases() {
                                   field: 1
                                 }
                               }
+                              root_reference: { }
                             }
                           }
                           post_join_filter: {
@@ -984,6 +1017,7 @@ std::vector<TestCase> getTestCases() {
                                   field: 2
                                 }
                               }
+                              root_reference: { }
                             }
                           }
                         }
@@ -1010,6 +1044,7 @@ std::vector<TestCase> getTestCases() {
                              field: 6
                            }
                          }
+                         root_reference: { }
                        }
                      }
                     }
@@ -1024,9 +1059,9 @@ std::vector<TestCase> getTestCases() {
           // TODO -- Replace this error message with something user-friendly.
           HasErrors({
               "1:0 → extraneous input 'relation' expecting {<EOF>, "
-              "'EXTENSION_SPACE', 'SCHEMA', 'PIPELINES', 'FILTER', "
+              "'EXTENSION_SPACE', 'NAMED', 'SCHEMA', 'PIPELINES', 'FILTER', "
               "'GROUPING', 'MEASURE', 'SORT', 'COUNT', 'TYPE', 'EMIT', "
-              "'LOCAL', 'SOURCE', 'ROOT', 'NULL', IDENTIFIER}",
+              "'SOURCE', 'ROOT', 'NULL', IDENTIFIER}",
               "1:24 → mismatched input '{' expecting 'RELATION'",
               "1:9 → Unrecognized relation type: notyperelation",
           }),
@@ -1040,7 +1075,7 @@ std::vector<TestCase> getTestCases() {
       {
           "test17-pipelines-with-relations",
           R"(pipelines {
-            root -> project -> read;
+            read -> project -> root;
           }
 
           read relation read {
@@ -1050,6 +1085,12 @@ std::vector<TestCase> getTestCases() {
 
           project relation project {
             expression r_regionkey;
+          }
+
+          schema schemaone {
+            r_regionkey i32;
+            r_name string;
+            r_comment string?;
           })",
           AllOf(
               HasSymbolsWithTypes(
@@ -1060,7 +1101,7 @@ std::vector<TestCase> getTestCases() {
       {
           "test18-root-and-read",
           R"(pipelines {
-            root -> read;
+            read -> root;
           }
 
           read relation read {
@@ -1075,28 +1116,27 @@ std::vector<TestCase> getTestCases() {
           })",
           AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
               R"(relations: {
-                root { names: "apple" }
+                root { names: "apple" input { read { common { direct { } } } } }
               })")),
       },
       {
           "test19-emit",
           R"(pipelines {
-            root -> project -> read;
+            read -> project -> root;
           }
 
           read relation read {
             base_schema schemaone;
           }
 
-          schema schemaone {
-            r_region_key i32;
+          project relation project {
+            expression r_region_key;
+
+            emit r_region_key;
           }
 
-          project relation project {
-            expression r_regionkey;
-
-            emit r_regionkey;
-            emit local 1;
+          schema schemaone {
+            r_region_key i32;
           })",
           AllOf(
               HasSymbolsWithTypes(
@@ -1109,11 +1149,17 @@ std::vector<TestCase> getTestCases() {
                       project {
                         common {
                           emit {
-                            output_mapping: 0
                             output_mapping: 1
                           }
                         }
                         input {
+                          read: {
+                            common { direct { } }
+                            base_schema {
+                              names: "r_region_key"
+                              struct { types { i32 {
+                                nullability: NULLABILITY_REQUIRED } }
+                                nullability: NULLABILITY_REQUIRED } } }
                         }
                         expressions {
                           selection {
@@ -1121,13 +1167,13 @@ std::vector<TestCase> getTestCases() {
                               struct_field {
                               }
                             }
+                            root_reference: { }
                           }
                         }
                       }
                     }
                   }
-                }
-                )"))),
+                })"))),
       },
   };
   return cases;
