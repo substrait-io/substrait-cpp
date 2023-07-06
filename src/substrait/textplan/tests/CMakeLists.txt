@@ -36,7 +36,6 @@ if(${SUBSTRAIT_CPP_ROUNDTRIP_TESTING})
     parse_result_matchers
     protobuf-matchers
     fmt::fmt-header-only
-    absl::strings
     gmock
     gtest
     gtest_main)

@@ -71,7 +71,7 @@ PlanOrErrors loadFromJson(std::string_view json) {
       std::string{usableJson}, &plan);
   if (!status.ok()) {
     return PlanOrErrors({fmt::format(
-        "Failed to parse Substrait JSON: {}", status.message().ToString())});
+        "Failed to parse Substrait JSON: {}", status.message())});
   }
   return PlanOrErrors(plan);
 }
