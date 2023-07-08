@@ -22,13 +22,14 @@ include_directories(src)
 
 add_subdirectory(third_party)
 
-# find_package(absl REQUIRED) include_directories(${ABSL_INCLUDE_DIRS})
+find_package(Protobuf QUIET CONFIG)
+if(NOT ${Protobuf_FOUND})
+  find_package(absl REQUIRED)
+  include_directories(${absl_INCLUDE_DIRS})
 
-find_package(Protobuf REQUIRED CONFIG)
-# include_directories(${PROTOBUF_INCLUDE_DIRS})
-
-message(STATUS "include dirs are ${Protobuf_INCLUDE_DIRS}")
-message(STATUS "include dirs are ${PROTOBUF_INCLUDE_DIRS}")
+  find_package(Protobuf REQUIRED)
+  include_directories(${Protobuf_INCLUDE_DIRS})
+endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules")
 include(BuildUtils)
