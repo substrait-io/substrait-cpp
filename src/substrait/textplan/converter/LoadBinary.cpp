@@ -70,8 +70,9 @@ PlanOrErrors loadFromJson(std::string_view json) {
   auto status = google::protobuf::util::JsonStringToMessage(
       std::string{usableJson}, &plan);
   if (!status.ok()) {
+    std::string msg{status.message()};
     return PlanOrErrors(
-        {fmt::format("Failed to parse Substrait JSON: {}", status.message())});
+        {fmt::format("Failed to parse Substrait JSON: {}", msg)});
   }
   return PlanOrErrors(plan);
 }
