@@ -790,8 +790,7 @@ std::any SubstraitPlanRelationVisitor::visitExpressionFunctionUse(
   expr.mutable_scalar_function()->set_function_reference(funcReference);
   for (const auto& exp : ctx->expression()) {
     if (endsWith(exp->getText(), "_enum")) {
-      auto str = exp->getText();
-      str = absl::StripSuffix(str, "_enum");
+      auto str = absl::StripSuffix(exp->getText(), "_enum");
       expr.mutable_scalar_function()->add_arguments()->set_enum_(str);
       continue;
     }
