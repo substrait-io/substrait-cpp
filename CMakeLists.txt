@@ -24,9 +24,6 @@ add_subdirectory(third_party)
 
 find_package(Protobuf QUIET CONFIG)
 if(NOT ${Protobuf_FOUND})
-  find_package(absl REQUIRED)
-  include_directories(${absl_INCLUDE_DIRS})
-
   find_package(Protobuf REQUIRED)
   include_directories(${Protobuf_INCLUDE_DIRS})
 endif()
