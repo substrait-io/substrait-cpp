@@ -26,12 +26,11 @@ add_subdirectory(third_party)
 # available otherwise we fallback to the older protobuf method. TODO: Simplify
 # once we can require cmake 3.27 (where CONFIG is default).
 find_package(Protobuf QUIET CONFIG)
-if(${Protobuf_FOUND})
-  set(PROTOBUF_LOADED_AS_CONFIG ON)
-else()
+set(ABSL_INCLUDED_WITH_PROTOBUF ON)
+if(NOT ${Protobuf_FOUND})
   find_package(Protobuf REQUIRED)
   include_directories(${Protobuf_INCLUDE_DIRS})
-  set(PROTOBUF_LOADED_AS_CONFIG OFF)
+  set(ABSL_INCLUDED_WITH_PROTOBUF OFF)
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules")
