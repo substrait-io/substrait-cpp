@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if(NOT ${ABSL_INCLUDED_WITH_PROTOBUF})
+if(${ABSL_INCLUDED_WITH_PROTOBUF})
+  # Remove abseil-cpp from the repo when we can require cmake 3.27.
+else()
   set(ABSL_PROPAGATE_CXX_STD ON)
   add_subdirectory(abseil-cpp)
 endif()
