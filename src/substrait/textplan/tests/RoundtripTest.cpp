@@ -10,8 +10,6 @@
 #include <gtest/gtest.h>
 #include <protobuf-matchers/protocol-buffer-matchers.h>
 
-#include "absl/strings/str_split.h"
-#include "gmock/gmock.h"
 #include "substrait/textplan/SymbolTablePrinter.h"
 #include "substrait/textplan/converter/LoadBinary.h"
 #include "substrait/textplan/converter/ParseBinary.h"
@@ -28,10 +26,12 @@ namespace io::substrait::textplan {
 namespace {
 
 std::string addLineNumbers(const std::string& text) {
+  std::stringstream input{text};
   std::stringstream result;
   int lineNum = 0;
-  for (absl::string_view sp : absl::StrSplit(text, '\n')) {
-    result << std::setw(4) << ++lineNum << " " << sp << std::endl;
+  std::string line;
+  while (std::getline(input, line, '\n')) {
+    result << std::setw(4) << ++lineNum << " " << line << std::endl;
   }
   return result.str();
 }

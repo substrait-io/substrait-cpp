@@ -82,7 +82,7 @@ add_library(substrait_proto ${PROTO_SRCS} ${PROTO_HDRS} ProtoUtils.cpp
                             ProtoUtils.h)
 
 # Include the protobuf library as a dependency to use this class.
-target_link_libraries(substrait_proto ${PROTOBUF_LIBRARIES})
+target_link_libraries(substrait_proto protobuf::libprotobuf)
 
 # Make sure we can see our own generated include files.
 target_include_directories(substrait_proto

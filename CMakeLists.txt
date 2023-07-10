@@ -16,12 +16,24 @@ option(
   "Enable substrait-cpp tests. This will enable all other build options automatically."
   ON)
 
-find_package(Protobuf REQUIRED)
-include_directories(${PROTOBUF_INCLUDE_DIRS})
-
-add_subdirectory(third_party)
+# Local files come first.
 include_directories(include)
 include_directories(src)
+
+# TODO: Simplify once we can require cmake 3.27 (where CONFIG is default).
+
+# Due to packaging changes we use the combined protobuf/absl packaging if
+# available otherwise we fallback to the older protobuf method.
+find_package(Protobuf QUIET CONFIG)
+if(${Protobuf_FOUND})
+  set(ABSL_INCLUDED_WITH_PROTOBUF ON)
+else()
+  find_package(Protobuf REQUIRED)
+  include_directories(${Protobuf_INCLUDE_DIRS})
+  set(ABSL_INCLUDED_WITH_PROTOBUF OFF)
+endif()
+
+add_subdirectory(third_party)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules")
 include(BuildUtils)
