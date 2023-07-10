@@ -31,6 +31,7 @@ if(${Protobuf_FOUND})
 else()
   find_package(Protobuf REQUIRED)
   include_directories(${Protobuf_INCLUDE_DIRS})
+  set(PROTOBUF_LOADED_AS_CONFIG OFF)
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules")
