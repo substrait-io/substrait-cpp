@@ -21,7 +21,6 @@ sudo --preserve-env apt install -y \
   libprotobuf-dev \
   libprotobuf23 \
   protobuf-compiler \
-  libabsl-dev \
   clang-format \
   uuid-dev \
   default-jre \
