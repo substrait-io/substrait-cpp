@@ -27,7 +27,7 @@ add_subdirectory(third_party)
 # once we can require cmake 3.27 (where CONFIG is default).
 find_package(Protobuf QUIET CONFIG)
 if(${Protobuf_FOUND})
-  set(PROTOBUF_LOADED_AS_CONFIG)
+  set(PROTOBUF_LOADED_AS_CONFIG ON)
 else()
   find_package(Protobuf REQUIRED)
   include_directories(${Protobuf_INCLUDE_DIRS})
