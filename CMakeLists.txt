@@ -20,8 +20,6 @@ option(
 include_directories(include)
 include_directories(src)
 
-add_subdirectory(third_party)
-
 # TODO: Simplify once we can require cmake 3.27 (where CONFIG is default).
 
 # Due to packaging changes we use the combined protobuf/absl packaging if
@@ -34,6 +32,8 @@ else()
   include_directories(${Protobuf_INCLUDE_DIRS})
   set(ABSL_INCLUDED_WITH_PROTOBUF OFF)
 endif()
+
+add_subdirectory(third_party)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules")
 include(BuildUtils)
