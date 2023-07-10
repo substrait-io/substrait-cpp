@@ -23,10 +23,12 @@ include_directories(src)
 add_subdirectory(third_party)
 
 # Due to packaging changes we use the combined protobuf/absl packaging if
-# available otherwise we fallback to the older protobuf method.
-# TODO: Simplify once we can require cmake 3.27 (where CONFIG is default).
+# available otherwise we fallback to the older protobuf method. TODO: Simplify
+# once we can require cmake 3.27 (where CONFIG is default).
 find_package(Protobuf QUIET CONFIG)
-if(NOT ${Protobuf_FOUND})
+if(${Protobuf_FOUND})
+  set(PROTOBUF_LOADED_AS_CONFIG)
+else()
   find_package(Protobuf REQUIRED)
   include_directories(${Protobuf_INCLUDE_DIRS})
 endif()
