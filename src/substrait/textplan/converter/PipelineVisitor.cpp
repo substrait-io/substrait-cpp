@@ -118,6 +118,7 @@ std::any PipelineVisitor::visitPlanRelation(
     const ::substrait::proto::PlanRel& relation) {
   auto symbols =
       symbolTable_->lookupSymbolsByLocation(PROTO_LOCATION(relation));
+  // A symbol is guaranteed as we previously visited the parse tree.
   auto relationData = ANY_CAST(std::shared_ptr<RelationData>, symbols[0]->blob);
   switch (relation.rel_type_case()) {
     case ::substrait::proto::PlanRel::kRel: {

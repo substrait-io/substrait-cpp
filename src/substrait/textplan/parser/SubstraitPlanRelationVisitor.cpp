@@ -278,10 +278,12 @@ void addInputFieldsToSchema(
     auto continuingRelationData = ANY_CAST(
         std::shared_ptr<RelationData>, relationData->continuingPipeline->blob);
     if (!continuingRelationData->outputFieldReferences.empty()) {
+      // There is an emit sequence so use that.
       for (auto field : continuingRelationData->outputFieldReferences) {
         relationData->fieldReferences.push_back(field);
       }
     } else {
+      // There was no emit so just access all the field references.
       for (auto field : continuingRelationData->fieldReferences) {
         relationData->fieldReferences.push_back(field);
       }
@@ -594,7 +596,7 @@ std::any SubstraitPlanRelationVisitor::visitRelationUsesSchema(
         auto typeProto = ANY_CAST(::substrait::proto::Type, sym.blob);
         if (typeProto.kind_case() != ::substrait::proto::Type::KIND_NOT_SET) {
           *schema->mutable_struct_()->add_types() = typeProto;
-          // If the schema contains one more types, the structure is required.
+          // If the schema contains any types, the struct is required.
           schema->mutable_struct_()->set_nullability(
               ::substrait::proto::Type_Nullability_NULLABILITY_REQUIRED);
         }
@@ -1161,8 +1163,6 @@ std::any SubstraitPlanRelationVisitor::visitExpressionColumn(
     // TODO -- Update the following when non-direct references are implemented.
     expr.mutable_selection()->mutable_root_reference();
   }
-
-  // visitChildren(ctx);
   return expr;
 }
 
@@ -1990,6 +1990,7 @@ void SubstraitPlanRelationVisitor::applyOutputMappingToSchema(
     common->mutable_direct();
   } else {
     if (!relationData->outputFieldReferences.empty()) {
+      // TODO -- Add support for aggregate relations.
       errorListener_->addError(
           token, "Aggregate relations do not yet support emit sections.");
       return;

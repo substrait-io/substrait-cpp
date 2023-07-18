@@ -19,7 +19,7 @@ namespace io::substrait::textplan {
 
 namespace {
 
-const std::string kIntermediateNodeName = "intermediate";
+const std::string kIntermediateNodeName{"intermediate"};
 const std::string kRootNames{"root.names"};
 
 std::string shortName(std::string str) {
@@ -90,7 +90,6 @@ void eraseInputs(::substrait::proto::Rel* relation) {
       return relation.filter().common().emit().output_mapping();
     case ::substrait::proto::Rel::kFetch:
       return relation.fetch().common().emit().output_mapping();
-      ;
     case ::substrait::proto::Rel::kAggregate:
       return relation.aggregate().common().emit().output_mapping();
     case ::substrait::proto::Rel::kSort:
@@ -100,7 +99,7 @@ void eraseInputs(::substrait::proto::Rel* relation) {
     case ::substrait::proto::Rel::kProject:
       return relation.project().common().emit().output_mapping();
     case ::substrait::proto::Rel::kSet:
-      return relation.sort().common().emit().output_mapping();
+      return relation.set().common().emit().output_mapping();
     case ::substrait::proto::Rel::kExtensionSingle:
       return relation.extension_single().common().emit().output_mapping();
     case ::substrait::proto::Rel::kExtensionMulti:
@@ -330,6 +329,7 @@ std::any InitialPlanProtoVisitor::visitNamedStruct(
         SymbolType::kField,
         SourceType::kUnknown,
         type);
+    nameNum++;
   }
   return BasePlanProtoVisitor::visitNamedStruct(named);
 }

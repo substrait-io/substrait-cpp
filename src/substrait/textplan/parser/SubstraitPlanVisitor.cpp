@@ -511,7 +511,6 @@ std::any SubstraitPlanVisitor::visitFile_detail(
   } else {
     return visitChildren(ctx);
   }
-  // symbol->blob.swap(item);
   return defaultResult();
 }
 
