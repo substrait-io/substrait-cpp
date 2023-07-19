@@ -3,10 +3,11 @@
 #pragma once
 
 #include <any>
+#include <map>
 #include <memory>
-#include <optional>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -19,13 +20,14 @@ enum class SymbolType {
   kFunction = 1,
   kPlanRelation = 2,
   kRelation = 3,
-  kRelationDetail = 4,
   kSchema = 5,
   kSchemaColumn = 6,
   kSource = 7,
   kSourceDetail = 8,
   kField = 9,
   kRoot = 10,
+  kTable = 11,
+  kMeasure = 12,
 
   kUnknown = -1,
 };
@@ -75,6 +77,8 @@ const std::string& symbolTypeName(SymbolType type);
 
 struct SymbolInfo {
   std::string name;
+  std::string alias{}; // If present, use this instead of name.
+  const SymbolInfo* schema{nullptr}; // The related schema symbol if present.
   Location location;
   SymbolType type;
   std::any subtype;
@@ -144,11 +148,22 @@ class SymbolTable {
   // Changes the location for a specified existing symbol.
   void updateLocation(const SymbolInfo& symbol, const Location& location);
 
+  // Adds an alias to the given symbol.
+  void addAlias(const std::string& alias, const SymbolInfo* symbol);
+
   [[nodiscard]] const SymbolInfo* lookupSymbolByName(
       const std::string& name) const;
 
-  [[nodiscard]] const SymbolInfo* lookupSymbolByLocation(
+  [[nodiscard]] std::vector<const SymbolInfo*> lookupSymbolsByLocation(
       const Location& location) const;
+
+  [[nodiscard]] const SymbolInfo* lookupSymbolByLocationAndType(
+      const Location& location,
+      SymbolType type) const;
+
+  [[nodiscard]] const SymbolInfo* lookupSymbolByLocationAndTypes(
+      const Location& location,
+      std::unordered_set<SymbolType> types) const;
 
   [[nodiscard]] const SymbolInfo& nthSymbolByType(uint32_t n, SymbolType type)
       const;
@@ -177,6 +192,8 @@ class SymbolTable {
     return os;
   }
 
+  [[nodiscard]] std::string toDebugString() const;
+
  private:
   // Returns the table size if the symbol is not found.
   size_t findSymbolIndex(const SymbolInfo& symbol);
@@ -187,7 +204,7 @@ class SymbolTable {
 
   std::vector<std::shared_ptr<SymbolInfo>> symbols_;
   std::unordered_map<std::string, size_t> symbolsByName_;
-  std::unordered_map<Location, size_t> symbolsByLocation_;
+  std::multimap<Location, size_t> symbolsByLocation_;
 };
 
 } // namespace io::substrait::textplan

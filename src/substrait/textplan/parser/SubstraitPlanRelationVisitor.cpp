@@ -20,6 +20,7 @@
 #include "substrait/textplan/Any.h"
 #include "substrait/textplan/Finally.h"
 #include "substrait/textplan/Location.h"
+#include "substrait/textplan/StringManipulation.h"
 #include "substrait/textplan/StructuredSymbolData.h"
 #include "substrait/textplan/SymbolTable.h"
 
@@ -27,9 +28,12 @@ namespace io::substrait::textplan {
 
 namespace {
 
-std::string kAggregationPhasePrefix = "aggregationphase";
-std::string kAggregationInvocationPrefix = "aggregationinvocation";
-std::string kSortDirectionPrefix = "sortdirection";
+const std::string kAggregationPhasePrefix = "aggregationphase";
+const std::string kAggregationInvocationPrefix = "aggregationinvocation";
+const std::string kJoinTypePrefix = "jointype";
+const std::string kSortDirectionPrefix = "sortdirection";
+
+const std::string kIntermediateNodeName = "intermediate";
 
 enum RelationFilterBehavior {
   kDefault = 0,
@@ -43,18 +47,6 @@ std::string toLower(const std::string& str) {
     return std::tolower(c);
   });
   return s;
-}
-
-// Yields true if the string 'haystack' starts with the string 'needle'.
-bool startsWith(std::string_view haystack, std::string_view needle) {
-  return haystack.size() > needle.size() &&
-      haystack.substr(0, needle.size()) == needle;
-}
-
-// Returns true if the string 'haystack' ends with the string 'needle'.
-bool endsWith(std::string_view haystack, std::string_view needle) {
-  return haystack.size() > needle.size() &&
-      haystack.substr(haystack.size() - needle.size(), needle.size()) == needle;
 }
 
 void setNullable(::substrait::proto::Type* type) {
@@ -217,6 +209,47 @@ void setRelationType(
   }
 }
 
+::substrait::proto::RelCommon* findCommonRelation(
+    RelationType relationType,
+    ::substrait::proto::Rel* relation) {
+  switch (relationType) {
+    case RelationType::kRead:
+      return relation->mutable_read()->mutable_common();
+    case RelationType::kProject:
+      return relation->mutable_project()->mutable_common();
+    case RelationType::kJoin:
+      return relation->mutable_join()->mutable_common();
+    case RelationType::kCross:
+      return relation->mutable_cross()->mutable_common();
+    case RelationType::kFetch:
+      return relation->mutable_fetch()->mutable_common();
+    case RelationType::kAggregate:
+      return relation->mutable_aggregate()->mutable_common();
+    case RelationType::kSort:
+      return relation->mutable_sort()->mutable_common();
+    case RelationType::kFilter:
+      return relation->mutable_filter()->mutable_common();
+    case RelationType::kSet:
+      return relation->mutable_set()->mutable_common();
+    case RelationType::kExtensionLeaf:
+      return relation->mutable_extension_leaf()->mutable_common();
+    case RelationType::kExtensionMulti:
+      return relation->mutable_extension_multi()->mutable_common();
+    case RelationType::kExtensionSingle:
+      return relation->mutable_extension_single()->mutable_common();
+    case RelationType::kHashJoin:
+      return relation->mutable_hash_join()->mutable_common();
+    case RelationType::kMergeJoin:
+      return relation->mutable_merge_join()->mutable_common();
+    case RelationType::kExchange:
+    case RelationType::kDdl:
+    case RelationType::kWrite:
+    case RelationType::kUnknown:
+      break;
+  }
+  return nullptr;
+}
+
 std::string normalizeProtoEnum(std::string_view text, std::string_view prefix) {
   std::string result{text};
   // Remove non-alphabetic characters.
@@ -238,6 +271,51 @@ std::string normalizeProtoEnum(std::string_view text, std::string_view prefix) {
   return result;
 }
 
+void addInputFieldsToSchema(
+    RelationType relationType,
+    std::shared_ptr<RelationData>& relationData) {
+  if (relationData->continuingPipeline != nullptr) {
+    auto continuingRelationData = ANY_CAST(
+        std::shared_ptr<RelationData>, relationData->continuingPipeline->blob);
+    if (!continuingRelationData->outputFieldReferences.empty()) {
+      // There is an emit sequence so use that.
+      for (auto field : continuingRelationData->outputFieldReferences) {
+        relationData->fieldReferences.push_back(field);
+      }
+    } else {
+      // There was no emit so just access all the field references.
+      for (auto field : continuingRelationData->fieldReferences) {
+        relationData->fieldReferences.push_back(field);
+      }
+      for (auto field : continuingRelationData->generatedFieldReferences) {
+        relationData->fieldReferences.push_back(field);
+      }
+    }
+  }
+
+  for (auto pipeline : relationData->newPipelines) {
+    auto pipelineRelationData =
+        ANY_CAST(std::shared_ptr<RelationData>, pipeline->blob);
+    if (!pipelineRelationData->outputFieldReferences.empty()) {
+      for (auto field : pipelineRelationData->outputFieldReferences) {
+        relationData->fieldReferences.push_back(field);
+      }
+    } else {
+      for (auto field : pipelineRelationData->fieldReferences) {
+        relationData->fieldReferences.push_back(field);
+      }
+      for (auto field : pipelineRelationData->generatedFieldReferences) {
+        relationData->fieldReferences.push_back(field);
+      }
+    }
+  }
+}
+
+bool isRelationEmitDetail(SubstraitPlanParser::Relation_detailContext* ctx) {
+  return dynamic_cast<SubstraitPlanParser::RelationEmitContext*>(ctx) !=
+      nullptr;
+}
+
 } // namespace
 
 std::any SubstraitPlanRelationVisitor::aggregateResult(
@@ -252,15 +330,14 @@ std::any SubstraitPlanRelationVisitor::aggregateResult(
 
 std::any SubstraitPlanRelationVisitor::visitRelation(
     SubstraitPlanParser::RelationContext* ctx) {
-  // Create the relation before visiting our children, so they can update it.
-  auto* symbol = symbolTable_->lookupSymbolByLocation(Location(ctx));
+  // First find the relation created in a previous step.
+  auto* symbol = symbolTable_->lookupSymbolByLocationAndType(
+      Location(ctx), SymbolType::kRelation);
   if (symbol == nullptr) {
     // This error has been previously dealt with thus we can safely skip it.
     return defaultResult();
   }
-  if (symbol->type == SymbolType::kRoot) {
-    return defaultResult();
-  }
+  // Create the relation data before visiting children, so they can update it.
   auto relationData = ANY_CAST(std::shared_ptr<RelationData>, symbol->blob);
   ::substrait::proto::Rel relation;
 
@@ -276,8 +353,95 @@ std::any SubstraitPlanRelationVisitor::visitRelation(
       finally([&]() { currentRelationScope_ = previousScope; });
   currentRelationScope_ = symbol;
 
-  visitChildren(ctx);
+  addInputFieldsToSchema(relationType, relationData);
 
+  // Visit everything but the emit details to gather necessary information.
+  for (auto detail : ctx->relation_detail()) {
+    if (!isRelationEmitDetail(detail)) {
+      visitRelationDetail(detail);
+    }
+  }
+
+  addExpressionsToSchema(relationData);
+
+  // Now visit the emit details.
+  for (auto detail : ctx->relation_detail()) {
+    if (isRelationEmitDetail(detail)) {
+      visitRelationDetail(detail);
+    }
+  }
+
+  // Aggregate relations are different in that they alter the emitted fields
+  // by default.
+  if (relationType == RelationType::kAggregate) {
+    relationData->outputFieldReferences.insert(
+        relationData->outputFieldReferences.end(),
+        relationData->generatedFieldReferences.begin(),
+        relationData->generatedFieldReferences.end());
+  }
+
+  applyOutputMappingToSchema(ctx->getStart(), relationType, relationData);
+
+  // Emit one empty grouping for an aggregation relation not specifying any.
+  if (relationType == RelationType::kAggregate &&
+      relationData->relation.aggregate().groupings_size() == 0) {
+    relationData->relation.mutable_aggregate()->add_groupings();
+  }
+  return defaultResult();
+}
+
+std::any SubstraitPlanRelationVisitor::visitRelationDetail(
+    SubstraitPlanParser::Relation_detailContext* ctx) {
+  if (auto* commonCtx =
+          dynamic_cast<SubstraitPlanParser::RelationCommonContext*>(ctx)) {
+    return visitRelationCommon(commonCtx);
+  } else if (
+      auto* usesSchemaCtx =
+          dynamic_cast<SubstraitPlanParser::RelationUsesSchemaContext*>(ctx)) {
+    return visitRelationUsesSchema(usesSchemaCtx);
+  } else if (
+      auto* filterCtx =
+          dynamic_cast<SubstraitPlanParser::RelationFilterContext*>(ctx)) {
+    return visitRelationFilter(filterCtx);
+  } else if (
+      auto* exprCtx =
+          dynamic_cast<SubstraitPlanParser::RelationExpressionContext*>(ctx)) {
+    return visitRelationExpression(exprCtx);
+  } else if (
+      auto* advExtensionCtx =
+          dynamic_cast<SubstraitPlanParser::RelationAdvancedExtensionContext*>(
+              ctx)) {
+    return visitRelationAdvancedExtension(advExtensionCtx);
+  } else if (
+      auto* sourceRefCtx =
+          dynamic_cast<SubstraitPlanParser::RelationSourceReferenceContext*>(
+              ctx)) {
+    return visitRelationSourceReference(sourceRefCtx);
+  } else if (
+      auto* groupingCtx =
+          dynamic_cast<SubstraitPlanParser::RelationGroupingContext*>(ctx)) {
+    return visitRelationGrouping(groupingCtx);
+  } else if (
+      auto* measureCtx =
+          dynamic_cast<SubstraitPlanParser::RelationMeasureContext*>(ctx)) {
+    return visitRelationMeasure(measureCtx);
+  } else if (
+      auto* sortCtx =
+          dynamic_cast<SubstraitPlanParser::RelationSortContext*>(ctx)) {
+    return visitRelationSort(sortCtx);
+  } else if (
+      auto* countCtx =
+          dynamic_cast<SubstraitPlanParser::RelationCountContext*>(ctx)) {
+    return visitRelationCount(countCtx);
+  } else if (
+      auto* joinTypeCtx =
+          dynamic_cast<SubstraitPlanParser::RelationJoinTypeContext*>(ctx)) {
+    return visitRelationJoinType(joinTypeCtx);
+  } else if (
+      auto* emitCtx =
+          dynamic_cast<SubstraitPlanParser::RelationEmitContext*>(ctx)) {
+    return visitRelationEmit(emitCtx);
+  }
   return defaultResult();
 }
 
@@ -313,11 +477,11 @@ std::any SubstraitPlanRelationVisitor::visitRelationFilter(
         visitRelation_filter_behavior(ctx->relation_filter_behavior()));
   }
 
-  auto* parentSymbol = symbolTable_->lookupSymbolByLocation(
-      Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)));
+  auto* parentSymbol = symbolTable_->lookupSymbolByLocationAndType(
+      PARSER_LOCATION(ctx->parent), SymbolType::kRelation);
   auto parentRelationData =
       ANY_CAST(std::shared_ptr<RelationData>, parentSymbol->blob);
-  auto result = SubstraitPlanRelationVisitor::visitChildren(ctx);
+  auto result = visitChildren(ctx);
   auto parentRelationType = ANY_CAST(RelationType, parentSymbol->subtype);
   switch (parentRelationType) {
     case RelationType::kRead:
@@ -407,8 +571,9 @@ std::any SubstraitPlanRelationVisitor::visitRelationFilter(
 
 std::any SubstraitPlanRelationVisitor::visitRelationUsesSchema(
     SubstraitPlanParser::RelationUsesSchemaContext* ctx) {
-  auto* parentSymbol = symbolTable_->lookupSymbolByLocation(
-      Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)));
+  auto* parentSymbol = symbolTable_->lookupSymbolByLocationAndType(
+      Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)),
+      SymbolType::kRelation);
   auto parentRelationData =
       ANY_CAST(std::shared_ptr<RelationData>, parentSymbol->blob);
   auto parentRelationType = ANY_CAST(RelationType, parentSymbol->subtype);
@@ -426,10 +591,14 @@ std::any SubstraitPlanRelationVisitor::visitRelationUsesSchema(
         if (sym.location != symbol->location) {
           continue;
         }
+        parentRelationData->outputFieldReferences.push_back(&sym);
         schema->add_names(sym.name);
         auto typeProto = ANY_CAST(::substrait::proto::Type, sym.blob);
         if (typeProto.kind_case() != ::substrait::proto::Type::KIND_NOT_SET) {
           *schema->mutable_struct_()->add_types() = typeProto;
+          // If the schema contains any types, the struct is required.
+          schema->mutable_struct_()->set_nullability(
+              ::substrait::proto::Type_Nullability_NULLABILITY_REQUIRED);
         }
       }
     }
@@ -443,11 +612,12 @@ std::any SubstraitPlanRelationVisitor::visitRelationUsesSchema(
 
 std::any SubstraitPlanRelationVisitor::visitRelationExpression(
     SubstraitPlanParser::RelationExpressionContext* ctx) {
-  auto* parentSymbol = symbolTable_->lookupSymbolByLocation(
-      Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)));
+  auto* parentSymbol = symbolTable_->lookupSymbolByLocationAndType(
+      Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)),
+      SymbolType::kRelation);
   auto parentRelationData =
       ANY_CAST(std::shared_ptr<RelationData>, parentSymbol->blob);
-  auto result = SubstraitPlanRelationVisitor::visitChildren(ctx);
+  auto result = visitChildren(ctx);
   auto parentRelationType = ANY_CAST(RelationType, parentSymbol->subtype);
   switch (parentRelationType) {
     case RelationType::kJoin:
@@ -476,11 +646,12 @@ std::any SubstraitPlanRelationVisitor::visitRelationExpression(
 
 std::any SubstraitPlanRelationVisitor::visitRelationGrouping(
     SubstraitPlanParser::RelationGroupingContext* ctx) {
-  auto* parentSymbol = symbolTable_->lookupSymbolByLocation(
-      Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)));
+  auto* parentSymbol = symbolTable_->lookupSymbolByLocationAndType(
+      Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)),
+      SymbolType::kRelation);
   auto parentRelationData =
       ANY_CAST(std::shared_ptr<RelationData>, parentSymbol->blob);
-  auto result = SubstraitPlanRelationVisitor::visitChildren(ctx);
+  auto result = visitChildren(ctx);
   auto parentRelationType = ANY_CAST(RelationType, parentSymbol->subtype);
   switch (parentRelationType) {
     case RelationType::kAggregate: {
@@ -494,6 +665,13 @@ std::any SubstraitPlanRelationVisitor::visitRelationGrouping(
       *newExpr = ANY_CAST(::substrait::proto::Expression, result);
       if (newExpr->has_selection()) {
         newExpr->mutable_selection()->mutable_root_reference();
+        if (newExpr->selection().direct_reference().has_struct_field()) {
+          parentRelationData->generatedFieldReferences.push_back(
+              parentRelationData->fieldReferences[newExpr->selection()
+                                                      .direct_reference()
+                                                      .struct_field()
+                                                      .field()]);
+        }
       }
       break;
     }
@@ -550,8 +728,9 @@ std::any SubstraitPlanRelationVisitor::visitRelationMeasure(
   }
 
   // Add it to our relation.
-  auto* parentSymbol = symbolTable_->lookupSymbolByLocation(
-      Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)));
+  auto* parentSymbol = symbolTable_->lookupSymbolByLocationAndType(
+      Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)),
+      SymbolType::kRelation);
   auto parentRelationData =
       ANY_CAST(std::shared_ptr<RelationData>, parentSymbol->blob);
   auto parentRelationType = ANY_CAST(RelationType, parentSymbol->subtype);
@@ -566,6 +745,75 @@ std::any SubstraitPlanRelationVisitor::visitRelationMeasure(
           "Measures are not permitted for this kind of relation.");
       break;
   }
+  return defaultResult();
+}
+
+std::any SubstraitPlanRelationVisitor::visitRelationJoinType(
+    SubstraitPlanParser::RelationJoinTypeContext* ctx) {
+  auto* parentSymbol = symbolTable_->lookupSymbolByLocationAndType(
+      Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)),
+      SymbolType::kRelation);
+  auto parentRelationData =
+      ANY_CAST(std::shared_ptr<RelationData>, parentSymbol->blob);
+  auto parentRelationType = ANY_CAST(RelationType, parentSymbol->subtype);
+  if (parentRelationType == RelationType::kJoin) {
+    std::string text =
+        normalizeProtoEnum(ctx->id()->getText(), kJoinTypePrefix);
+    ::substrait::proto::JoinRel_JoinType joinType;
+    if (text == "unspecified") {
+      joinType = ::substrait::proto::JoinRel_JoinType_JOIN_TYPE_UNSPECIFIED;
+    } else if (text == "inner") {
+      joinType = ::substrait::proto::JoinRel_JoinType_JOIN_TYPE_INNER;
+    } else if (text == "outer") {
+      joinType = ::substrait::proto::JoinRel_JoinType_JOIN_TYPE_OUTER;
+    } else if (text == "left") {
+      joinType = ::substrait::proto::JoinRel_JoinType_JOIN_TYPE_LEFT;
+    } else if (text == "right") {
+      joinType = ::substrait::proto::JoinRel_JoinType_JOIN_TYPE_RIGHT;
+    } else if (text == "semi") {
+      joinType = ::substrait::proto::JoinRel_JoinType_JOIN_TYPE_SEMI;
+    } else if (text == "anti") {
+      joinType = ::substrait::proto::JoinRel_JoinType_JOIN_TYPE_ANTI;
+    } else if (text == "single") {
+      joinType = ::substrait::proto::JoinRel_JoinType_JOIN_TYPE_SINGLE;
+    } else {
+      joinType = ::substrait::proto::JoinRel_JoinType_JOIN_TYPE_UNSPECIFIED;
+    }
+    if (joinType ==
+        ::substrait::proto::JoinRel_JoinType_JOIN_TYPE_UNSPECIFIED) {
+      this->errorListener_->addError(
+          ctx->getStart(),
+          "Unsupported join type direction: " + ctx->id()->getText());
+    }
+    parentRelationData->relation.mutable_join()->set_type(joinType);
+
+    // TODO -- Add support for HashJoin/MergeJoin which have different enums.
+  } else {
+    errorListener_->addError(
+        ctx->getStart(),
+        "Join types are not supported for this relation type.");
+    return defaultResult();
+  }
+  return defaultResult();
+}
+
+std::any SubstraitPlanRelationVisitor::visitRelationEmit(
+    SubstraitPlanParser::RelationEmitContext* ctx) {
+  auto* parentSymbol = symbolTable_->lookupSymbolByLocationAndType(
+      Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)),
+      SymbolType::kRelation);
+  auto parentRelationData =
+      ANY_CAST(std::shared_ptr<RelationData>, parentSymbol->blob);
+  auto result = visitChildren(ctx);
+  auto parentRelationType = ANY_CAST(RelationType, parentSymbol->subtype);
+  auto common =
+      findCommonRelation(parentRelationType, &parentRelationData->relation);
+  if (common == nullptr) {
+    errorListener_->addError(
+        ctx->getStart(), "Emits do not make sense for this kind of relation.");
+    return defaultResult();
+  }
+  common->mutable_emit()->add_output_mapping(ANY_CAST(int32_t, result));
   return defaultResult();
 }
 
@@ -635,17 +883,34 @@ std::any SubstraitPlanRelationVisitor::visitMeasure_detail(
               ::substrait::proto::Type,
               visitLiteral_complex_type(ctx->literal_complex_type()));
         }
-        if (ctx->id() != nullptr) {
+        if (ctx->id(0) != nullptr) {
           measure.mutable_measure()->set_phase(
               static_cast<::substrait::proto::AggregationPhase>(
-                  visitAggregationPhase(ctx->id())));
+                  visitAggregationPhase(ctx->id(0))));
         }
       } else {
         errorListener_->addError(
-            ctx->id()->getStart(),
+            ctx->id(0)->getStart(),
             "Expected an expression utilizing a function here.");
       }
+      // If we have a NAMED clause, add a symbol reference.
+      if (ctx->id().size() > 1) {
+        auto symbol = symbolTable_->defineSymbol(
+            ctx->id(1)->getText(),
+            PROTO_LOCATION(measure),
+            SymbolType::kMeasure,
+            std::nullopt,
+            std::nullopt);
 
+        // Add it to our generated field mapping.
+        auto* parentSymbol = symbolTable_->lookupSymbolByLocationAndType(
+            Location(
+                dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent->parent)),
+            SymbolType::kRelation);
+        auto parentRelationData =
+            ANY_CAST(std::shared_ptr<RelationData>, parentSymbol->blob);
+        parentRelationData->generatedFieldReferences.push_back(symbol);
+      }
       return measure;
     }
     case SubstraitPlanParser::FILTER:
@@ -656,7 +921,7 @@ std::any SubstraitPlanRelationVisitor::visitMeasure_detail(
       measure.mutable_measure()->set_invocation(
           static_cast<
               ::substrait::proto::AggregateFunction_AggregationInvocation>(
-              visitAggregationInvocation(ctx->id())));
+              visitAggregationInvocation(ctx->id(0))));
       return measure;
     case SubstraitPlanParser::SORT:
       *measure.mutable_measure()->add_sorts() = ANY_CAST(
@@ -670,16 +935,43 @@ std::any SubstraitPlanRelationVisitor::visitMeasure_detail(
 
 std::any SubstraitPlanRelationVisitor::visitRelationSourceReference(
     SubstraitPlanParser::RelationSourceReferenceContext* ctx) {
-  auto* parentSymbol = symbolTable_->lookupSymbolByLocation(
-      Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)));
+  auto* parentSymbol = symbolTable_->lookupSymbolByLocationAndType(
+      Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)),
+      SymbolType::kRelation);
   auto parentRelationData =
       ANY_CAST(std::shared_ptr<RelationData>, parentSymbol->blob);
   auto parentRelationType = ANY_CAST(RelationType, parentSymbol->subtype);
 
-  if (parentRelationType == RelationType::kRead) {
-    auto sourceName = ctx->source_reference()->id()->getText();
-    auto* symbol = symbolTable_->lookupSymbolByName(sourceName);
-    if (symbol != nullptr) {
+  if (parentRelationType != RelationType::kRead) {
+    errorListener_->addError(
+        ctx->getStart(),
+        "Source references are not defined for this kind of relation.");
+    return defaultResult();
+  }
+
+  auto sourceName = ctx->source_reference()->id()->getText();
+  auto* symbol = symbolTable_->lookupSymbolByName(sourceName);
+  if (symbol == nullptr) {
+    return defaultResult();
+  }
+  switch (ANY_CAST(SourceType, symbol->subtype)) {
+    case SourceType::kLocalFiles: {
+      auto* source =
+          parentRelationData->relation.mutable_read()->mutable_local_files();
+      for (const auto& sym : *symbolTable_) {
+        if (sym.type != SymbolType::kSourceDetail) {
+          continue;
+        }
+        if (sym.location != symbol->location) {
+          continue;
+        }
+        *source->add_items() = *ANY_CAST(
+            std::shared_ptr<::substrait::proto::ReadRel_LocalFiles_FileOrFiles>,
+            sym.blob);
+      }
+      break;
+    }
+    case SourceType::kNamedTable: {
       auto* source =
           parentRelationData->relation.mutable_read()->mutable_named_table();
       for (const auto& sym : *symbolTable_) {
@@ -691,19 +983,26 @@ std::any SubstraitPlanRelationVisitor::visitRelationSourceReference(
         }
         source->add_names(sym.name);
       }
+      break;
     }
-  } else {
-    errorListener_->addError(
-        ctx->getStart(),
-        "Source references are not defined for this kind of relation.");
+    case SourceType::kVirtualTable:
+      // TODO -- Implement.
+      break;
+    case SourceType::kExtensionTable:
+      // TODO -- Implement.
+      break;
+    case SourceType::kUnknown:
+      break;
   }
+
   return defaultResult();
 }
 
 std::any SubstraitPlanRelationVisitor::visitRelationSort(
     SubstraitPlanParser::RelationSortContext* ctx) {
-  auto* parentSymbol = symbolTable_->lookupSymbolByLocation(
-      Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)));
+  auto* parentSymbol = symbolTable_->lookupSymbolByLocationAndType(
+      Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)),
+      SymbolType::kRelation);
   auto parentRelationData =
       ANY_CAST(std::shared_ptr<RelationData>, parentSymbol->blob);
   auto parentRelationType = ANY_CAST(RelationType, parentSymbol->subtype);
@@ -716,6 +1015,31 @@ std::any SubstraitPlanRelationVisitor::visitRelationSort(
       errorListener_->addError(
           ctx->getStart(),
           "Sorts are not permitted for this kind of relation.");
+      break;
+  }
+  return defaultResult();
+}
+
+std::any SubstraitPlanRelationVisitor::visitRelationCount(
+    SubstraitPlanParser::RelationCountContext* ctx) {
+  auto* parentSymbol = symbolTable_->lookupSymbolByLocationAndType(
+      Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)),
+      SymbolType::kRelation);
+  auto parentRelationData =
+      ANY_CAST(std::shared_ptr<RelationData>, parentSymbol->blob);
+  auto parentRelationType = ANY_CAST(RelationType, parentSymbol->subtype);
+  switch (parentRelationType) {
+    case RelationType::kFetch: {
+      ::substrait::proto::Type type;
+      type.mutable_i64()->set_nullability(
+          ::substrait::proto::Type_Nullability_NULLABILITY_REQUIRED);
+      auto number = visitNumber(ctx->NUMBER(), type);
+      parentRelationData->relation.mutable_fetch()->set_count(number.i64());
+      break;
+    }
+    default:
+      errorListener_->addError(
+          ctx->getStart(), "Count only applies to fetch relations.");
       break;
   }
   return defaultResult();
@@ -804,6 +1128,12 @@ std::any SubstraitPlanRelationVisitor::visitExpressionFunctionUse(
     auto newExpr = ANY_CAST(::substrait::proto::Expression, result);
     *expr.mutable_scalar_function()->add_arguments()->mutable_value() = newExpr;
   }
+  if (ctx->literal_complex_type() != nullptr) {
+    auto literalType = ANY_CAST(
+        ::substrait::proto::Type,
+        visitLiteral_complex_type(ctx->literal_complex_type()));
+    *expr.mutable_scalar_function()->mutable_output_type() = literalType;
+  }
   return expr;
 }
 
@@ -821,23 +1151,18 @@ std::any SubstraitPlanRelationVisitor::visitExpressionColumn(
       ANY_CAST(std::shared_ptr<RelationData>, currentRelationScope_->blob);
 
   std::string symbolName = ctx->getText();
-  auto currentFieldNumber = std::find_if(
-      relationData->fieldReferences.begin(),
-      relationData->fieldReferences.end(),
-      [&](auto ref) { return (ref->name == symbolName); });
+  int32_t fieldReference =
+      findFieldReferenceByName(ctx->getStart(), relationData, symbolName);
 
   ::substrait::proto::Expression expr;
-  if (currentFieldNumber != relationData->fieldReferences.end()) {
-    int32_t fieldReference = static_cast<int32_t>(
-        (currentFieldNumber - relationData->fieldReferences.begin()) &
-        std::numeric_limits<int32_t>::max());
+  if (fieldReference != -1) {
     expr.mutable_selection()
         ->mutable_direct_reference()
         ->mutable_struct_field()
         ->set_field(fieldReference);
+    // TODO -- Update the following when non-direct references are implemented.
+    expr.mutable_selection()->mutable_root_reference();
   }
-
-  visitChildren(ctx);
   return expr;
 }
 
@@ -926,7 +1251,10 @@ std::any SubstraitPlanRelationVisitor::visitStruct_literal(
 
 std::any SubstraitPlanRelationVisitor::visitColumn_name(
     SubstraitPlanParser::Column_nameContext* ctx) {
-  return visitChildren(ctx);
+  auto relationData =
+      ANY_CAST(std::shared_ptr<RelationData>, currentRelationScope_->blob);
+  return findFieldReferenceByName(
+      ctx->getStart(), relationData, ctx->getText());
 }
 
 ::substrait::proto::Expression_Literal
@@ -1560,6 +1888,135 @@ int32_t SubstraitPlanRelationVisitor::visitSortDirection(
   this->errorListener_->addError(
       ctx->getStart(), "Unrecognized sort direction: " + ctx->getText());
   return ::substrait::proto::SortField::SORT_DIRECTION_UNSPECIFIED;
+}
+
+void SubstraitPlanRelationVisitor::addExpressionsToSchema(
+    std::shared_ptr<RelationData>& relationData) {
+  const auto& relation = relationData->relation;
+  switch (relation.rel_type_case()) {
+    case ::substrait::proto::Rel::kProject:
+      for (const auto& expr : relation.project().expressions()) {
+        if (expr.selection().direct_reference().has_struct_field()) {
+          if (expr.selection().direct_reference().struct_field().field() <
+              relationData->fieldReferences.size()) {
+            relationData->generatedFieldReferences.push_back(
+                relationData->fieldReferences[expr.selection()
+                                                  .direct_reference()
+                                                  .struct_field()
+                                                  .field()]);
+          }
+        } else {
+          const auto& uniqueName =
+              symbolTable_->getUniqueName(kIntermediateNodeName);
+          auto newSymbol = symbolTable_->defineSymbol(
+              uniqueName,
+              PROTO_LOCATION(expr),
+              SymbolType::kUnknown,
+              std::nullopt,
+              std::nullopt);
+          relationData->generatedFieldReferences.push_back(newSymbol);
+        }
+      }
+      break;
+    default:
+      // Only project and aggregate relations affect the output mapping.
+      break;
+  }
+}
+
+std::string SubstraitPlanRelationVisitor::fullyQualifiedReference(
+    const SymbolInfo* fieldReference) {
+  for (const auto& symbol : symbolTable_->getSymbols()) {
+    if (symbol->type == SymbolType::kSchema &&
+        symbol->location == fieldReference->location) {
+      auto fqn = symbol->name + "." + fieldReference->name;
+      return fqn;
+    }
+  }
+  // Shouldn't happen, but return no schema if we can't find one.
+  return fieldReference->name;
+}
+
+int SubstraitPlanRelationVisitor::findFieldReferenceByName(
+    antlr4::Token* token,
+    std::shared_ptr<RelationData>& relationData,
+    const std::string& name) {
+  auto fieldReferencesSize = relationData->fieldReferences.size();
+
+  auto generatedField = std::find_if(
+      relationData->generatedFieldReferences.rbegin(),
+      relationData->generatedFieldReferences.rend(),
+      [&](auto ref) {
+        return (!ref->alias.empty() && ref->alias == name || ref->name == name);
+      });
+  if (generatedField != relationData->generatedFieldReferences.rend()) {
+    auto fieldPlacement =
+        generatedField - relationData->generatedFieldReferences.rbegin();
+    return static_cast<int32_t>(
+        (fieldReferencesSize + relationData->generatedFieldReferences.size() -
+         fieldPlacement - 1) &
+        std::numeric_limits<int32_t>::max());
+  }
+
+  auto field = std::find_if(
+      relationData->fieldReferences.rbegin(),
+      relationData->fieldReferences.rend(),
+      [&](auto ref) {
+        return (
+            !ref->alias.empty() && ref->alias == name || ref->name == name ||
+            fullyQualifiedReference(ref) == name);
+      });
+
+  if (field != relationData->fieldReferences.rend()) {
+    auto fieldPlacement = field - relationData->fieldReferences.rbegin();
+    return static_cast<int32_t>(
+        (fieldReferencesSize - fieldPlacement - 1) &
+        std::numeric_limits<int32_t>::max());
+  }
+
+  errorListener_->addError(token, "Reference " + name + " does not exist.");
+  return -1;
+}
+
+void SubstraitPlanRelationVisitor::applyOutputMappingToSchema(
+    antlr4::Token* token,
+    RelationType relationType,
+    std::shared_ptr<RelationData>& relationData) {
+  auto common = findCommonRelation(relationType, &relationData->relation);
+  if (common == nullptr) {
+    return;
+  }
+  if (common->emit().output_mapping_size() == 0) {
+    common->mutable_direct();
+  } else {
+    if (!relationData->outputFieldReferences.empty()) {
+      // TODO -- Add support for aggregate relations.
+      errorListener_->addError(
+          token, "Aggregate relations do not yet support emit sections.");
+      return;
+    }
+    for (auto mapping : common->emit().output_mapping()) {
+      auto fieldReferencesSize = relationData->fieldReferences.size();
+      if (mapping < fieldReferencesSize) {
+        relationData->outputFieldReferences.push_back(
+            relationData->fieldReferences[mapping]);
+      } else if (
+          mapping <
+          fieldReferencesSize + relationData->generatedFieldReferences.size()) {
+        relationData->outputFieldReferences.push_back(
+            relationData
+                ->generatedFieldReferences[mapping - fieldReferencesSize]);
+      } else {
+        errorListener_->addError(
+            token,
+            "Field #" + std::to_string(mapping) + " requested but only " +
+                std::to_string(
+                    fieldReferencesSize +
+                    relationData->generatedFieldReferences.size()) +
+                " are available.");
+      }
+    }
+  }
 }
 
 } // namespace io::substrait::textplan

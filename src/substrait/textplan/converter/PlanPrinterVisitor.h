@@ -34,7 +34,9 @@ class PlanPrinterVisitor : public BasePlanProtoVisitor {
   std::string typeToText(const ::substrait::proto::Type& type);
 
  private:
-  std::string lookupFieldReference(uint32_t field_reference);
+  std::string lookupFieldReference(
+      uint32_t field_reference,
+      bool needFullyQualified);
   std::string lookupFunctionReference(uint32_t function_reference);
 
   std::any visitSelect(
@@ -87,6 +89,8 @@ class PlanPrinterVisitor : public BasePlanProtoVisitor {
   std::any visitReferenceSegment(
       const ::substrait::proto::Expression_ReferenceSegment& segment) override;
 
+  std::any visitRelationCommon(
+      const ::substrait::proto::RelCommon& common) override;
   std::any visitAggregateFunction(
       const ::substrait::proto::AggregateFunction& function) override;
   std::any visitExpression(
@@ -111,6 +115,8 @@ class PlanPrinterVisitor : public BasePlanProtoVisitor {
       const ::substrait::proto::ProjectRel& relation) override;
   std::any visitJoinRelation(
       const ::substrait::proto::JoinRel& relation) override;
+  std::any visitCrossRelation(
+      const ::substrait::proto::CrossRel& relation) override;
 
   std::shared_ptr<SymbolTable> symbolTable_;
   std::shared_ptr<SubstraitErrorListener> errorListener_;

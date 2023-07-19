@@ -62,7 +62,9 @@
       "input": {
        "project": {
         "common": {
-         "direct": {}
+         "emit": {
+          "outputMapping": [4, 5]
+         }
         },
         "input": {
          "filter": {
@@ -109,7 +111,7 @@
                }
               ],
               "type_variation_reference": 0,
-              "nullability": "NULLABILITY_UNSPECIFIED"
+              "nullability": "NULLABILITY_REQUIRED"
              }
             },
             "filter": {

@@ -95,25 +95,24 @@ std::any SubstraitPlanPipelineVisitor::visitPipeline(
   //    a -> b -> c -> d
   const SymbolInfo* leftSymbol = &SymbolInfo::kUnknown;
   if (ctx->pipeline() != nullptr) {
-    leftSymbol =
-        symbolTable_->lookupSymbolByLocation(PARSER_LOCATION(ctx->pipeline()));
+    leftSymbol = symbolTable_->lookupSymbolByLocationAndType(
+        PARSER_LOCATION(ctx->pipeline()), SymbolType::kRelation);
   }
   const SymbolInfo* rightSymbol = &SymbolInfo::kUnknown;
   if (dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)->getRuleIndex() ==
       SubstraitPlanParser::RulePipeline) {
-    rightSymbol =
-        symbolTable_->lookupSymbolByLocation(PARSER_LOCATION(ctx->parent));
+    rightSymbol = symbolTable_->lookupSymbolByLocationAndTypes(
+        PARSER_LOCATION(ctx->parent),
+        {SymbolType::kRelation, SymbolType::kRoot});
   }
   const SymbolInfo* rightmostSymbol = rightSymbol;
   if (*rightSymbol != SymbolInfo::kUnknown) {
-    if (rightSymbol->blob.type() != typeid(std::shared_ptr<RelationData>)) {
-      errorListener_->addError(
-          ctx->getStart(), "No relation definition present for this symbol.");
-    }
-    auto rightRelationData =
-        ANY_CAST(std::shared_ptr<RelationData>, rightSymbol->blob);
-    if (rightRelationData->pipelineStart != nullptr) {
-      rightmostSymbol = rightRelationData->pipelineStart;
+    if (rightSymbol->blob.type() == typeid(std::shared_ptr<RelationData>)) {
+      auto rightRelationData =
+          ANY_CAST(std::shared_ptr<RelationData>, rightSymbol->blob);
+      if (rightRelationData->pipelineStart != nullptr) {
+        rightmostSymbol = rightRelationData->pipelineStart;
+      }
     }
   }
 

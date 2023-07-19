@@ -23,7 +23,11 @@ add_custom_command(
           "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tests/data"
   COMMAND
     ${CMAKE_COMMAND} -E copy "${TEXTPLAN_SOURCE_DIR}/data/q6_first_stage.json"
-    "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tests/data/q6_first_stage.json")
+    "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tests/data/q6_first_stage.json"
+  COMMAND
+    ${CMAKE_COMMAND} -E copy
+    "${TEXTPLAN_SOURCE_DIR}/data/q6_first_stage.golden.splan"
+    "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tests/data/q6_first_stage.golden.splan")
 
 message(
   STATUS

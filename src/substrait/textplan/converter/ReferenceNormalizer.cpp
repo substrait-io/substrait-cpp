@@ -26,7 +26,7 @@ bool compareExtensionFunctions(
   };
 
   // Now let the default tuple compare do the rest of the work.
-  return ord(a) > ord(b);
+  return ord(a) < ord(b);
 }
 
 void normalizeFunctionsForExpression(

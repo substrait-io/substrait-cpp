@@ -7,6 +7,8 @@ add_library(
   symbol_table
   Location.cpp
   Location.h
+  StringManipulation.cpp
+  StringManipulation.h
   SymbolTable.cpp
   SymbolTable.h
   SymbolTablePrinter.cpp

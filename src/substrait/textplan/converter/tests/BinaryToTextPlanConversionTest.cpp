@@ -196,6 +196,8 @@ std::vector<TestCase> getTestCases() {
                    "count",
                    "named",
                    "#2",
+                   "cost",
+                   "count",
                    "read",
                    "root"}),
               WhenSerialized(EqSquashingWhitespace(
@@ -321,8 +323,8 @@ std::vector<TestCase> getTestCases() {
 
               join relation join {
                 type JOIN_TYPE_UNSPECIFIED;
-                expression product_id;
-                post_join count;
+                expression schema.product_id;
+                post_join schema.count;
               }
 
               read relation read3 {
@@ -332,7 +334,7 @@ std::vector<TestCase> getTestCases() {
 
               join relation join2 {
                 type JOIN_TYPE_UNSPECIFIED;
-                expression order_id;
+                expression schema3.order_id;
               }
 
               schema schema {
@@ -415,7 +417,7 @@ std::vector<TestCase> getTestCases() {
                      }
 
                      filter relation filter {
-                       filter functionref#4(field#2, 0.07_fp64);
+                       filter functionref#4(field#2, 0.07_fp64)->bool?;
                      })"))),
       },
       {
@@ -468,7 +470,7 @@ std::vector<TestCase> getTestCases() {
                      }
 
                      filter relation filter {
-                       filter functionref#4(field#2, 0.07_fp64);
+                       filter functionref#4(field#2, 0.07_fp64)->bool?;
                      })"))),
       },
       {
@@ -624,12 +626,14 @@ INSTANTIATE_TEST_SUITE_P(
 
 class BinaryToTextPlanConversionTest : public ::testing::Test {};
 
-TEST_F(BinaryToTextPlanConversionTest, loadFromJSON) {
+TEST_F(BinaryToTextPlanConversionTest, FullSample) {
   std::string json = readFromFile("data/q6_first_stage.json");
   auto planOrError = loadFromJson(json);
   ASSERT_TRUE(planOrError.ok());
   auto plan = *planOrError;
   EXPECT_THAT(plan.extensions_size(), ::testing::Eq(7));
+
+  std::string expectedOutput = readFromFile("data/q6_first_stage.golden.splan");
 
   auto result = parseBinaryPlan(plan);
   auto symbols = result.getSymbolTable().getSymbols();
@@ -663,7 +667,9 @@ TEST_F(BinaryToTextPlanConversionTest, loadFromJSON) {
                   SymbolType::kRelation,
                   SymbolType::kSource,
                   SymbolType::kSchema,
-              })));
+              }),
+          WhenSerialized(EqSquashingWhitespace(expectedOutput))))
+      << result.getSymbolTable().toDebugString();
 }
 
 } // namespace
