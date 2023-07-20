@@ -2,20 +2,19 @@
 
 #include "substrait/textplan/converter/LoadBinary.h"
 
+#include <fmt/format.h>
 #include <google/protobuf/io/tokenizer.h>
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/util/json_util.h>
-
 #include <filesystem>
 #include <fstream>
-#include <iterator>
 #include <sstream>
 #include <string>
 #include <string_view>
 #include <vector>
 
-#include "substrait/common/Exceptions.h"
 #include "substrait/proto/plan.pb.h"
+#include "substrait/textplan/StringManipulation.h"
 
 namespace io::substrait::textplan {
 
@@ -39,24 +38,23 @@ class StringErrorCollector : public google::protobuf::io::ErrorCollector {
 
 } // namespace
 
-std::string readFromFile(std::string_view msgPath) {
+absl::StatusOr<std::string> readFromFile(std::string_view msgPath) {
   std::ifstream textFile(std::string{msgPath});
   if (textFile.fail()) {
-    auto currdir = std::filesystem::current_path().string();
-    SUBSTRAIT_FAIL(
-        "Failed to open file {} when running in {}: {}",
-        msgPath,
-        currdir,
-        strerror(errno));
+    auto currDir = std::filesystem::current_path().string();
+    return absl::ErrnoToStatus(
+        errno,
+        fmt::format(
+            "Failed to open file {} when running in {}", msgPath, currDir));
   }
   std::stringstream buffer;
   buffer << textFile.rdbuf();
   return buffer.str();
 }
 
-PlanOrErrors loadFromJson(std::string_view json) {
+absl::StatusOr<::substrait::proto::Plan> loadFromJson(const std::string& json) {
   if (json.empty()) {
-    return PlanOrErrors({"Provided JSON string was empty."});
+    return absl::InternalError("Provided JSON string was empty.");
   }
   std::string_view usableJson = json;
   if (json[0] == '#') {
@@ -71,21 +69,32 @@ PlanOrErrors loadFromJson(std::string_view json) {
       std::string{usableJson}, &plan);
   if (!status.ok()) {
     std::string msg{status.message()};
-    return PlanOrErrors(
-        {fmt::format("Failed to parse Substrait JSON: {}", msg)});
+    return absl::InternalError(
+        fmt::format("Failed to parse Substrait JSON: {}", msg));
   }
-  return PlanOrErrors(plan);
+  return plan;
 }
 
-PlanOrErrors loadFromText(const std::string& text) {
+absl::StatusOr<::substrait::proto::Plan> loadFromProtoText(
+    const std::string& text) {
   ::substrait::proto::Plan plan;
   ::google::protobuf::TextFormat::Parser parser;
   StringErrorCollector collector;
   parser.RecordErrorsTo(&collector);
   if (!parser.ParseFromString(text, &plan)) {
-    return PlanOrErrors(collector.getErrors());
+    auto errors = collector.getErrors();
+    return absl::InternalError(joinLines(errors));
   }
-  return PlanOrErrors(plan);
+  return plan;
+}
+
+absl::StatusOr<::substrait::proto::Plan> loadFromBinary(
+    const std::string& bytes) {
+  ::substrait::proto::Plan plan;
+  if (!plan.ParseFromString(bytes)) {
+    return absl::InternalError("Failed to parse as a binary Substrait plan.");
+  }
+  return plan;
 }
 
 } // namespace io::substrait::textplan

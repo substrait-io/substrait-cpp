@@ -70,12 +70,12 @@ std::vector<std::string> getTestCases() {
 
 TEST_P(RoundTripBinaryToTextFixture, RoundTrip) {
   auto filename = GetParam();
-  std::string json = readFromFile(filename);
-  auto planOrErrors = loadFromJson(json);
-  std::vector<std::string> errors = planOrErrors.errors();
-  ASSERT_THAT(errors, ::testing::ElementsAre());
+  auto jsonOrError = readFromFile(filename);
+  ASSERT_TRUE(jsonOrError.ok());
+  auto planOrError = loadFromJson(*jsonOrError);
+  ASSERT_TRUE(planOrError.ok());
 
-  auto plan = *planOrErrors;
+  auto plan = *planOrError;
 
   auto textResult = parseBinaryPlan(plan);
   auto textSymbols = textResult.getSymbolTable().getSymbols();

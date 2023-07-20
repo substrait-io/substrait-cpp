@@ -597,9 +597,10 @@ std::vector<TestCase> getTestCases() {
 TEST_P(BinaryToTextPlanConverterTestFixture, Parse) {
   auto [name, input, matcher] = GetParam();
 
-  auto planOrError = loadFromText(input);
+  auto planOrError = loadFromProtoText(input);
   if (!planOrError.ok()) {
-    ParseResult result(SymbolTable(), planOrError.errors(), {});
+    ParseResult result(
+        SymbolTable(), {std::string(planOrError.status().message())}, {});
     ASSERT_THAT(result, matcher);
     return;
   }
@@ -627,13 +628,15 @@ INSTANTIATE_TEST_SUITE_P(
 class BinaryToTextPlanConversionTest : public ::testing::Test {};
 
 TEST_F(BinaryToTextPlanConversionTest, FullSample) {
-  std::string json = readFromFile("data/q6_first_stage.json");
-  auto planOrError = loadFromJson(json);
+  auto jsonOrError = readFromFile("data/q6_first_stage.json");
+  ASSERT_TRUE(jsonOrError.ok());
+  auto planOrError = loadFromJson(*jsonOrError);
   ASSERT_TRUE(planOrError.ok());
   auto plan = *planOrError;
   EXPECT_THAT(plan.extensions_size(), ::testing::Eq(7));
 
-  std::string expectedOutput = readFromFile("data/q6_first_stage.golden.splan");
+  auto expectedOutputOrError = readFromFile("data/q6_first_stage.golden.splan");
+  ASSERT_TRUE(expectedOutputOrError.ok());
 
   auto result = parseBinaryPlan(plan);
   auto symbols = result.getSymbolTable().getSymbols();
@@ -668,7 +671,7 @@ TEST_F(BinaryToTextPlanConversionTest, FullSample) {
                   SymbolType::kSource,
                   SymbolType::kSchema,
               }),
-          WhenSerialized(EqSquashingWhitespace(expectedOutput))))
+          WhenSerialized(EqSquashingWhitespace(*expectedOutputOrError))))
       << result.getSymbolTable().toDebugString();
 }
 

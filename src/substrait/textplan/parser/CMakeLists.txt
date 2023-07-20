@@ -12,6 +12,8 @@ add_library(
   SubstraitPlanRelationVisitor.h
   SubstraitPlanTypeVisitor.cpp
   SubstraitPlanTypeVisitor.h
+  LoadText.cpp
+  LoadText.h
   ParseText.cpp
   ParseText.h
   SubstraitParserErrorListener.cpp)
@@ -26,7 +28,9 @@ target_link_libraries(
   textplan_grammar
   fmt::fmt-header-only
   date::date
-  date::date-tz)
+  date::date-tz
+  absl::status
+  absl::statusor)
 
 add_executable(planparser Tool.cpp)
 

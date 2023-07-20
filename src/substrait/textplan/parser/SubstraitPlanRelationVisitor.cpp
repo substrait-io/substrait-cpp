@@ -974,14 +974,12 @@ std::any SubstraitPlanRelationVisitor::visitRelationSourceReference(
     case SourceType::kNamedTable: {
       auto* source =
           parentRelationData->relation.mutable_read()->mutable_named_table();
-      for (const auto& sym : *symbolTable_) {
-        if (sym.type != SymbolType::kSourceDetail) {
+      for (const auto& sym :
+           symbolTable_->lookupSymbolsByLocation(symbol->location)) {
+        if (sym->type != SymbolType::kSourceDetail) {
           continue;
         }
-        if (sym.location != symbol->location) {
-          continue;
-        }
-        source->add_names(sym.name);
+        source->add_names(sym->name);
       }
       break;
     }

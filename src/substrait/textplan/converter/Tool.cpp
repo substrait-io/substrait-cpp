@@ -6,6 +6,7 @@
 
 #include <sstream>
 
+#include "substrait/common/Io.h"
 #include "substrait/textplan/SymbolTablePrinter.h"
 #include "substrait/textplan/converter/LoadBinary.h"
 #include "substrait/textplan/converter/ParseBinary.h"
@@ -13,14 +14,10 @@
 namespace io::substrait::textplan {
 namespace {
 
-void convertJsonToText(const char* filename) {
-  std::string json = readFromFile(filename);
-  auto planOrError = loadFromJson(json);
+void convertPlanToText(const char* filename) {
+  auto planOrError = loadPlanWithUnknownEncoding(filename);
   if (!planOrError.ok()) {
-    std::cerr << "An error occurred while reading: " << filename << std::endl;
-    for (const auto& err : planOrError.errors()) {
-      std::cerr << err << std::endl;
-    }
+    std::cerr << planOrError.status() << std::endl;
     return;
   }
 
@@ -46,7 +43,7 @@ int main(int argc, char* argv[]) {
 #ifdef _WIN32
   for (int currArg = 1; currArg < argc; currArg++) {
     printf("===== %s =====\n", argv[currArg]);
-    io::substrait::textplan::convertJsonToText(argv[currArg]);
+    io::substrait::textplan::convertPlanToText(argv[currArg]);
   }
 #else
   for (int currArg = 1; currArg < argc; currArg++) {
@@ -54,7 +51,7 @@ int main(int argc, char* argv[]) {
     glob(argv[currArg], GLOB_TILDE, nullptr, &globResult);
     for (size_t i = 0; i < globResult.gl_pathc; i++) {
       printf("===== %s =====\n", globResult.gl_pathv[i]);
-      io::substrait::textplan::convertJsonToText(globResult.gl_pathv[i]);
+      io::substrait::textplan::convertPlanToText(globResult.gl_pathv[i]);
     }
   }
 #endif

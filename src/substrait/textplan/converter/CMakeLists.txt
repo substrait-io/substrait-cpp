@@ -11,6 +11,8 @@ set(TEXTPLAN_SRCS
     PlanPrinterVisitor.h
     LoadBinary.cpp
     LoadBinary.h
+    SaveBinary.cpp
+    SaveBinary.h
     ParseBinary.cpp
     ParseBinary.h)
 
@@ -20,10 +22,14 @@ target_link_libraries(
   substrait_textplan_converter
   substrait_common
   substrait_expression
+  substrait_io
   substrait_proto
   symbol_table
   error_listener
-  date::date)
+  date::date
+  fmt::fmt-header-only
+  absl::status
+  absl::statusor)
 
 if(${SUBSTRAIT_CPP_BUILD_TESTING})
   add_subdirectory(tests)
