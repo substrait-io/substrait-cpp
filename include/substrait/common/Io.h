@@ -9,7 +9,7 @@
 
 namespace io::substrait {
 
-enum PlanFileEncoding {
+enum class PlanFileEncoding {
   kBinary = 0,
   kJson = 1,
   kProtoText = 2,
@@ -17,7 +17,7 @@ enum PlanFileEncoding {
 };
 
 // Loads a Substrait plan consisting of any encoding type from the given file.
-absl::StatusOr<::substrait::proto::Plan> loadPlanWithUnknownEncoding(
+absl::StatusOr<::substrait::proto::Plan> loadPlan(
     std::string_view input_filename);
 
 // Writes the provided plan to the specified location with the specified

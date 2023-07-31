@@ -14,7 +14,8 @@ namespace io::substrait {
 
 namespace {
 
-const std::regex kIsJson(R"(("extensionUris"|"extensions"|"relations"))");
+const std::regex kIsJson(
+    R"(("extensionUris"|"extension_uris"|"extensions"|"relations"))");
 const std::regex kIsProtoText(
     R"((^|\n)((relations|extensions|extension_uris|expected_type_urls) \{))");
 const std::regex kIsText(
@@ -22,20 +23,20 @@ const std::regex kIsText(
 
 PlanFileEncoding detectEncoding(std::string_view content) {
   if (std::regex_search(content.begin(), content.end(), kIsJson)) {
-    return kJson;
+    return PlanFileEncoding::kJson;
   }
   if (std::regex_search(content.begin(), content.end(), kIsProtoText)) {
-    return kProtoText;
+    return PlanFileEncoding::kProtoText;
   }
   if (std::regex_search(content.begin(), content.end(), kIsText)) {
-    return kText;
+    return PlanFileEncoding::kText;
   }
-  return kBinary;
+  return PlanFileEncoding::kBinary;
 }
 
 } // namespace
 
-absl::StatusOr<::substrait::proto::Plan> loadPlanWithUnknownEncoding(
+absl::StatusOr<::substrait::proto::Plan> loadPlan(
     std::string_view input_filename) {
   auto contentOrError = textplan::readFromFile(input_filename.data());
   if (!contentOrError.ok()) {
@@ -45,13 +46,13 @@ absl::StatusOr<::substrait::proto::Plan> loadPlanWithUnknownEncoding(
   auto encoding = detectEncoding(*contentOrError);
   absl::StatusOr<::substrait::proto::Plan> planOrError;
   switch (encoding) {
-    case kBinary:
+    case PlanFileEncoding::kBinary:
       return textplan::loadFromBinary(*contentOrError);
-    case kJson:
+    case PlanFileEncoding::kJson:
       return textplan::loadFromJson(*contentOrError);
-    case kProtoText:
+    case PlanFileEncoding::kProtoText:
       return textplan::loadFromProtoText(*contentOrError);
-    case kText:
+    case PlanFileEncoding::kText:
       return textplan::loadFromText(*contentOrError);
   }
   return absl::UnimplementedError("Unexpected encoding requested.");
@@ -62,13 +63,13 @@ absl::Status savePlan(
     std::string_view output_filename,
     PlanFileEncoding encoding) {
   switch (encoding) {
-    case kBinary:
+    case PlanFileEncoding::kBinary:
       return textplan::savePlanToBinary(plan, output_filename);
-    case kJson:
+    case PlanFileEncoding::kJson:
       return textplan::savePlanToJson(plan, output_filename);
-    case kProtoText:
+    case PlanFileEncoding::kProtoText:
       return textplan::savePlanToProtoText(plan, output_filename);
-    case kText:
+    case PlanFileEncoding::kText:
       return textplan::savePlanToText(plan, output_filename);
   }
   return absl::UnimplementedError("Unexpected encoding requested.");

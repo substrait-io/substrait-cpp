@@ -33,8 +33,7 @@ constexpr const char* planFileEncodingToString(PlanFileEncoding e) noexcept {
 class IoTest : public ::testing::Test {};
 
 TEST_F(IoTest, LoadMissingFile) {
-  auto result =
-      ::io::substrait::loadPlanWithUnknownEncoding("non-existent-file");
+  auto result = ::io::substrait::loadPlan("non-existent-file");
   ASSERT_FALSE(result.ok());
   ASSERT_THAT(
       result.status().message(),
@@ -71,7 +70,7 @@ TEST_P(SaveAndLoadTestFixture, SaveAndLoad) {
   auto status = ::io::substrait::savePlan(plan, tempFilename, encoding);
   ASSERT_TRUE(status.ok()) << "Save failed.\n" << status;
 
-  auto result = ::io::substrait::loadPlanWithUnknownEncoding(tempFilename);
+  auto result = ::io::substrait::loadPlan(tempFilename);
   ASSERT_TRUE(result.ok()) << "Load failed.\n" << result.status();
   ASSERT_THAT(
       *result,
@@ -96,7 +95,11 @@ TEST_P(SaveAndLoadTestFixture, SaveAndLoad) {
 INSTANTIATE_TEST_SUITE_P(
     SaveAndLoadTests,
     SaveAndLoadTestFixture,
-    testing::Values(kBinary, kJson, kProtoText, kText),
+    testing::Values(
+        PlanFileEncoding::kBinary,
+        PlanFileEncoding::kJson,
+        PlanFileEncoding::kProtoText,
+        PlanFileEncoding::kText),
     [](const testing::TestParamInfo<SaveAndLoadTestFixture::ParamType>& info) {
       return planFileEncodingToString(info.param);
     });

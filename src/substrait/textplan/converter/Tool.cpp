@@ -15,7 +15,7 @@ namespace io::substrait::textplan {
 namespace {
 
 void convertPlanToText(const char* filename) {
-  auto planOrError = loadPlanWithUnknownEncoding(filename);
+  auto planOrError = loadPlan(filename);
   if (!planOrError.ok()) {
     std::cerr << planOrError.status() << std::endl;
     return;
