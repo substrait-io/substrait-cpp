@@ -14,15 +14,15 @@ namespace io::substrait {
 
 namespace {
 
-constexpr const char* planFileEncodingToString(PlanFileEncoding e) noexcept {
+constexpr const char* planFileEncodingToString(PlanFileFormat e) noexcept {
   switch (e) {
-    case PlanFileEncoding::kBinary:
+    case PlanFileFormat::kBinary:
       return "kBinary";
-    case PlanFileEncoding::kJson:
+    case PlanFileFormat::kJson:
       return "kJson";
-    case PlanFileEncoding::kProtoText:
+    case PlanFileFormat::kProtoText:
       return "kProtoText";
-    case PlanFileEncoding::kText:
+    case PlanFileFormat::kText:
       return "kText";
   }
   return "IMPOSSIBLE";
@@ -40,8 +40,7 @@ TEST_F(IoTest, LoadMissingFile) {
       ::testing::ContainsRegex("Failed to open file non-existent-file"));
 }
 
-class SaveAndLoadTestFixture
-    : public ::testing::TestWithParam<PlanFileEncoding> {
+class SaveAndLoadTestFixture : public ::testing::TestWithParam<PlanFileFormat> {
  public:
   ~SaveAndLoadTestFixture() override {
     for (const auto& filename : testFiles_) {
@@ -60,7 +59,7 @@ class SaveAndLoadTestFixture
 TEST_P(SaveAndLoadTestFixture, SaveAndLoad) {
   auto tempFilename = std::tmpnam(nullptr);
   registerCleanup(tempFilename);
-  PlanFileEncoding encoding = GetParam();
+  PlanFileFormat encoding = GetParam();
 
   ::substrait::proto::Plan plan;
   auto root = plan.add_relations()->mutable_root();
@@ -96,10 +95,10 @@ INSTANTIATE_TEST_SUITE_P(
     SaveAndLoadTests,
     SaveAndLoadTestFixture,
     testing::Values(
-        PlanFileEncoding::kBinary,
-        PlanFileEncoding::kJson,
-        PlanFileEncoding::kProtoText,
-        PlanFileEncoding::kText),
+        PlanFileFormat::kBinary,
+        PlanFileFormat::kJson,
+        PlanFileFormat::kProtoText,
+        PlanFileFormat::kText),
     [](const testing::TestParamInfo<SaveAndLoadTestFixture::ParamType>& info) {
       return planFileEncodingToString(info.param);
     });

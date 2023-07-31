@@ -21,17 +21,17 @@ const std::regex kIsProtoText(
 const std::regex kIsText(
     R"((^|\n) *(pipelines|[a-z]+ *relation|schema|source|extension_space) *)");
 
-PlanFileEncoding detectEncoding(std::string_view content) {
+PlanFileFormat detectFormat(std::string_view content) {
   if (std::regex_search(content.begin(), content.end(), kIsJson)) {
-    return PlanFileEncoding::kJson;
+    return PlanFileFormat::kJson;
   }
   if (std::regex_search(content.begin(), content.end(), kIsProtoText)) {
-    return PlanFileEncoding::kProtoText;
+    return PlanFileFormat::kProtoText;
   }
   if (std::regex_search(content.begin(), content.end(), kIsText)) {
-    return PlanFileEncoding::kText;
+    return PlanFileFormat::kText;
   }
-  return PlanFileEncoding::kBinary;
+  return PlanFileFormat::kBinary;
 }
 
 } // namespace
@@ -43,16 +43,16 @@ absl::StatusOr<::substrait::proto::Plan> loadPlan(
     return contentOrError.status();
   }
 
-  auto encoding = detectEncoding(*contentOrError);
+  auto encoding = detectFormat(*contentOrError);
   absl::StatusOr<::substrait::proto::Plan> planOrError;
   switch (encoding) {
-    case PlanFileEncoding::kBinary:
+    case PlanFileFormat::kBinary:
       return textplan::loadFromBinary(*contentOrError);
-    case PlanFileEncoding::kJson:
+    case PlanFileFormat::kJson:
       return textplan::loadFromJson(*contentOrError);
-    case PlanFileEncoding::kProtoText:
+    case PlanFileFormat::kProtoText:
       return textplan::loadFromProtoText(*contentOrError);
-    case PlanFileEncoding::kText:
+    case PlanFileFormat::kText:
       return textplan::loadFromText(*contentOrError);
   }
   return absl::UnimplementedError("Unexpected encoding requested.");
@@ -61,18 +61,18 @@ absl::StatusOr<::substrait::proto::Plan> loadPlan(
 absl::Status savePlan(
     const ::substrait::proto::Plan& plan,
     std::string_view output_filename,
-    PlanFileEncoding encoding) {
-  switch (encoding) {
-    case PlanFileEncoding::kBinary:
+    PlanFileFormat format) {
+  switch (format) {
+    case PlanFileFormat::kBinary:
       return textplan::savePlanToBinary(plan, output_filename);
-    case PlanFileEncoding::kJson:
+    case PlanFileFormat::kJson:
       return textplan::savePlanToJson(plan, output_filename);
-    case PlanFileEncoding::kProtoText:
+    case PlanFileFormat::kProtoText:
       return textplan::savePlanToProtoText(plan, output_filename);
-    case PlanFileEncoding::kText:
+    case PlanFileFormat::kText:
       return textplan::savePlanToText(plan, output_filename);
   }
-  return absl::UnimplementedError("Unexpected encoding requested.");
+  return absl::UnimplementedError("Unexpected format requested.");
 }
 
 } // namespace io::substrait
