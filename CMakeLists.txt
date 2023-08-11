@@ -11,6 +11,12 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+add_compile_options($<$<CONFIG:Debug>:-fsanitize=undefined>)
+add_link_options($<$<CONFIG:Debug>:-fsanitize=undefined>)
+
+add_compile_options($<$<CONFIG:Debug>:-fsanitize=address>)
+add_link_options($<$<CONFIG:Debug>:-fsanitize=address>)
+
 option(
   SUBSTRAIT_CPP_BUILD_TESTING
   "Enable substrait-cpp tests. This will enable all other build options automatically."
