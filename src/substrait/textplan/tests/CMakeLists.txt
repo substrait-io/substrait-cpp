@@ -52,5 +52,5 @@ add_custom_command(
           "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tests/data/")
 
 message(
-  STATUS
-    "test data will be here:  ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tests/data")
+  STATUS "test data will be here:  ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tests/data"
+)
