@@ -109,7 +109,7 @@ std::any SubstraitPlanTypeVisitor::visitLiteral_complex_type(
     }
     case TypeKind::kVarchar: {
       auto varChar =
-          reinterpret_cast<const ParameterizedFixedChar*>(&decodedType);
+          reinterpret_cast<const ParameterizedVarchar*>(&decodedType);
       if (varChar == nullptr) {
         break;
       }
