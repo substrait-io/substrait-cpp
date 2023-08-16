@@ -197,7 +197,12 @@ ParameterizedTypePtr ParameterizedType::decode(
 
   const auto& leftAngleBracketPos = matchingType.find('<');
   if (leftAngleBracketPos == std::string::npos) {
-    bool nullable = matchingType.back() == '?';
+    bool nullable;
+    if (matchingType.empty()) {
+      nullable = false;
+    } else {
+      nullable = matchingType.back() == '?';
+    }
     // deal with type and with a question mask like "i32?".
     const auto& baseType = nullable
         ? matchingType = matchingType.substr(0, questionMaskPos)
