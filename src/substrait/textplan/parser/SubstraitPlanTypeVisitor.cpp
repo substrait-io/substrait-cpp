@@ -109,11 +109,15 @@ std::any SubstraitPlanTypeVisitor::visitLiteral_complex_type(
     }
     case TypeKind::kVarchar: {
       auto varChar =
-          reinterpret_cast<const ParameterizedFixedChar*>(&decodedType);
+          reinterpret_cast<const ParameterizedVarchar*>(&decodedType);
       if (varChar == nullptr) {
         break;
       }
       try {
+        if (!varChar->length()->isInteger()) {
+          errorListener_->addError(ctx->getStart(), "Missing varchar length.");
+          break;
+        }
         int32_t length = std::stoi(varChar->length()->value());
         type.mutable_varchar()->set_length(length);
       } catch (...) {
