@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if(NOT ${ABSL_INCLUDED_WITH_PROTOBUF})
-    set(ABSL_PROPAGATE_CXX_STD ON)
-    add_subdirectory(abseil-cpp)
+  set(ABSL_PROPAGATE_CXX_STD ON)
+  add_subdirectory(abseil-cpp)
 endif()
 
 include(datetime.cmake)
