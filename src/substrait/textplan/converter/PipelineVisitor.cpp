@@ -107,6 +107,24 @@ std::any PipelineVisitor::visitRelation(
       relationData->newPipelines.push_back(rightSymbol);
       break;
     }
+    case ::substrait::proto::Rel::kWindow: {
+      const auto* inputSymbol = symbolTable_->lookupSymbolByLocationAndType(
+          PROTO_LOCATION(relation.window().input()), SymbolType::kRelation);
+      relationData->continuingPipeline = inputSymbol;
+      break;
+    }
+    case ::substrait::proto::Rel::kExchange: {
+      const auto* inputSymbol = symbolTable_->lookupSymbolByLocationAndType(
+          PROTO_LOCATION(relation.exchange().input()), SymbolType::kRelation);
+      relationData->continuingPipeline = inputSymbol;
+      break;
+    }
+    case ::substrait::proto::Rel::kExpand: {
+      const auto* inputSymbol = symbolTable_->lookupSymbolByLocationAndType(
+          PROTO_LOCATION(relation.expand().input()), SymbolType::kRelation);
+      relationData->continuingPipeline = inputSymbol;
+      break;
+    }
     case ::substrait::proto::Rel::REL_TYPE_NOT_SET:
       break;
   }

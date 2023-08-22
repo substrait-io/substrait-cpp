@@ -411,6 +411,21 @@ std::any BasePlanProtoVisitor::visitWindowFunction(
   return std::nullopt;
 }
 
+std::any BasePlanProtoVisitor::visitWindowRelFunction(
+    const ::substrait::proto::ConsistentPartitionWindowRel::WindowRelFunction&
+        function) {
+  for (const auto& arg : function.arguments()) {
+    visitFunctionArgument(arg);
+  }
+  for (const auto& arg : function.options()) {
+    visitFunctionOption(arg);
+  }
+  if (function.has_output_type()) {
+    visitType(function.output_type());
+  }
+  return std::nullopt;
+}
+
 std::any BasePlanProtoVisitor::visitIfThen(
     const ::substrait::proto::Expression::IfThen& ifthen) {
   for (const auto& ifThenIf : ifthen.ifs()) {
@@ -649,7 +664,6 @@ std::any BasePlanProtoVisitor::visitExpression(
     case ::substrait::proto::Expression::RexTypeCase::REX_TYPE_NOT_SET:
       break;
   }
-  // TODO -- Use an error listener instead.
   SUBSTRAIT_UNSUPPORTED(
       "Unsupported expression type encountered: " +
       std::to_string(expression.rex_type_case()));
@@ -732,6 +746,25 @@ std::any BasePlanProtoVisitor::visitFieldReference(
   }
   if (ref.has_expression()) {
     visitExpression(ref.expression());
+  }
+  return std::nullopt;
+}
+
+std::any BasePlanProtoVisitor::visitExpandField(
+    const ::substrait::proto::ExpandRel::ExpandField& field) {
+  switch (field.field_type_case()) {
+    case ::substrait::proto::ExpandRel_ExpandField::kSwitchingField:
+      for (const auto& switchingField : field.switching_field().duplicates()) {
+        visitExpression(switchingField);
+      }
+      break;
+    case ::substrait::proto::ExpandRel_ExpandField::kConsistentField:
+      if (field.has_consistent_field()) {
+        visitExpression(field.consistent_field());
+      }
+      break;
+    case ::substrait::proto::ExpandRel_ExpandField::FIELD_TYPE_NOT_SET:
+      break;
   }
   return std::nullopt;
 }
@@ -992,6 +1025,57 @@ std::any BasePlanProtoVisitor::visitMergeJoinRelation(
   return std::nullopt;
 }
 
+std::any BasePlanProtoVisitor::visitWindowRelation(
+    const ::substrait::proto::ConsistentPartitionWindowRel& relation) {
+  if (relation.has_common()) {
+    visitRelationCommon(relation.common());
+  }
+  if (relation.has_input()) {
+    visitRelation(relation.input());
+  }
+  for (const auto& func : relation.window_functions()) {
+    visitWindowRelFunction(func);
+  }
+  for (const auto& exp : relation.partition_expressions()) {
+    visitExpression(exp);
+  }
+  for (const auto& sort : relation.sorts()) {
+    visitSortField(sort);
+  }
+  if (relation.has_advanced_extension()) {
+    visitAdvancedExtension(relation.advanced_extension());
+  };
+  return std::nullopt;
+}
+
+std::any BasePlanProtoVisitor::visitExchangeRelation(
+    const ::substrait::proto::ExchangeRel& relation) {
+  if (relation.has_common()) {
+    visitRelationCommon(relation.common());
+  }
+  if (relation.has_input()) {
+    visitRelation(relation.input());
+  }
+  if (relation.has_advanced_extension()) {
+    visitAdvancedExtension(relation.advanced_extension());
+  };
+  return std::nullopt;
+}
+
+std::any BasePlanProtoVisitor::visitExpandRelation(
+    const ::substrait::proto::ExpandRel& relation) {
+  if (relation.has_common()) {
+    visitRelationCommon(relation.common());
+  }
+  if (relation.has_input()) {
+    visitRelation(relation.input());
+  }
+  for (const auto& expandField : relation.fields()) {
+    visitExpandField(expandField);
+  }
+  return std::nullopt;
+}
+
 std::any BasePlanProtoVisitor::visitRelation(
     const ::substrait::proto::Rel& relation) {
   switch (relation.rel_type_case()) {
@@ -1023,6 +1107,12 @@ std::any BasePlanProtoVisitor::visitRelation(
       return visitHashJoinRelation(relation.hash_join());
     case ::substrait::proto::Rel::RelTypeCase::kMergeJoin:
       return visitMergeJoinRelation(relation.merge_join());
+    case ::substrait::proto::Rel::kWindow:
+      return visitWindowRelation(relation.window());
+    case ::substrait::proto::Rel::kExchange:
+      return visitExchangeRelation(relation.exchange());
+    case ::substrait::proto::Rel::kExpand:
+      return visitExpandRelation(relation.expand());
     case ::substrait::proto::Rel::REL_TYPE_NOT_SET:
       break;
   }

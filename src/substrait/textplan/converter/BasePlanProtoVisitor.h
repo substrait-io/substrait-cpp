@@ -4,6 +4,7 @@
 
 #include <any>
 
+#include "substrait/proto/algebra.pb.h"
 #include "substrait/proto/plan.pb.h"
 
 namespace io::substrait::textplan {
@@ -84,6 +85,9 @@ class BasePlanProtoVisitor {
       const ::substrait::proto::Expression::ScalarFunction& function);
   virtual std::any visitWindowFunction(
       const ::substrait::proto::Expression::WindowFunction& function);
+  virtual std::any visitWindowRelFunction(
+      const ::substrait::proto::ConsistentPartitionWindowRel::WindowRelFunction&
+          function);
   virtual std::any visitIfThen(
       const ::substrait::proto::Expression::IfThen& ifthen);
   virtual std::any visitSwitchExpression(
@@ -140,6 +144,8 @@ class BasePlanProtoVisitor {
   virtual std::any visitSortField(const ::substrait::proto::SortField& sort);
   virtual std::any visitFieldReference(
       const ::substrait::proto::Expression::FieldReference& ref);
+  virtual std::any visitExpandField(
+      const ::substrait::proto::ExpandRel::ExpandField& field);
 
   virtual std::any visitReadRelation(
       const ::substrait::proto::ReadRel& relation);
@@ -168,6 +174,12 @@ class BasePlanProtoVisitor {
       const ::substrait::proto::HashJoinRel& relation);
   virtual std::any visitMergeJoinRelation(
       const ::substrait::proto::MergeJoinRel& relation);
+  virtual std::any visitWindowRelation(
+      const ::substrait::proto::ConsistentPartitionWindowRel& relation);
+  virtual std::any visitExchangeRelation(
+      const ::substrait::proto::ExchangeRel& relation);
+  virtual std::any visitExpandRelation(
+      const ::substrait::proto::ExpandRel& relation);
 
   virtual std::any visitRelation(const ::substrait::proto::Rel& relation);
   virtual std::any visitRelationRoot(
