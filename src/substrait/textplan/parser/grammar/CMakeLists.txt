@@ -19,7 +19,7 @@ include(ExternalAntlr4Cpp)
 
 include_directories(${ANTLR4_INCLUDE_DIRS})
 
-file(DOWNLOAD https://www.antlr.org/download/${ANTLR4_TAG}-complete.jar
+file(DOWNLOAD https://www.antlr.org/download/antlr-4.13.0-complete.jar
      "${GRAMMAR_DIR}/antlr.jar")
 set(ANTLR_EXECUTABLE "${GRAMMAR_DIR}/antlr.jar")
 find_package(ANTLR REQUIRED)
