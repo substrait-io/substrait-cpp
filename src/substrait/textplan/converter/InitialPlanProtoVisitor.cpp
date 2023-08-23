@@ -76,6 +76,15 @@ void eraseInputs(::substrait::proto::Rel* relation) {
       relation->mutable_merge_join()->clear_left();
       relation->mutable_merge_join()->clear_right();
       break;
+    case ::substrait::proto::Rel::kWindow:
+      relation->mutable_window()->clear_input();
+      break;
+    case ::substrait::proto::Rel::kExchange:
+      relation->mutable_exchange()->clear_input();
+      break;
+    case ::substrait::proto::Rel::kExpand:
+      relation->mutable_expand()->clear_input();
+      break;
     case ::substrait::proto::Rel::REL_TYPE_NOT_SET:
       break;
   }
@@ -112,6 +121,12 @@ void eraseInputs(::substrait::proto::Rel* relation) {
       return relation.hash_join().common().emit().output_mapping();
     case ::substrait::proto::Rel::kMergeJoin:
       return relation.merge_join().common().emit().output_mapping();
+    case ::substrait::proto::Rel::kWindow:
+      return relation.window().common().emit().output_mapping();
+    case ::substrait::proto::Rel::kExchange:
+      return relation.exchange().common().emit().output_mapping();
+    case ::substrait::proto::Rel::kExpand:
+      return relation.expand().common().emit().output_mapping();
     case ::substrait::proto::Rel::REL_TYPE_NOT_SET:
       break;
   }
@@ -520,6 +535,15 @@ void InitialPlanProtoVisitor::updateLocalSchema(
           relationData,
           relation.merge_join().left(),
           relation.merge_join().right());
+      break;
+    case ::substrait::proto::Rel::kWindow:
+      addFieldsToRelation(relationData, relation.window().input());
+      break;
+    case ::substrait::proto::Rel::kExchange:
+      addFieldsToRelation(relationData, relation.exchange().input());
+      break;
+    case ::substrait::proto::Rel::kExpand:
+      addFieldsToRelation(relationData, relation.expand().input());
       break;
     case ::substrait::proto::Rel::REL_TYPE_NOT_SET:
       break;
