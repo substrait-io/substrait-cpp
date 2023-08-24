@@ -5,8 +5,7 @@ if(NOT ${ABSL_INCLUDED_WITH_PROTOBUF})
   add_subdirectory(abseil-cpp)
 endif()
 
-set(BUILD_TZ_LIB ON)
-add_subdirectory(datetime)
+include(datetime.cmake)
 
 add_subdirectory(fmt)
 add_subdirectory(googletest)
