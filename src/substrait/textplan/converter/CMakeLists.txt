@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
+include(../../../../third_party/datetime.cmake)
+
 set(TEXTPLAN_SRCS
     InitialPlanProtoVisitor.cpp
     InitialPlanProtoVisitor.h
