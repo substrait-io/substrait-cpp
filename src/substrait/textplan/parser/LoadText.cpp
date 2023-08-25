@@ -13,7 +13,7 @@ namespace io::substrait::textplan {
 
 absl::StatusOr<::substrait::proto::Plan> loadFromText(const std::string& text) {
   auto stream = loadTextString(text);
-  auto parseResult = io::substrait::textplan::parseStream(stream);
+  auto parseResult = parseStream(&stream);
   if (!parseResult.successful()) {
     auto errors = parseResult.getAllErrors();
     return absl::UnknownError(absl::StrJoin(errors, ""));

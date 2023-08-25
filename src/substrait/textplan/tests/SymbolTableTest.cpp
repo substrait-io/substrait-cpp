@@ -121,23 +121,27 @@ TEST_F(SymbolTableTest, LocationsUnchangedAfterCopy) {
           symbols[2]->blob),
       ::testing::Eq(ptr3));
 
-  ASSERT_THAT(symbols[0]->location, ::testing::Eq(symbols[0]->location));
   ASSERT_THAT(
-      symbols[0]->location,
-      ::testing::Not(::testing::Eq(symbols[1]->location)));
+      symbols[0]->sourceLocation, ::testing::Eq(symbols[0]->sourceLocation));
   ASSERT_THAT(
-      symbols[0]->location,
-      ::testing::Not(::testing::Eq(symbols[2]->location)));
+      symbols[0]->sourceLocation,
+      ::testing::Not(::testing::Eq(symbols[1]->sourceLocation)));
   ASSERT_THAT(
-      symbols[1]->location,
-      ::testing::Not(::testing::Eq(symbols[2]->location)));
+      symbols[0]->sourceLocation,
+      ::testing::Not(::testing::Eq(symbols[2]->sourceLocation)));
+  ASSERT_THAT(
+      symbols[1]->sourceLocation,
+      ::testing::Not(::testing::Eq(symbols[2]->sourceLocation)));
 
   ASSERT_THAT(
-      table.getSymbols()[0]->location, ::testing::Eq(symbols[0]->location));
+      table.getSymbols()[0]->sourceLocation,
+      ::testing::Eq(symbols[0]->sourceLocation));
   ASSERT_THAT(
-      table.getSymbols()[1]->location, ::testing::Eq(symbols[1]->location));
+      table.getSymbols()[1]->sourceLocation,
+      ::testing::Eq(symbols[1]->sourceLocation));
   ASSERT_THAT(
-      table.getSymbols()[2]->location, ::testing::Eq(symbols[2]->location));
+      table.getSymbols()[2]->sourceLocation,
+      ::testing::Eq(symbols[2]->sourceLocation));
 }
 
 } // namespace

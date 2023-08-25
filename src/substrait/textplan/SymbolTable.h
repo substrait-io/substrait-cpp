@@ -33,7 +33,7 @@ enum class SymbolType {
 };
 
 enum class RelationType {
-  // Logical plans
+  // Logical
   kUnknown = 0,
   kRead = 1,
   kProject = 2,
@@ -45,11 +45,11 @@ enum class RelationType {
   kFilter = 8,
   kSet = 9,
 
-  // Physical plans
+  // Physical
   kHashJoin = 31,
   kMergeJoin = 32,
 
-  // Write relations, currently unreachable in Plan protos.
+  // Write
   kExchange = 50,
   kDdl = 51,
   kWrite = 52,
@@ -79,7 +79,10 @@ struct SymbolInfo {
   std::string name;
   std::string alias{}; // If present, use this instead of name.
   const SymbolInfo* schema{nullptr}; // The related schema symbol if present.
-  Location location;
+  Location sourceLocation;
+  Location permanentLocation{Location::kUnknownLocation};
+  Location parentQueryLocation{Location::kUnknownLocation};
+  int parentQueryIndex{-1};
   SymbolType type;
   std::any subtype;
   std::any blob;
@@ -91,7 +94,7 @@ struct SymbolInfo {
       std::any newSubtype,
       std::any newBlob)
       : name(std::move(newName)),
-        location(newLocation),
+        sourceLocation(newLocation),
         type(newType),
         subtype(std::move(newSubtype)),
         blob(std::move(newBlob)){};
@@ -145,8 +148,13 @@ class SymbolTable {
       const std::any& subtype,
       const std::any& blob);
 
-  // Changes the location for a specified existing symbol.
-  void updateLocation(const SymbolInfo& symbol, const Location& location);
+  // Changes the permanent location for a specified existing symbol.
+  void addPermanentLocation(const SymbolInfo& symbol, const Location& location);
+
+  // Sets the location of the parent query.
+  void setParentQueryLocation(
+      const SymbolInfo& symbol,
+      const Location& location);
 
   // Adds an alias to the given symbol.
   void addAlias(const std::string& alias, const SymbolInfo* symbol);
@@ -164,6 +172,9 @@ class SymbolTable {
   [[nodiscard]] const SymbolInfo* lookupSymbolByLocationAndTypes(
       const Location& location,
       std::unordered_set<SymbolType> types) const;
+
+  [[nodiscard]] const SymbolInfo* lookupSymbolByParentQueryAndType(
+      const Location& location, int index, SymbolType type) const;
 
   [[nodiscard]] const SymbolInfo& nthSymbolByType(uint32_t n, SymbolType type)
       const;

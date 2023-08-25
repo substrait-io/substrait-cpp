@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include "substrait/textplan/converter/PlanPrinterVisitor.h"
+#include <unistd.h>
 
 #include <sstream>
 #include <string>
@@ -65,38 +66,6 @@ std::string visitEnumArgument(const std::string& str) {
   return text.str();
 }
 
-int32_t expressionCount(const ::substrait::proto::Rel& relation) {
-  switch (relation.rel_type_case()) {
-    case ::substrait::proto::Rel::kProject:
-      return relation.project().expressions().size();
-    default:
-      // No support for any other types besides project at the moment.
-      break;
-  }
-  return 0;
-}
-
-const ::substrait::proto::Expression* getExpressionByNumber(
-    const ::substrait::proto::Rel& relation,
-    int num) {
-  switch (relation.rel_type_case()) {
-    case ::substrait::proto::Rel::kProject:
-      return &relation.project().expressions(num);
-    default:
-      // No support for any other types besides project at the moment.
-      break;
-  }
-  return nullptr;
-}
-
-bool isDirectFieldReference(const ::substrait::proto::Expression& expr) {
-  if (expr.selection().reference_type_case() ==
-      ::substrait::proto::Expression::FieldReference::kDirectReference) {
-    return expr.selection().direct_reference().has_struct_field();
-  }
-  return false;
-}
-
 } // namespace
 
 std::string PlanPrinterVisitor::printRelation(const SymbolInfo& symbol) {
@@ -132,33 +101,68 @@ std::string PlanPrinterVisitor::typeToText(
   return ANY_CAST(std::string, visitType(type));
 }
 
+Location getParentQueryLocation(const SymbolInfo* scope) {
+  if (scope->parentQueryLocation != Location::kUnknownLocation) {
+    return scope->parentQueryLocation;
+  }
+  auto relationData = ANY_CAST(std::shared_ptr<RelationData>, scope->blob);
+  auto nextPipeline = relationData->pipelineStart;
+  if (nextPipeline != nullptr) {
+    if (nextPipeline->parentQueryLocation != Location::kUnknownLocation) {
+      return nextPipeline->parentQueryLocation;
+    }
+  }
+  return Location::kUnknownLocation;
+}
+
 // TODO -- Refactor this to return the symbol for later display decisions.
 std::string PlanPrinterVisitor::lookupFieldReference(
-    uint32_t field_reference,
+    uint32_t fieldReference,
+    const SymbolInfo* currentScope,
+    uint32_t stepsOut,
     bool needFullyQualified) {
-  if (*currentScope_ == SymbolInfo::kUnknown) {
+  if (currentScope == nullptr || *currentScope_ == SymbolInfo::kUnknown) {
     errorListener_->addError(
-        "Field number " + std::to_string(field_reference) +
+        "Field number " + std::to_string(fieldReference) +
         " mysteriously requested outside of a relation.");
-    return "field#" + std::to_string(field_reference);
+    return "field#" + std::to_string(fieldReference);
+  }
+  auto actualScope = currentScope;
+  if (stepsOut > 0) {
+    for (auto stepsLeft = stepsOut; stepsLeft > 0; stepsLeft--) {
+      auto actualParentQueryLocation = getParentQueryLocation(actualScope);
+      if (actualParentQueryLocation == Location::kUnknownLocation) {
+        errorListener_->addError(
+            "Requested steps out of " + std::to_string(stepsOut) +
+            " but not within subquery depth that high.");
+        return "field#" + std::to_string(fieldReference);
+      }
+      actualScope = symbolTable_->lookupSymbolByLocationAndType(
+          actualParentQueryLocation, SymbolType::kRelation);
+      if (actualScope == nullptr) {
+        errorListener_->addError(
+            "Internal error: Missing previously encountered parent query symbol.");
+        return "field#" + std::to_string(fieldReference);
+      }
+    }
   }
   auto relationData =
-      ANY_CAST(std::shared_ptr<RelationData>, currentScope_->blob);
+      ANY_CAST(std::shared_ptr<RelationData>, actualScope->blob);
   auto fieldReferencesSize = relationData->fieldReferences.size();
   const SymbolInfo* symbol{nullptr};
-  if (field_reference < fieldReferencesSize) {
-    symbol = relationData->fieldReferences[field_reference];
+  if (fieldReference < fieldReferencesSize) {
+    symbol = relationData->fieldReferences[fieldReference];
   } else if (
-      field_reference <
+      fieldReference <
       fieldReferencesSize + relationData->generatedFieldReferences.size()) {
     symbol =
         relationData
-            ->generatedFieldReferences[field_reference - fieldReferencesSize];
+            ->generatedFieldReferences[fieldReference - fieldReferencesSize];
   } else {
     errorListener_->addError(
         "Encountered field reference out of range: " +
-        std::to_string(field_reference));
-    return "field#" + std::to_string(field_reference);
+        std::to_string(fieldReference));
+    return "field#" + std::to_string(fieldReference);
   }
   if (!symbol->alias.empty()) {
     return symbol->alias;
@@ -183,6 +187,160 @@ std::string PlanPrinterVisitor::lookupFunctionReference(
       "Reference of undefined function " + std::to_string(function_reference) +
       " encountered.");
   return "functionref#" + std::to_string(function_reference);
+}
+
+std::any PlanPrinterVisitor::visitSubqueryScalar(
+    const ::substrait::proto::Expression_Subquery_Scalar& query) {
+  std::stringstream result;
+  result << "SUBQUERY ";
+  if (query.has_input()) {
+    const SymbolInfo* symbol = symbolTable_->lookupSymbolByParentQueryAndType(
+        currentScope_->sourceLocation,
+        ++currentScopeIndex_,
+        SymbolType::kRelation);
+    if (symbol != nullptr) {
+      result << symbol->name;
+    } else {
+      errorListener_->addError(
+          "Internal error -- could not find subquery symbol.");
+    }
+  } else {
+    errorListener_->addError(
+        "No subquery input provided to scalar subquery operation.");
+  }
+  return result.str();
+}
+
+std::any PlanPrinterVisitor::visitSubqueryInPredicate(
+    const ::substrait::proto::Expression_Subquery_InPredicate& query) {
+  std::stringstream result;
+  result << "(";
+  bool hadPreviousNeedle = false;
+  for (const auto& needle : query.needles()) {
+    if (hadPreviousNeedle) {
+      result << ", ";
+    }
+    result << ANY_CAST(std::string, visitExpression(needle));
+    hadPreviousNeedle = true;
+  }
+  result << ") IN SUBQUERY ";
+  if (query.has_haystack()) {
+    const SymbolInfo* symbol = symbolTable_->lookupSymbolByParentQueryAndType(
+        currentScope_->sourceLocation,
+        ++currentScopeIndex_,
+        SymbolType::kRelation);
+    if (symbol != nullptr) {
+      result << symbol->name;
+    } else {
+      errorListener_->addError(
+          "Internal error -- could not find subquery symbol.");
+    }
+  } else {
+    errorListener_->addError("No haystack defined for in predicate subquery.");
+  }
+  return result.str();
+}
+
+std::any PlanPrinterVisitor::visitSubquerySetPredicate(
+    const ::substrait::proto::Expression_Subquery_SetPredicate& query) {
+  std::stringstream result;
+  switch (query.predicate_op()) {
+    case ::substrait::proto::
+        Expression_Subquery_SetPredicate_PredicateOp_PREDICATE_OP_EXISTS:
+      result << "EXISTS IN ";
+      break;
+    case ::substrait::proto::
+        Expression_Subquery_SetPredicate_PredicateOp_PREDICATE_OP_UNIQUE:
+      result << "UNIQUE IN ";
+      break;
+    case ::substrait::proto::
+        Expression_Subquery_SetPredicate_PredicateOp_PREDICATE_OP_UNSPECIFIED:
+    case ::substrait::proto::
+        Expression_Subquery_SetPredicate_PredicateOp_Expression_Subquery_SetPredicate_PredicateOp_INT_MIN_SENTINEL_DO_NOT_USE_:
+    case ::substrait::proto::
+        Expression_Subquery_SetPredicate_PredicateOp_Expression_Subquery_SetPredicate_PredicateOp_INT_MAX_SENTINEL_DO_NOT_USE_:
+      errorListener_->addError("Did not recognize the subquery predicate.");
+      return std::string("UNSUPPORTED SUBQUERY");
+  }
+  result << "SUBQUERY ";
+  if (query.has_tuples()) {
+    const SymbolInfo* symbol = symbolTable_->lookupSymbolByParentQueryAndType(
+        currentScope_->sourceLocation,
+        ++currentScopeIndex_,
+        SymbolType::kRelation);
+    if (symbol != nullptr) {
+      result << symbol->name;
+    } else {
+      errorListener_->addError(
+          "Internal error -- could not find subquery symbol.");
+    }
+  } else {
+    errorListener_->addError(
+        "No subquery defined for set predicate operation.");
+  }
+  return result.str();
+}
+
+std::any PlanPrinterVisitor::visitSubquerySetComparison(
+    const ::substrait::proto::Expression_Subquery_SetComparison& query) {
+  std::stringstream result;
+  if (query.has_left()) {
+    result << ANY_CAST(std::string, visitExpression(query.left()));
+  } else {
+    errorListener_->addError(
+        "No expression defined for set comparison operation.");
+  }
+  switch (query.comparison_op()) {
+    case ::substrait::proto::
+        Expression_Subquery_SetComparison_ComparisonOp_COMPARISON_OP_LE:
+      result << "LE ";
+      break;
+    case ::substrait::proto::
+        Expression_Subquery_SetComparison_ComparisonOp_COMPARISON_OP_GE:
+      result << "GE ";
+      break;
+    case ::substrait::proto::
+        Expression_Subquery_SetComparison_ComparisonOp_COMPARISON_OP_EQ:
+      result << "EQ ";
+      break;
+    case ::substrait::proto::
+        Expression_Subquery_SetComparison_ComparisonOp_COMPARISON_OP_NE:
+      result << "NE ";
+      break;
+    case ::substrait::proto::
+        Expression_Subquery_SetComparison_ComparisonOp_COMPARISON_OP_LT:
+      result << "LT ";
+      break;
+    case ::substrait::proto::
+        Expression_Subquery_SetComparison_ComparisonOp_COMPARISON_OP_GT:
+      result << "GT ";
+      break;
+    case ::substrait::proto::
+        Expression_Subquery_SetComparison_ComparisonOp_COMPARISON_OP_UNSPECIFIED:
+    case ::substrait::proto::
+        Expression_Subquery_SetComparison_ComparisonOp_Expression_Subquery_SetComparison_ComparisonOp_INT_MIN_SENTINEL_DO_NOT_USE_:
+    case ::substrait::proto::
+        Expression_Subquery_SetComparison_ComparisonOp_Expression_Subquery_SetComparison_ComparisonOp_INT_MAX_SENTINEL_DO_NOT_USE_:
+      errorListener_->addError("Did not recognize the subquery comparison.");
+      return std::string("UNSUPPORTED SUBQUERY");
+  }
+  result << "ALL SUBQUERY ";
+  if (query.has_right()) {
+    const SymbolInfo* symbol = symbolTable_->lookupSymbolByParentQueryAndType(
+        currentScope_->sourceLocation,
+        ++currentScopeIndex_,
+        SymbolType::kRelation);
+    if (symbol != nullptr) {
+      result << symbol->name;
+    } else {
+      errorListener_->addError(
+          "Internal error -- could not find subquery symbol.");
+    }
+  } else {
+    errorListener_->addError(
+        "No subquery defined for set comparison operation.");
+  }
+  return result.str();
 }
 
 std::any PlanPrinterVisitor::visitSelect(
@@ -410,10 +568,18 @@ std::any PlanPrinterVisitor::visitFieldReference(
     const ::substrait::proto::Expression::FieldReference& ref) {
   // TODO -- Move this logic into visitDirectReference and visitMaskedReference.
   switch (ref.reference_type_case()) {
-    case ::substrait::proto::Expression::FieldReference::kDirectReference:
+    case ::substrait::proto::Expression::FieldReference::kDirectReference: {
+      uint32_t stepsOut{0};
+      if (ref.has_outer_reference()) {
+        stepsOut = ref.outer_reference().steps_out();
+      }
       // TODO -- Figure out when fully qualified names aren't needed.
       return lookupFieldReference(
-          ref.direct_reference().struct_field().field(), true);
+          ref.direct_reference().struct_field().field(),
+          currentScope_,
+          stepsOut,
+          true);
+    }
     case ::substrait::proto::Expression::FieldReference::kMaskedReference:
       errorListener_->addError(
           "Masked reference not yet supported: " + ref.ShortDebugString());
@@ -426,13 +592,6 @@ std::any PlanPrinterVisitor::visitFieldReference(
       "Field reference type not yet supported: " + ref.ShortDebugString());
   return "FIELD_REF_TYPE_NOT_SUPPORTED";
 }
-
-// The visitor should be tolerant of older plans.  This requires calling
-// deprecated APIs.
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#pragma gcc diagnostic push
-#pragma gcc diagnostic ignored "-Wdeprecated-declarations"
 
 std::any PlanPrinterVisitor::visitScalarFunction(
     const ::substrait::proto::Expression::ScalarFunction& function) {
@@ -489,9 +648,6 @@ std::any PlanPrinterVisitor::visitScalarFunction(
 
   return text.str();
 }
-
-#pragma clang diagnostic pop
-#pragma gcc diagnostic pop
 
 std::any PlanPrinterVisitor::visitWindowFunction(
     const ::substrait::proto::Expression::WindowFunction& function) {
@@ -564,14 +720,6 @@ std::any PlanPrinterVisitor::visitCast(
   return text.str();
 }
 
-std::any PlanPrinterVisitor::visitSubquery(
-    const ::substrait::proto::Expression_Subquery& query) {
-  errorListener_->addError(
-      "Subquery expressions are not yet supported: " +
-      query.ShortDebugString());
-  return std::string("SUBQUERY_NOT_YET_IMPLEMENTED");
-}
-
 std::any PlanPrinterVisitor::visitNested(
     const ::substrait::proto::Expression_Nested& structure) {
   errorListener_->addError(
@@ -641,7 +789,10 @@ std::any PlanPrinterVisitor::visitRelationCommon(
     text << "\n";
   }
   for (const auto& mapping : common.emit().output_mapping()) {
-    text << "  emit " << lookupFieldReference(mapping, true) << ";\n";
+    text << "  emit "
+         << lookupFieldReference(
+                mapping, currentScope_, /* stepsOut= */ 0, true)
+         << ";\n";
   }
   return text.str();
 }
@@ -726,12 +877,17 @@ std::any PlanPrinterVisitor::visitRelation(
     const ::substrait::proto::Rel& relation) {
   // Mark the current scope for any operations within this relation.
   auto previousScope = currentScope_;
-  auto resetCurrentScope = finally([&]() { currentScope_ = previousScope; });
+  auto previousScopeIndex = currentScopeIndex_;
+  auto resetCurrentScope = finally([&]() {
+    currentScope_ = previousScope;
+    currentScopeIndex_ = previousScopeIndex;
+  });
   const SymbolInfo* symbol = symbolTable_->lookupSymbolByLocationAndType(
       PROTO_LOCATION(relation), SymbolType::kRelation);
   if (symbol != nullptr) {
     currentScope_ = symbol;
   }
+  currentScopeIndex_ = -1;
 
   auto result = BasePlanProtoVisitor::visitRelation(relation);
 

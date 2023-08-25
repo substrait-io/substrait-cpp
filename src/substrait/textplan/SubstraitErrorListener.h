@@ -30,6 +30,10 @@ class SubstraitErrorListener {
     addError(-1, -1, msg);
   };
 
+  void addErrorInstances(const std::vector<ErrorInstance>& errors) {
+    errors_.insert(errors_.end(), errors.begin(), errors.end());
+  }
+
   const std::vector<ErrorInstance>& getErrors() {
     return errors_;
   };

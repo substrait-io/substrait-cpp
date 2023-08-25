@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#include <absl/strings/str_join.h>
+
 #include <algorithm>
 #include <filesystem>
 #include <memory>
@@ -79,17 +81,20 @@ TEST_P(RoundTripBinaryToTextFixture, RoundTrip) {
   auto textResult = parseBinaryPlan(plan);
   auto textSymbols = textResult.getSymbolTable().getSymbols();
 
+  SubstraitErrorListener errorListener;
   std::string outputText =
-      SymbolTablePrinter::outputToText(textResult.getSymbolTable());
+      SymbolTablePrinter::outputToText(textResult.getSymbolTable(),
+        &errorListener);
+  textResult.addErrors(errorListener.getErrorMessages());
 
-  ASSERT_THAT(textResult, AllOf(ParsesOk(), HasErrors({})))
+  ASSERT_THAT(textResult, ParsesOk())
       << std::endl
       << "Initial result:" << std::endl
       << addLineNumbers(outputText) << std::endl
       << textResult.getSymbolTable().toDebugString() << std::endl;
 
   auto stream = loadTextString(outputText);
-  auto result = parseStream(stream);
+  auto result = parseStream(&stream);
   ASSERT_NO_THROW(auto outputBinary = SymbolTablePrinter::outputToBinaryPlan(
                       result.getSymbolTable()););
 

@@ -29,8 +29,13 @@ bool compareExtensionFunctions(
   return ord(a) < ord(b);
 }
 
+// Forward references
 void normalizeFunctionsForExpression(
     ::substrait::proto::Expression* expr,
+    const std::map<uint32_t, uint32_t>& functionReferenceMapping);
+
+void normalizeFunctionsForRelation(
+    ::substrait::proto::Rel* relation,
     const std::map<uint32_t, uint32_t>& functionReferenceMapping);
 
 void normalizeFunctionsForArgument(
@@ -72,6 +77,41 @@ void normalizeFunctionsForExpression(
     if (expr->if_then().has_else_()) {
       normalizeFunctionsForExpression(
           expr->mutable_if_then()->mutable_else_(), functionReferenceMapping);
+    }
+  } else if (expr->has_subquery()) {
+    switch (expr->subquery().subquery_type_case()) {
+      case ::substrait::proto::Expression_Subquery::kScalar:
+        normalizeFunctionsForRelation(
+            expr->mutable_subquery()->mutable_scalar()->mutable_input(),
+            functionReferenceMapping);
+        break;
+      case ::substrait::proto::Expression_Subquery::kInPredicate:
+        for (auto& needle : *expr->mutable_subquery()
+                                 ->mutable_in_predicate()
+                                 ->mutable_needles()) {
+          normalizeFunctionsForExpression(&needle, functionReferenceMapping);
+        }
+        normalizeFunctionsForRelation(
+            expr->mutable_subquery()
+                ->mutable_in_predicate()
+                ->mutable_haystack(),
+            functionReferenceMapping);
+        break;
+      case ::substrait::proto::Expression_Subquery::kSetPredicate:
+        normalizeFunctionsForRelation(
+            expr->mutable_subquery()->mutable_set_predicate()->mutable_tuples(),
+            functionReferenceMapping);
+        break;
+      case ::substrait::proto::Expression_Subquery::kSetComparison:
+        normalizeFunctionsForExpression(
+            expr->mutable_subquery()->mutable_set_comparison()->mutable_left(),
+            functionReferenceMapping);
+        normalizeFunctionsForRelation(
+            expr->mutable_subquery()->mutable_set_comparison()->mutable_right(),
+            functionReferenceMapping);
+        break;
+      case ::substrait::proto::Expression_Subquery::SUBQUERY_TYPE_NOT_SET:
+        break;
     }
   }
 }

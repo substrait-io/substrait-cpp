@@ -30,6 +30,17 @@ class SubstraitPlanPipelineVisitor : public SubstraitPlanParserBaseVisitor {
   std::any visitPipelines(SubstraitPlanParser::PipelinesContext* ctx) override;
   std::any visitPipeline(SubstraitPlanParser::PipelineContext* ctx) override;
 
+  std::any visitRelation(SubstraitPlanParser::RelationContext* ctx) override;
+  std::any visitExpressionScalarSubquery(
+      SubstraitPlanParser::ExpressionScalarSubqueryContext* ctx) override;
+  std::any visitExpressionInPredicateSubquery(
+      SubstraitPlanParser::ExpressionInPredicateSubqueryContext* ctx) override;
+  std::any visitExpressionSetPredicateSubquery(
+      SubstraitPlanParser::ExpressionSetPredicateSubqueryContext* ctx) override;
+  std::any visitExpressionSetComparisonSubquery(
+      SubstraitPlanParser::ExpressionSetComparisonSubqueryContext* ctx)
+      override;
+
  private:
   // Creates a symbol table entry if we don't already have one, then adds the
   // current location.
@@ -39,6 +50,9 @@ class SubstraitPlanPipelineVisitor : public SubstraitPlanParserBaseVisitor {
 
   std::shared_ptr<SymbolTable> symbolTable_;
   std::shared_ptr<SubstraitParserErrorListener> errorListener_;
+
+  const SymbolInfo* currentRelationScope_{nullptr};
+  Location currentRelationScopeLocation_{Location::kUnknownLocation};
 };
 
 } // namespace io::substrait::textplan

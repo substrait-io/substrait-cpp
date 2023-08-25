@@ -7,7 +7,6 @@
 
 #include "substrait/common/Exceptions.h"
 #include "substrait/proto/algebra.pb.h"
-#include "substrait/proto/extensions/extensions.pb.h"
 #include "substrait/textplan/Any.h"
 #include "substrait/textplan/StructuredSymbolData.h"
 #include "substrait/textplan/SymbolTable.h"
@@ -81,7 +80,8 @@ std::string typeToText(const ::substrait::proto::Type& type) {
 
 std::string relationToText(
     const SymbolTable& symbolTable,
-    const SymbolInfo& info) {
+    const SymbolInfo& info,
+    SubstraitErrorListener* errorListener) {
   auto relationData = ANY_CAST(std::shared_ptr<RelationData>, info.blob);
   if (relationData->relation.rel_type_case() ==
       ::substrait::proto::Rel::REL_TYPE_NOT_SET) {
@@ -90,7 +90,19 @@ std::string relationToText(
   }
 
   PlanPrinterVisitor printer(symbolTable);
-  return printer.printRelation(info);
+  auto result = printer.printRelation(info);
+  errorListener->addErrorInstances(printer.getErrorListener()->getErrors());
+  return result;
+}
+
+const SymbolInfo* getNextSinglePipeline(
+    const std::shared_ptr<RelationData>& relationData) {
+  if (relationData->continuingPipeline != nullptr) {
+    return relationData->continuingPipeline;
+  } else if (relationData->newPipelines.size() == 1) {
+    return relationData->newPipelines[0];
+  }
+  return nullptr;
 }
 
 std::vector<std::string> pipelineToPath(
@@ -134,6 +146,22 @@ std::string outputPipelinesSection(const SymbolTable& symbolTable) {
       text << ";\n";
       hasPreviousText = true;
     }
+    for (auto pipelineStart : relationData->subQueryPipelines) {
+      auto pipeline = pipelineToPath(symbolTable, pipelineStart);
+      // No need to include this node since the subquery already points to the
+      // end of this pipeline.
+      bool isFirstPipe = true;
+      for (auto pipe = pipeline.rbegin(); pipe != pipeline.rend(); pipe++) {
+        if (isFirstPipe) {
+          text << "  " << *pipe;
+        } else {
+          text << " -> " << *pipe;
+        }
+        isFirstPipe = false;
+      }
+      text << ";\n";
+      hasPreviousText = true;
+    }
   }
   if (hasPreviousText) {
     return "pipelines {\n" + text.str() + "}\n";
@@ -141,7 +169,9 @@ std::string outputPipelinesSection(const SymbolTable& symbolTable) {
   return text.str();
 }
 
-std::string outputRelationsSection(const SymbolTable& symbolTable) {
+std::string outputRelationsSection(
+    const SymbolTable& symbolTable,
+    SubstraitErrorListener* errorListener) {
   std::stringstream text;
   bool hasPreviousText = false;
   for (const SymbolInfo& info : symbolTable) {
@@ -152,7 +182,7 @@ std::string outputRelationsSection(const SymbolTable& symbolTable) {
     if (hasPreviousText) {
       text << "\n";
     }
-    text << relationToText(symbolTable, info);
+    text << relationToText(symbolTable, info, errorListener);
     hasPreviousText = true;
   }
   return text.str();
@@ -260,7 +290,7 @@ std::string outputSourcesSection(const SymbolTable& symbolTable) {
         text << "source named_table " << info.name << " {\n";
         text << "  names = [\n";
         for (const auto& sym :
-             symbolTable.lookupSymbolsByLocation(info.location)) {
+             symbolTable.lookupSymbolsByLocation(info.sourceLocation)) {
           if (sym->type == SymbolType::kSourceDetail) {
             text << "    \"" << sym->name << "\",\n";
           }
@@ -459,7 +489,9 @@ void outputFunctionsToBinaryPlan(
 } // namespace
 
 // TODO -- Update so that errors occurring during printing are captured.
-std::string SymbolTablePrinter::outputToText(const SymbolTable& symbolTable) {
+std::string SymbolTablePrinter::outputToText(
+    const SymbolTable& symbolTable,
+    SubstraitErrorListener* errorListener) {
   std::stringstream text;
   bool hasPreviousText = false;
 
@@ -469,7 +501,7 @@ std::string SymbolTablePrinter::outputToText(const SymbolTable& symbolTable) {
     hasPreviousText = true;
   }
 
-  newText = outputRelationsSection(symbolTable);
+  newText = outputRelationsSection(symbolTable, errorListener);
   if (!newText.empty()) {
     if (hasPreviousText) {
       text << "\n";
@@ -516,9 +548,11 @@ std::string SymbolTablePrinter::outputToText(const SymbolTable& symbolTable) {
 }
 
 void SymbolTablePrinter::addInputsToRelation(
+    const SymbolTable& symbolTable,
     const SymbolInfo& symbolInfo,
     ::substrait::proto::Rel* relation) {
   auto relationData = ANY_CAST(std::shared_ptr<RelationData>, symbolInfo.blob);
+  int consumedPipelines = 0;
 
   // Connect up the incoming inputs in the relation data to the appropriate
   // input/left/right/inputs of this relation (which recursively also needs to
@@ -532,24 +566,36 @@ void SymbolTablePrinter::addInputsToRelation(
     case RelationType::kRead:
       // No inputs to add.
       break;
-    case RelationType::kProject:
-      if (relationData->continuingPipeline != nullptr) {
-        auto continuingRelationData = ANY_CAST(
-            std::shared_ptr<RelationData>,
-            relationData->continuingPipeline->blob);
+    case RelationType::kProject: {
+      auto nextPipeline = getNextSinglePipeline(relationData);
+      if (nextPipeline != nullptr) {
+        auto nextRelationData =
+            ANY_CAST(std::shared_ptr<RelationData>, nextPipeline->blob);
         *relation->mutable_project()->mutable_input() =
-            continuingRelationData->relation;
+            nextRelationData->relation;
         addInputsToRelation(
-            *relationData->continuingPipeline,
+            symbolTable,
+            *nextPipeline,
             relation->mutable_project()->mutable_input());
+        for (auto& expr : *relation->mutable_project()->mutable_expressions()) {
+          addInputsToExpression(
+              symbolTable,
+              relationData->subQueryPipelines,
+              &expr,
+              &consumedPipelines);
+        }
+      } else {
+        SUBSTRAIT_FAIL("Internal error:  Incorrect number of pipelines.");
       }
       break;
+    }
     case RelationType::kJoin:
       if (relationData->newPipelines.size() == kBinaryRelationInputCount) {
         auto leftRelationData = ANY_CAST(
             std::shared_ptr<RelationData>, relationData->newPipelines[0]->blob);
         *relation->mutable_join()->mutable_left() = leftRelationData->relation;
         addInputsToRelation(
+            symbolTable,
             *relationData->newPipelines[0],
             relation->mutable_join()->mutable_left());
 
@@ -558,16 +604,32 @@ void SymbolTablePrinter::addInputsToRelation(
         *relation->mutable_join()->mutable_right() =
             rightRelationData->relation;
         addInputsToRelation(
+            symbolTable,
             *relationData->newPipelines[1],
             relation->mutable_join()->mutable_right());
+        if (relation->join().has_expression()) {
+          addInputsToExpression(
+              symbolTable,
+              relationData->subQueryPipelines,
+              relation->mutable_join()->mutable_expression(),
+              &consumedPipelines);
+        }
+        if (relation->join().has_post_join_filter()) {
+          addInputsToExpression(
+              symbolTable,
+              relationData->subQueryPipelines,
+              relation->mutable_join()->mutable_post_join_filter(),
+              &consumedPipelines);
+        }
+        break;
       }
-      break;
     case RelationType::kCross:
       if (relationData->newPipelines.size() == kBinaryRelationInputCount) {
         auto leftRelationData = ANY_CAST(
             std::shared_ptr<RelationData>, relationData->newPipelines[0]->blob);
         *relation->mutable_cross()->mutable_left() = leftRelationData->relation;
         addInputsToRelation(
+            symbolTable,
             *relationData->newPipelines[0],
             relation->mutable_cross()->mutable_left());
 
@@ -576,74 +638,137 @@ void SymbolTablePrinter::addInputsToRelation(
         *relation->mutable_cross()->mutable_right() =
             rightRelationData->relation;
         addInputsToRelation(
+            symbolTable,
             *relationData->newPipelines[1],
             relation->mutable_cross()->mutable_right());
       }
       break;
-    case RelationType::kFetch:
-      if (relationData->continuingPipeline != nullptr) {
-        auto continuingRelationData = ANY_CAST(
-            std::shared_ptr<RelationData>,
-            relationData->continuingPipeline->blob);
+    case RelationType::kFetch: {
+      auto nextPipeline = getNextSinglePipeline(relationData);
+      if (nextPipeline != nullptr) {
+        auto nextRelationData =
+            ANY_CAST(std::shared_ptr<RelationData>, nextPipeline->blob);
         *relation->mutable_fetch()->mutable_input() =
-            continuingRelationData->relation;
+            nextRelationData->relation;
         addInputsToRelation(
-            *relationData->continuingPipeline,
+            symbolTable,
+            *nextPipeline,
             relation->mutable_fetch()->mutable_input());
+      } else {
+        SUBSTRAIT_FAIL("Internal error:  Incorrect number of pipelines.");
       }
       break;
-    case RelationType::kAggregate:
-      if (relationData->continuingPipeline != nullptr) {
-        auto continuingRelationData = ANY_CAST(
-            std::shared_ptr<RelationData>,
-            relationData->continuingPipeline->blob);
+    }
+    case RelationType::kAggregate: {
+      auto nextPipeline = getNextSinglePipeline(relationData);
+      if (nextPipeline != nullptr) {
+        auto nextRelationData =
+            ANY_CAST(std::shared_ptr<RelationData>, nextPipeline->blob);
         *relation->mutable_aggregate()->mutable_input() =
-            continuingRelationData->relation;
+            nextRelationData->relation;
         addInputsToRelation(
-            *relationData->continuingPipeline,
+            symbolTable,
+            *nextPipeline,
             relation->mutable_aggregate()->mutable_input());
+      } else {
+        SUBSTRAIT_FAIL("Internal error:  Incorrect number of pipelines.");
+      }
+      for (auto& grouping :
+           *relation->mutable_aggregate()->mutable_groupings()) {
+        for (auto& groupExpression : *grouping.mutable_grouping_expressions()) {
+          addInputsToExpression(
+              symbolTable,
+              relationData->subQueryPipelines,
+              &groupExpression,
+              &consumedPipelines);
+        }
+      }
+      for (auto& measure : *relation->mutable_aggregate()->mutable_measures()) {
+        if (measure.has_measure()) {
+          for (auto& argument :
+               *measure.mutable_measure()->mutable_arguments()) {
+            if (argument.arg_type_case() ==
+                ::substrait::proto::FunctionArgument::kValue) {
+              addInputsToExpression(
+                  symbolTable,
+                  relationData->subQueryPipelines,
+                  argument.mutable_value(),
+                  &consumedPipelines);
+            }
+          }
+        }
+        if (measure.has_filter()) {
+          addInputsToExpression(
+              symbolTable,
+              relationData->subQueryPipelines,
+              measure.mutable_filter(),
+              &consumedPipelines);
+        }
       }
       break;
-    case RelationType::kSort:
-      if (relationData->continuingPipeline != nullptr) {
-        auto continuingRelationData = ANY_CAST(
-            std::shared_ptr<RelationData>,
-            relationData->continuingPipeline->blob);
-        *relation->mutable_sort()->mutable_input() =
-            continuingRelationData->relation;
+    }
+    case RelationType::kSort: {
+      auto nextPipeline = getNextSinglePipeline(relationData);
+      if (nextPipeline != nullptr) {
+        auto nextRelationData =
+            ANY_CAST(std::shared_ptr<RelationData>, nextPipeline->blob);
+        *relation->mutable_sort()->mutable_input() = nextRelationData->relation;
         addInputsToRelation(
-            *relationData->continuingPipeline,
+            symbolTable,
+            *nextPipeline,
             relation->mutable_sort()->mutable_input());
+        for (auto& sort : *relation->mutable_sort()->mutable_sorts()) {
+          addInputsToExpression(
+              symbolTable,
+              relationData->subQueryPipelines,
+              sort.mutable_expr(),
+              &consumedPipelines);
+        }
+      } else {
+        SUBSTRAIT_FAIL("Internal error:  Incorrect number of pipelines.");
       }
       break;
-    case RelationType::kFilter:
-      if (relationData->continuingPipeline != nullptr) {
-        auto continuingRelationData = ANY_CAST(
-            std::shared_ptr<RelationData>,
-            relationData->continuingPipeline->blob);
+    }
+    case RelationType::kFilter: {
+      auto nextPipeline = getNextSinglePipeline(relationData);
+      if (nextPipeline != nullptr) {
+        auto nextRelationData =
+            ANY_CAST(std::shared_ptr<RelationData>, nextPipeline->blob);
         *relation->mutable_filter()->mutable_input() =
-            continuingRelationData->relation;
+            nextRelationData->relation;
         addInputsToRelation(
-            *relationData->continuingPipeline,
+            symbolTable,
+            *nextPipeline,
             relation->mutable_filter()->mutable_input());
+        if (relation->filter().has_condition()) {
+          addInputsToExpression(
+              symbolTable,
+              relationData->subQueryPipelines,
+              relation->mutable_filter()->mutable_condition(),
+              &consumedPipelines);
+        }
+      } else {
+        SUBSTRAIT_FAIL("Internal error:  Incorrect number of pipelines.");
       }
       break;
+    }
     case RelationType::kSet:
       for (const auto& pipeline : relationData->newPipelines) {
         auto inputRelationData =
             ANY_CAST(std::shared_ptr<RelationData>, pipeline->blob);
         auto* input = relation->mutable_set()->add_inputs();
         *input = inputRelationData->relation;
-        addInputsToRelation(*pipeline, input);
+        addInputsToRelation(symbolTable, *pipeline, input);
       }
       break;
-    case RelationType::kHashJoin:
+    case RelationType::kHashJoin: {
       if (relationData->newPipelines.size() == kBinaryRelationInputCount) {
         auto leftRelationData = ANY_CAST(
             std::shared_ptr<RelationData>, relationData->newPipelines[0]->blob);
         *relation->mutable_hash_join()->mutable_left() =
             leftRelationData->relation;
         addInputsToRelation(
+            symbolTable,
             *relationData->newPipelines[0],
             relation->mutable_hash_join()->mutable_left());
 
@@ -652,17 +777,27 @@ void SymbolTablePrinter::addInputsToRelation(
         *relation->mutable_hash_join()->mutable_right() =
             rightRelationData->relation;
         addInputsToRelation(
+            symbolTable,
             *relationData->newPipelines[1],
             relation->mutable_hash_join()->mutable_right());
       }
+      if (relation->hash_join().has_post_join_filter()) {
+        addInputsToExpression(
+            symbolTable,
+            relationData->subQueryPipelines,
+            relation->mutable_hash_join()->mutable_post_join_filter(),
+            &consumedPipelines);
+      }
       break;
-    case RelationType::kMergeJoin:
+    }
+    case RelationType::kMergeJoin: {
       if (relationData->newPipelines.size() == kBinaryRelationInputCount) {
         auto leftRelationData = ANY_CAST(
             std::shared_ptr<RelationData>, relationData->newPipelines[0]->blob);
         *relation->mutable_merge_join()->mutable_left() =
             leftRelationData->relation;
         addInputsToRelation(
+            symbolTable,
             *relationData->newPipelines[0],
             relation->mutable_merge_join()->mutable_left());
 
@@ -671,39 +806,276 @@ void SymbolTablePrinter::addInputsToRelation(
         *relation->mutable_merge_join()->mutable_right() =
             rightRelationData->relation;
         addInputsToRelation(
+            symbolTable,
             *relationData->newPipelines[1],
             relation->mutable_merge_join()->mutable_right());
       }
+      if (relation->merge_join().has_post_join_filter()) {
+        addInputsToExpression(
+            symbolTable,
+            relationData->subQueryPipelines,
+            relation->mutable_merge_join()->mutable_post_join_filter(),
+            &consumedPipelines);
+      }
       break;
+    }
     case RelationType::kExchange:
     case RelationType::kDdl:
     case RelationType::kWrite:
       // Not yet possible to reach these relations in plans.
       break;
     case RelationType::kExtensionLeaf:
+      // Nothing to do here.
       break;
-    case RelationType::kExtensionSingle:
-      if (relationData->continuingPipeline != nullptr) {
-        auto continuingRelationData = ANY_CAST(
-            std::shared_ptr<RelationData>,
-            relationData->continuingPipeline->blob);
+    case RelationType::kExtensionSingle: {
+      auto nextPipeline = getNextSinglePipeline(relationData);
+      if (nextPipeline != nullptr) {
+        auto nextRelationData =
+            ANY_CAST(std::shared_ptr<RelationData>, nextPipeline->blob);
         *relation->mutable_extension_single()->mutable_input() =
-            continuingRelationData->relation;
+            nextRelationData->relation;
         addInputsToRelation(
-            *relationData->continuingPipeline,
+            symbolTable,
+            *nextPipeline,
             relation->mutable_extension_single()->mutable_input());
+      } else {
+        SUBSTRAIT_FAIL("Internal error:  Incorrect number of pipelines.");
       }
       break;
+    }
     case RelationType::kExtensionMulti:
       for (const auto& pipeline : relationData->newPipelines) {
         auto inputRelationData =
             ANY_CAST(std::shared_ptr<RelationData>, pipeline->blob);
         auto* input = relation->mutable_extension_multi()->add_inputs();
         *input = inputRelationData->relation;
-        addInputsToRelation(*pipeline, input);
+        addInputsToRelation(symbolTable, *pipeline, input);
       }
       break;
     case RelationType::kUnknown:
+      break;
+  }
+}
+
+void SymbolTablePrinter::addInputsToExpression(
+    const SymbolTable& symbolTable,
+    const std::vector<const SymbolInfo*>& symbolInfos,
+    ::substrait::proto::Expression* expression,
+    int* consumedPipelines) {
+  switch (expression->rex_type_case()) {
+    case ::substrait::proto::Expression::kLiteral:
+    case ::substrait::proto::Expression::kSelection:
+      return;
+    case ::substrait::proto::Expression::kScalarFunction: {
+      for (auto& arg :
+           *expression->mutable_scalar_function()->mutable_arguments()) {
+        if (arg.arg_type_case() ==
+            ::substrait::proto::FunctionArgument::kValue) {
+          addInputsToExpression(
+              symbolTable, symbolInfos, arg.mutable_value(), consumedPipelines);
+        }
+      }
+      break;
+    }
+    case ::substrait::proto::Expression::kWindowFunction:
+      for (auto& arg :
+           *expression->mutable_window_function()->mutable_arguments()) {
+        if (arg.arg_type_case() ==
+            ::substrait::proto::FunctionArgument::kValue) {
+          addInputsToExpression(
+              symbolTable, symbolInfos, arg.mutable_value(), consumedPipelines);
+        }
+      }
+      for (auto& partition :
+           *expression->mutable_window_function()->mutable_partitions()) {
+        addInputsToExpression(
+            symbolTable, symbolInfos, &partition, consumedPipelines);
+      }
+      break;
+    case ::substrait::proto::Expression::kIfThen:
+      for (auto& ifThen : *expression->mutable_if_then()->mutable_ifs()) {
+        addInputsToExpression(
+            symbolTable, symbolInfos, ifThen.mutable_if_(), consumedPipelines);
+        addInputsToExpression(
+            symbolTable, symbolInfos, ifThen.mutable_then(), consumedPipelines);
+      }
+      if (expression->if_then().has_else_()) {
+        addInputsToExpression(
+            symbolTable,
+            symbolInfos,
+            expression->mutable_if_then()->mutable_else_(),
+            consumedPipelines);
+      }
+      break;
+    case ::substrait::proto::Expression::kSwitchExpression:
+      if (expression->switch_expression().has_match()) {
+        addInputsToExpression(
+            symbolTable,
+            symbolInfos,
+            expression->mutable_switch_expression()->mutable_match(),
+            consumedPipelines);
+      }
+      for (auto& ifValue :
+           *expression->mutable_switch_expression()->mutable_ifs()) {
+        addInputsToExpression(
+            symbolTable,
+            symbolInfos,
+            ifValue.mutable_then(),
+            consumedPipelines);
+      }
+      if (expression->switch_expression().has_else_()) {
+        addInputsToExpression(
+            symbolTable,
+            symbolInfos,
+            expression->mutable_switch_expression()->mutable_else_(),
+            consumedPipelines);
+      }
+      break;
+    case ::substrait::proto::Expression::kSingularOrList:
+      if (expression->singular_or_list().has_value()) {
+        addInputsToExpression(
+            symbolTable,
+            symbolInfos,
+            expression->mutable_singular_or_list()->mutable_value(),
+            consumedPipelines);
+      }
+      for (auto& option :
+           *expression->mutable_singular_or_list()->mutable_options()) {
+        addInputsToExpression(
+            symbolTable, symbolInfos, &option, consumedPipelines);
+      }
+      break;
+    case ::substrait::proto::Expression::kMultiOrList:
+      for (auto& value :
+           *expression->mutable_multi_or_list()->mutable_value()) {
+        addInputsToExpression(
+            symbolTable, symbolInfos, &value, consumedPipelines);
+      }
+      for (auto& option :
+           *expression->mutable_multi_or_list()->mutable_options()) {
+        for (auto& field : *option.mutable_fields()) {
+          addInputsToExpression(
+              symbolTable, symbolInfos, &field, consumedPipelines);
+        }
+      }
+      break;
+    case ::substrait::proto::Expression::kCast:
+      if (expression->cast().has_input()) {
+        addInputsToExpression(
+            symbolTable,
+            symbolInfos,
+            expression->mutable_cast()->mutable_input(),
+            consumedPipelines);
+      }
+      break;
+    case ::substrait::proto::Expression::kSubquery:
+      // Handled below.
+      break;
+    case ::substrait::proto::Expression::kNested:
+      // TODO -- Implement nested expressions.
+      break;
+    case ::substrait::proto::Expression::kEnum:
+      break;
+    case ::substrait::proto::Expression::REX_TYPE_NOT_SET:
+      return;
+  }
+
+  switch (expression->subquery().subquery_type_case()) {
+    case ::substrait::proto::Expression_Subquery::kScalar: {
+      if (*consumedPipelines >= symbolInfos.size()) {
+        SUBSTRAIT_FAIL("Internal error:  Ran out of subquery symbols.");
+      }
+      auto subquerySymbol = symbolInfos[(*consumedPipelines)++];
+      if (subquerySymbol != nullptr) {
+        auto relationData =
+            ANY_CAST(std::shared_ptr<RelationData>, subquerySymbol->blob);
+        *expression->mutable_subquery()->mutable_scalar()->mutable_input() =
+            relationData->relation;
+        addInputsToRelation(
+            symbolTable,
+            *subquerySymbol,
+            expression->mutable_subquery()->mutable_scalar()->mutable_input());
+      }
+      SUBSTRAIT_FAIL("Internal Error:  Known symbol is missing.");
+    }
+    case ::substrait::proto::Expression_Subquery::kInPredicate: {
+      // First visit the needle expressions.
+      for (auto& expr : *expression->mutable_subquery()
+                             ->mutable_in_predicate()
+                             ->mutable_needles()) {
+        addInputsToExpression(
+            symbolTable, symbolInfos, &expr, consumedPipelines);
+      }
+      // Now visit the haystack.
+      if (expression->subquery().in_predicate().has_haystack()) {
+        if (*consumedPipelines >= symbolInfos.size()) {
+          SUBSTRAIT_FAIL("Internal error:  Ran out of subquery symbols.");
+        }
+        auto subquerySymbol = symbolInfos[(*consumedPipelines)++];
+        if (subquerySymbol != nullptr) {
+          auto relationData =
+              ANY_CAST(std::shared_ptr<RelationData>, subquerySymbol->blob);
+          *expression->mutable_subquery()
+               ->mutable_in_predicate()
+               ->mutable_haystack() = relationData->relation;
+          addInputsToRelation(
+              symbolTable,
+              *subquerySymbol,
+              expression->mutable_subquery()
+                  ->mutable_in_predicate()
+                  ->mutable_haystack());
+        }
+        SUBSTRAIT_FAIL("Internal Error:  Known symbol is missing.");
+      }
+      break;
+    }
+    case ::substrait::proto::Expression_Subquery::kSetPredicate: {
+      if (*consumedPipelines >= symbolInfos.size()) {
+        SUBSTRAIT_FAIL("Internal error:  Ran out of subquery symbols.");
+      }
+      auto subquerySymbol = symbolInfos[(*consumedPipelines)++];
+      if (subquerySymbol != nullptr) {
+        auto relationData =
+            ANY_CAST(std::shared_ptr<RelationData>, subquerySymbol->blob);
+        *expression->mutable_subquery()
+             ->mutable_set_predicate()
+             ->mutable_tuples() = relationData->relation;
+        addInputsToRelation(
+            symbolTable,
+            *subquerySymbol,
+            expression->mutable_subquery()
+                ->mutable_set_predicate()
+                ->mutable_tuples());
+      }
+      SUBSTRAIT_FAIL("Internal Error:  Known symbol is missing.");
+    }
+    case ::substrait::proto::Expression_Subquery::kSetComparison: {
+      addInputsToExpression(
+          symbolTable,
+          symbolInfos,
+          expression->mutable_subquery()
+              ->mutable_set_comparison()
+              ->mutable_left(),
+          consumedPipelines);
+      if (*consumedPipelines >= symbolInfos.size()) {
+        SUBSTRAIT_FAIL("Internal error:  Ran out of subquery symbols.");
+      }
+      auto subquerySymbol = symbolInfos[(*consumedPipelines)++];
+      if (subquerySymbol != nullptr) {
+        auto relationData =
+            ANY_CAST(std::shared_ptr<RelationData>, subquerySymbol->blob);
+        *expression->mutable_subquery()
+             ->mutable_set_comparison()
+             ->mutable_right() = relationData->relation;
+        addInputsToRelation(
+            symbolTable,
+            *subquerySymbol,
+            expression->mutable_subquery()
+                ->mutable_set_comparison()
+                ->mutable_right());
+      }
+    }
+    case ::substrait::proto::Expression_Subquery::SUBQUERY_TYPE_NOT_SET:
       break;
   }
 }
@@ -714,7 +1086,8 @@ void SymbolTablePrinter::addInputsToRelation(
   outputExtensionSpacesToBinaryPlan(symbolTable, &plan);
   outputFunctionsToBinaryPlan(symbolTable, &plan);
   for (const SymbolInfo& info : symbolTable) {
-    if (info.type != SymbolType::kRelation) {
+    if (info.type != SymbolType::kRelation ||
+        info.parentQueryLocation != Location::kUnknownLocation) {
       continue;
     }
     auto relationData = ANY_CAST(std::shared_ptr<RelationData>, info.blob);
@@ -736,6 +1109,7 @@ void SymbolTablePrinter::addInputsToRelation(
             inputRelationData->relation;
 
         addInputsToRelation(
+            symbolTable,
             *relationData->newPipelines[0],
             relation->mutable_root()->mutable_input());
       }

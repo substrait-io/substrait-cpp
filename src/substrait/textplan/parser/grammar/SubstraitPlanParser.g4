@@ -87,9 +87,17 @@ relation_detail
 
 expression
    : id LEFTPAREN (expression COMMA?)* RIGHTPAREN (ARROW literal_complex_type)? # expressionFunctionUse
-   | constant                                      # expressionConstant
-   | column_name                                   # expressionColumn
-   | expression AS literal_complex_type            # expressionCast
+   | constant                                               # expressionConstant
+   | column_name                                            # expressionColumn
+   | expression AS literal_complex_type                     # expressionCast
+   | SUBQUERY relation_ref                                  # expressionScalarSubquery
+   | expression_list IN SUBQUERY relation_ref               # expressionInPredicateSubquery
+   | (UNIQUE|EXISTS) IN SUBQUERY relation_ref (OR SUBQUERY relation_ref)*       # expressionSetPredicateSubquery
+   | expression COMPARISON ALL SUBQUERY relation_ref        # expressionSetComparisonSubquery
+   ;
+
+expression_list
+   : LEFTPAREN expression ( COMMA expression )* RIGHTPAREN
    ;
 
 constant
@@ -226,4 +234,7 @@ simple_id
    | TYPE
    | EMIT
    | NAMED
+   | ALL
+   | COMPARISON
+   | OR
    ;

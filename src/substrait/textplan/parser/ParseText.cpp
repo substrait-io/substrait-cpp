@@ -14,6 +14,7 @@
 #include "substrait/textplan/parser/SubstraitParserErrorListener.h"
 #include "substrait/textplan/parser/SubstraitPlanPipelineVisitor.h"
 #include "substrait/textplan/parser/SubstraitPlanRelationVisitor.h"
+#include "substrait/textplan/parser/SubstraitPlanSubqueryRelationVisitor.h"
 #include "substrait/textplan/parser/SubstraitPlanVisitor.h"
 
 namespace io::substrait::textplan {
@@ -36,10 +37,10 @@ antlr4::ANTLRInputStream loadTextString(std::string_view text) {
   return {text};
 }
 
-ParseResult parseStream(antlr4::ANTLRInputStream stream) {
-  io::substrait::textplan::SubstraitParserErrorListener errorListener;
+ParseResult parseStream(antlr4::ANTLRInputStream* stream) {
+  SubstraitParserErrorListener errorListener;
 
-  SubstraitPlanLexer lexer(&stream);
+  SubstraitPlanLexer lexer(stream);
   lexer.removeErrorListeners();
   lexer.addErrorListener(&errorListener);
   antlr4::CommonTokenStream tokens(&lexer);
@@ -57,6 +58,15 @@ ParseResult parseStream(antlr4::ANTLRInputStream stream) {
       visitorSymbolTable, visitorErrorListener);
   try {
     visitor->visitPlan(tree);
+  } catch (std::invalid_argument& ex) {
+    // Catches the any_cast exception and logs a useful error message.
+    errorListener.syntaxError(
+        &parser,
+        nullptr,
+        /*line=*/1,
+        /*charPositionInLine=*/1,
+        ex.what(),
+        std::current_exception());
   } catch (...) {
     errorListener.syntaxError(
         &parser,
@@ -71,7 +81,7 @@ ParseResult parseStream(antlr4::ANTLRInputStream stream) {
       *visitor->getSymbolTable(), visitor->getErrorListener());
   try {
     pipelineVisitor->visitPlan(tree);
-  } catch (std::invalid_argument ex) {
+  } catch (std::invalid_argument& ex) {
     // Catches the any_cast exception and logs a useful error message.
     errorListener.syntaxError(
         &parser,
@@ -94,7 +104,7 @@ ParseResult parseStream(antlr4::ANTLRInputStream stream) {
       *pipelineVisitor->getSymbolTable(), pipelineVisitor->getErrorListener());
   try {
     relationVisitor->visitPlan(tree);
-  } catch (std::invalid_argument ex) {
+  } catch (std::invalid_argument& ex) {
     // Catches the any_cast exception and logs a useful error message.
     errorListener.syntaxError(
         &parser,
@@ -113,11 +123,44 @@ ParseResult parseStream(antlr4::ANTLRInputStream stream) {
         std::current_exception());
   }
 
-  auto finalSymbolTable = relationVisitor->getSymbolTable();
+  if (relationVisitor->getErrorListener()->hasErrors()) {
+    // We have enough errors that proceeding to the final step isn't useful.
+    return {
+        *relationVisitor->getSymbolTable(),
+        errorListener.getErrorMessages(),
+        relationVisitor->getErrorListener()->getErrorMessages()};
+  }
+
+  auto subQueryRelationVisitor =
+      std::make_shared<SubstraitPlanSubqueryRelationVisitor>(
+          *relationVisitor->getSymbolTable(),
+          relationVisitor->getErrorListener());
+  try {
+    subQueryRelationVisitor->visitPlan(tree);
+  } catch (std::invalid_argument& ex) {
+    // Catches the any_cast exception and logs a useful error message.
+    errorListener.syntaxError(
+        &parser,
+        nullptr,
+        /*line=*/1,
+        /*charPositionInLine=*/1,
+        ex.what(),
+        std::current_exception());
+  } catch (...) {
+    errorListener.syntaxError(
+        &parser,
+        nullptr,
+        /*line=*/1,
+        /*charPositionInLine=*/1,
+        "uncaught parser relation exception encountered",
+        std::current_exception());
+  }
+
+  auto finalSymbolTable = subQueryRelationVisitor->getSymbolTable();
   return {
       *finalSymbolTable,
       errorListener.getErrorMessages(),
-      relationVisitor->getErrorListener()->getErrorMessages()};
+      subQueryRelationVisitor->getErrorListener()->getErrorMessages()};
 }
 
 } // namespace io::substrait::textplan

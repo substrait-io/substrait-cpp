@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "substrait/textplan/parser/SubstraitPlanRelationVisitor.h"
+#include "substrait/textplan/parser/SubstraitPlanSubqueryRelationVisitor.h"
 
 #include <chrono>
 #include <limits>
@@ -311,14 +311,72 @@ void addInputFieldsToSchema(
   }
 }
 
+void resetSchema(std::shared_ptr<RelationData>& relationData) {
+  relationData->fieldReferences.clear();
+  relationData->generatedFieldReferences.clear();
+  relationData->outputFieldReferences.clear();
+}
+
 bool isRelationEmitDetail(SubstraitPlanParser::Relation_detailContext* ctx) {
   return dynamic_cast<SubstraitPlanParser::RelationEmitContext*>(ctx) !=
       nullptr;
 }
 
+Location getParentQueryLocation(
+    const SymbolInfo* symbol,
+    std::shared_ptr<RelationData>& relationData) {
+  auto actualParentQueryLocation = symbol->parentQueryLocation;
+  if (actualParentQueryLocation != Location::kUnknownLocation) {
+    return actualParentQueryLocation;
+  }
+  auto currRelationData = relationData;
+  while (currRelationData->pipelineStart != nullptr) {
+    if (currRelationData->pipelineStart->parentQueryLocation !=
+        Location::kUnknownLocation) {
+      return currRelationData->pipelineStart->parentQueryLocation;
+    }
+    currRelationData = ANY_CAST(
+        std::shared_ptr<RelationData>, currRelationData->pipelineStart->blob);
+  }
+  return Location::kUnknownLocation;
+}
+
+::substrait::proto::Expression_Subquery_SetComparison_ComparisonOp
+comparisonToProto(const std::string& text) {
+  std::unordered_map<
+      std::string,
+      ::substrait::proto::Expression_Subquery_SetComparison_ComparisonOp>
+      comparisonOpMap = {
+          {"le",
+           ::substrait::proto::
+               Expression_Subquery_SetComparison_ComparisonOp_COMPARISON_OP_LE},
+          {"ge",
+           ::substrait::proto::
+               Expression_Subquery_SetComparison_ComparisonOp_COMPARISON_OP_GE},
+          {"eq",
+           ::substrait::proto::
+               Expression_Subquery_SetComparison_ComparisonOp_COMPARISON_OP_EQ},
+          {"ne",
+           ::substrait::proto::
+               Expression_Subquery_SetComparison_ComparisonOp_COMPARISON_OP_NE},
+          {"lt",
+           ::substrait::proto::
+               Expression_Subquery_SetComparison_ComparisonOp_COMPARISON_OP_LT},
+          {"gt",
+           ::substrait::proto::
+               Expression_Subquery_SetComparison_ComparisonOp_COMPARISON_OP_GT},
+      };
+  auto it = comparisonOpMap.find(toLower(text));
+  if (it != comparisonOpMap.end()) {
+    return it->second;
+  }
+  return ::substrait::proto::
+      Expression_Subquery_SetComparison_ComparisonOp_COMPARISON_OP_UNSPECIFIED;
+}
+
 } // namespace
 
-std::any SubstraitPlanRelationVisitor::aggregateResult(
+std::any SubstraitPlanSubqueryRelationVisitor::aggregateResult(
     std::any aggregate,
     std::any nextResult) {
   if (!nextResult.has_value()) {
@@ -328,7 +386,7 @@ std::any SubstraitPlanRelationVisitor::aggregateResult(
   return nextResult;
 }
 
-std::any SubstraitPlanRelationVisitor::visitRelation(
+std::any SubstraitPlanSubqueryRelationVisitor::visitRelation(
     SubstraitPlanParser::RelationContext* ctx) {
   // First find the relation created in a previous step.
   auto* symbol = symbolTable_->lookupSymbolByLocationAndType(
@@ -354,7 +412,11 @@ std::any SubstraitPlanRelationVisitor::visitRelation(
       finally([&]() { currentRelationScope_ = previousScope; });
   currentRelationScope_ = symbol;
 
+  resetSchema(relationData);
+
+  // if (!isWithinSubquery(ctx)) {
   addInputFieldsToSchema(relationType, relationData);
+  //}
 
   // Visit everything but the emit details to gather necessary information.
   for (auto detail : ctx->relation_detail()) {
@@ -363,38 +425,38 @@ std::any SubstraitPlanRelationVisitor::visitRelation(
     }
   }
 
+  // if (isWithinSubquery(ctx)) {
   addExpressionsToSchema(relationData);
+  //}
 
-  // We will handle subqueries in the next phase.
-  if (!isWithinSubquery(ctx)) {
-    // Now visit the emit details.
-    for (auto detail : ctx->relation_detail()) {
-      if (isRelationEmitDetail(detail)) {
-        visitRelationDetail(detail);
-      }
-    }
-
-    // Aggregate relations are different in that they alter the emitted fields
-    // by default.
-    if (relationType == RelationType::kAggregate) {
-      relationData->outputFieldReferences.insert(
-          relationData->outputFieldReferences.end(),
-          relationData->generatedFieldReferences.begin(),
-          relationData->generatedFieldReferences.end());
-    }
-
-    applyOutputMappingToSchema(ctx->getStart(), relationType, relationData);
-
-    // Emit one empty grouping for an aggregation relation not specifying any.
-    if (relationType == RelationType::kAggregate &&
-        relationData->relation.aggregate().groupings_size() == 0) {
-      relationData->relation.mutable_aggregate()->add_groupings();
+  // Now visit the emit details.
+  for (auto detail : ctx->relation_detail()) {
+    if (isRelationEmitDetail(detail)) {
+      visitRelationDetail(detail);
     }
   }
+
+  // Aggregate relations are different in that they alter the emitted fields
+  // by default.
+  if (relationType == RelationType::kAggregate) {
+    relationData->outputFieldReferences.insert(
+        relationData->outputFieldReferences.end(),
+        relationData->generatedFieldReferences.begin(),
+        relationData->generatedFieldReferences.end());
+  }
+
+  applyOutputMappingToSchema(ctx->getStart(), relationType, relationData);
+
+  // Emit one empty grouping for an aggregation relation not specifying any.
+  if (relationType == RelationType::kAggregate &&
+      relationData->relation.aggregate().groupings_size() == 0) {
+    relationData->relation.mutable_aggregate()->add_groupings();
+  }
+
   return defaultResult();
 }
 
-std::any SubstraitPlanRelationVisitor::visitRelationDetail(
+std::any SubstraitPlanSubqueryRelationVisitor::visitRelationDetail(
     SubstraitPlanParser::Relation_detailContext* ctx) {
   if (auto* commonCtx =
           dynamic_cast<SubstraitPlanParser::RelationCommonContext*>(ctx)) {
@@ -449,7 +511,7 @@ std::any SubstraitPlanRelationVisitor::visitRelationDetail(
   return defaultResult();
 }
 
-std::any SubstraitPlanRelationVisitor::visitRelation_filter_behavior(
+std::any SubstraitPlanSubqueryRelationVisitor::visitRelation_filter_behavior(
     SubstraitPlanParser::Relation_filter_behaviorContext* ctx) {
   std::string text = toLower(ctx->getText());
   // Only look at alphabetic characters for this comparison.
@@ -472,7 +534,7 @@ std::any SubstraitPlanRelationVisitor::visitRelation_filter_behavior(
   return kDefault;
 }
 
-std::any SubstraitPlanRelationVisitor::visitRelationFilter(
+std::any SubstraitPlanSubqueryRelationVisitor::visitRelationFilter(
     SubstraitPlanParser::RelationFilterContext* ctx) {
   RelationFilterBehavior behavior = kDefault;
   if (ctx->relation_filter_behavior() != nullptr) {
@@ -554,7 +616,7 @@ std::any SubstraitPlanRelationVisitor::visitRelationFilter(
         if (result.type() != typeid(::substrait::proto::Expression)) {
           errorListener_->addError(
               ctx->getStart(),
-              "Could not parse as an expression (pass 1, spot 1).");
+              "Could not parse as an expression (pass 2, spot 1).");
           return defaultResult();
         }
         *parentRelationData->relation.mutable_filter()->mutable_condition() =
@@ -574,7 +636,7 @@ std::any SubstraitPlanRelationVisitor::visitRelationFilter(
   return defaultResult();
 }
 
-std::any SubstraitPlanRelationVisitor::visitRelationUsesSchema(
+std::any SubstraitPlanSubqueryRelationVisitor::visitRelationUsesSchema(
     SubstraitPlanParser::RelationUsesSchemaContext* ctx) {
   auto* parentSymbol = symbolTable_->lookupSymbolByLocationAndType(
       Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)),
@@ -615,14 +677,14 @@ std::any SubstraitPlanRelationVisitor::visitRelationUsesSchema(
   return defaultResult();
 }
 
-std::any SubstraitPlanRelationVisitor::visitRelationExpression(
+std::any SubstraitPlanSubqueryRelationVisitor::visitRelationExpression(
     SubstraitPlanParser::RelationExpressionContext* ctx) {
   auto* parentSymbol = symbolTable_->lookupSymbolByLocationAndType(
       Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)),
       SymbolType::kRelation);
   auto parentRelationData =
       ANY_CAST(std::shared_ptr<RelationData>, parentSymbol->blob);
-  auto result = visitExpression(ctx->expression());
+  auto result = visitChildren(ctx);
   auto parentRelationType = ANY_CAST(RelationType, parentSymbol->subtype);
   switch (parentRelationType) {
     case RelationType::kJoin:
@@ -636,20 +698,10 @@ std::any SubstraitPlanRelationVisitor::visitRelationExpression(
       *parentRelationData->relation.mutable_join()->mutable_expression() =
           ANY_CAST(::substrait::proto::Expression, result);
       break;
-    case RelationType::kProject: {
+    case RelationType::kProject:
       *parentRelationData->relation.mutable_project()->add_expressions() =
           ANY_CAST(::substrait::proto::Expression, result);
-      std::string name;
-      if (ctx->id() != nullptr) {
-        name = ctx->id()->getText();
-      } else {
-        name = symbolTable_->getUniqueName(kIntermediateNodeName);
-      }
-      parentRelationData->generatedFieldReferenceAliases
-          [parentRelationData->relation.project().expressions_size() - 1] =
-          name;
       break;
-    }
     default:
       errorListener_->addError(
           ctx->getStart(),
@@ -659,7 +711,7 @@ std::any SubstraitPlanRelationVisitor::visitRelationExpression(
   return defaultResult();
 }
 
-std::any SubstraitPlanRelationVisitor::visitRelationGrouping(
+std::any SubstraitPlanSubqueryRelationVisitor::visitRelationGrouping(
     SubstraitPlanParser::RelationGroupingContext* ctx) {
   auto* parentSymbol = symbolTable_->lookupSymbolByLocationAndType(
       Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)),
@@ -699,7 +751,7 @@ std::any SubstraitPlanRelationVisitor::visitRelationGrouping(
   return defaultResult();
 }
 
-std::any SubstraitPlanRelationVisitor::visitRelationMeasure(
+std::any SubstraitPlanSubqueryRelationVisitor::visitRelationMeasure(
     SubstraitPlanParser::RelationMeasureContext* ctx) {
   // Construct the measure.
   ::substrait::proto::AggregateRel_Measure measure;
@@ -763,7 +815,7 @@ std::any SubstraitPlanRelationVisitor::visitRelationMeasure(
   return defaultResult();
 }
 
-std::any SubstraitPlanRelationVisitor::visitRelationJoinType(
+std::any SubstraitPlanSubqueryRelationVisitor::visitRelationJoinType(
     SubstraitPlanParser::RelationJoinTypeContext* ctx) {
   auto* parentSymbol = symbolTable_->lookupSymbolByLocationAndType(
       Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)),
@@ -812,7 +864,7 @@ std::any SubstraitPlanRelationVisitor::visitRelationJoinType(
   return defaultResult();
 }
 
-std::any SubstraitPlanRelationVisitor::visitRelationEmit(
+std::any SubstraitPlanSubqueryRelationVisitor::visitRelationEmit(
     SubstraitPlanParser::RelationEmitContext* ctx) {
   auto* parentSymbol = symbolTable_->lookupSymbolByLocationAndType(
       Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)),
@@ -839,7 +891,7 @@ std::any SubstraitPlanRelationVisitor::visitRelationEmit(
   return defaultResult();
 }
 
-int32_t SubstraitPlanRelationVisitor::visitAggregationInvocation(
+int32_t SubstraitPlanSubqueryRelationVisitor::visitAggregationInvocation(
     SubstraitPlanParser::IdContext* ctx) {
   std::string text =
       normalizeProtoEnum(ctx->getText(), kAggregationInvocationPrefix);
@@ -859,7 +911,7 @@ int32_t SubstraitPlanRelationVisitor::visitAggregationInvocation(
       AGGREGATION_INVOCATION_UNSPECIFIED;
 }
 
-int32_t SubstraitPlanRelationVisitor::visitAggregationPhase(
+int32_t SubstraitPlanSubqueryRelationVisitor::visitAggregationPhase(
     SubstraitPlanParser::IdContext* ctx) {
   std::string text =
       normalizeProtoEnum(ctx->getText(), kAggregationPhasePrefix);
@@ -879,7 +931,7 @@ int32_t SubstraitPlanRelationVisitor::visitAggregationPhase(
   return ::substrait::proto::AGGREGATION_PHASE_UNSPECIFIED;
 }
 
-std::any SubstraitPlanRelationVisitor::visitMeasure_detail(
+std::any SubstraitPlanSubqueryRelationVisitor::visitMeasure_detail(
     SubstraitPlanParser::Measure_detailContext* ctx) {
   ::substrait::proto::AggregateRel_Measure measure;
   switch (ctx->getStart()->getType()) {
@@ -955,7 +1007,7 @@ std::any SubstraitPlanRelationVisitor::visitMeasure_detail(
   }
 }
 
-std::any SubstraitPlanRelationVisitor::visitRelationSourceReference(
+std::any SubstraitPlanSubqueryRelationVisitor::visitRelationSourceReference(
     SubstraitPlanParser::RelationSourceReferenceContext* ctx) {
   auto* parentSymbol = symbolTable_->lookupSymbolByLocationAndType(
       Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)),
@@ -1018,7 +1070,7 @@ std::any SubstraitPlanRelationVisitor::visitRelationSourceReference(
   return defaultResult();
 }
 
-std::any SubstraitPlanRelationVisitor::visitRelationSort(
+std::any SubstraitPlanSubqueryRelationVisitor::visitRelationSort(
     SubstraitPlanParser::RelationSortContext* ctx) {
   auto* parentSymbol = symbolTable_->lookupSymbolByLocationAndType(
       Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)),
@@ -1040,7 +1092,7 @@ std::any SubstraitPlanRelationVisitor::visitRelationSort(
   return defaultResult();
 }
 
-std::any SubstraitPlanRelationVisitor::visitRelationCount(
+std::any SubstraitPlanSubqueryRelationVisitor::visitRelationCount(
     SubstraitPlanParser::RelationCountContext* ctx) {
   auto* parentSymbol = symbolTable_->lookupSymbolByLocationAndType(
       Location(dynamic_cast<antlr4::ParserRuleContext*>(ctx->parent)),
@@ -1065,7 +1117,7 @@ std::any SubstraitPlanRelationVisitor::visitRelationCount(
   return defaultResult();
 }
 
-std::any SubstraitPlanRelationVisitor::visitExpression(
+std::any SubstraitPlanSubqueryRelationVisitor::visitExpression(
     SubstraitPlanParser::ExpressionContext* ctx) {
   if (auto* funcUseCtx =
           dynamic_cast<SubstraitPlanParser::ExpressionFunctionUseContext*>(
@@ -1107,7 +1159,7 @@ std::any SubstraitPlanRelationVisitor::visitExpression(
 }
 
 ::substrait::proto::Expression
-SubstraitPlanRelationVisitor::visitExpressionIfThenUse(
+SubstraitPlanSubqueryRelationVisitor::visitExpressionIfThenUse(
     SubstraitPlanParser::ExpressionFunctionUseContext* ctx) {
   ::substrait::proto::Expression expr;
   size_t currExprNum = 0;
@@ -1132,7 +1184,7 @@ SubstraitPlanRelationVisitor::visitExpressionIfThenUse(
   return expr;
 }
 
-std::any SubstraitPlanRelationVisitor::visitExpressionFunctionUse(
+std::any SubstraitPlanSubqueryRelationVisitor::visitExpressionFunctionUse(
     SubstraitPlanParser::ExpressionFunctionUseContext* ctx) {
   ::substrait::proto::Expression expr;
   std::string funcName = ctx->id()->getText();
@@ -1158,23 +1210,15 @@ std::any SubstraitPlanRelationVisitor::visitExpressionFunctionUse(
       continue;
     }
 
-    if (hasSubquery(exp)) {
-      // Not ready to look at this function just yet.
-      ::substrait::proto::Expression newExpr;
-      *expr.mutable_scalar_function()->add_arguments()->mutable_value() =
-          newExpr;
-    } else {
-      auto result = visitExpression(exp);
-      if (result.type() != typeid(::substrait::proto::Expression)) {
-        errorListener_->addError(
-            ctx->id()->getStart(),
-            "Could not parse as an expression (pass 1, spot 2).");
-        return expr;
-      }
-      auto newExpr = ANY_CAST(::substrait::proto::Expression, result);
-      *expr.mutable_scalar_function()->add_arguments()->mutable_value() =
-          newExpr;
+    auto result = visitExpression(exp);
+    if (result.type() != typeid(::substrait::proto::Expression)) {
+      errorListener_->addError(
+          ctx->id()->getStart(),
+          "Could not parse as an expression (pass 2, spot 2).");
+      return expr;
     }
+    auto newExpr = ANY_CAST(::substrait::proto::Expression, result);
+    *expr.mutable_scalar_function()->add_arguments()->mutable_value() = newExpr;
   }
   if (ctx->literal_complex_type() != nullptr) {
     auto literalType = ANY_CAST(
@@ -1185,7 +1229,7 @@ std::any SubstraitPlanRelationVisitor::visitExpressionFunctionUse(
   return expr;
 }
 
-std::any SubstraitPlanRelationVisitor::visitExpressionConstant(
+std::any SubstraitPlanSubqueryRelationVisitor::visitExpressionConstant(
     SubstraitPlanParser::ExpressionConstantContext* ctx) {
   ::substrait::proto::Expression expr;
   *expr.mutable_literal() =
@@ -1193,7 +1237,7 @@ std::any SubstraitPlanRelationVisitor::visitExpressionConstant(
   return expr;
 }
 
-std::any SubstraitPlanRelationVisitor::visitExpressionCast(
+std::any SubstraitPlanSubqueryRelationVisitor::visitExpressionCast(
     SubstraitPlanParser::ExpressionCastContext* ctx) {
   ::substrait::proto::Expression expr;
   auto origExpression = ANY_CAST(
@@ -1206,18 +1250,12 @@ std::any SubstraitPlanRelationVisitor::visitExpressionCast(
   return expr;
 }
 
-std::any SubstraitPlanRelationVisitor::visitExpressionColumn(
+std::any SubstraitPlanSubqueryRelationVisitor::visitExpressionColumn(
     SubstraitPlanParser::ExpressionColumnContext* ctx) {
   auto relationData =
       ANY_CAST(std::shared_ptr<RelationData>, currentRelationScope_->blob);
 
   std::string symbolName = ctx->getText();
-  if (currentRelationScope_->parentQueryLocation !=
-      Location::kUnknownLocation) {
-    // Skip evaluating expressions in subqueries in this pass.
-    ::substrait::proto::Expression expr;
-    return expr;
-  }
   auto [stepsOut, fieldReference] = findFieldReferenceByName(
       ctx->getStart(), currentRelationScope_, relationData, symbolName);
 
@@ -1238,7 +1276,106 @@ std::any SubstraitPlanRelationVisitor::visitExpressionColumn(
   return expr;
 }
 
-std::any SubstraitPlanRelationVisitor::visitExpression_list(
+std::any SubstraitPlanSubqueryRelationVisitor::visitExpressionScalarSubquery(
+    SubstraitPlanParser::ExpressionScalarSubqueryContext* ctx) {
+  ::substrait::proto::Expression expr;
+  // First find the relation created in a previous step.
+  auto symbol =
+      symbolTable_->lookupSymbolByName(ctx->relation_ref()->getText());
+  if (symbol == nullptr) {
+    errorListener_->addError(
+        ctx->getStart(), "Internal error -- Failed to find a known symbol.");
+    return expr;
+  }
+
+  auto relationData = ANY_CAST(std::shared_ptr<RelationData>, symbol->blob);
+  *expr.mutable_subquery()->mutable_scalar()->mutable_input() =
+      relationData->relation;
+  return expr;
+}
+
+std::any
+SubstraitPlanSubqueryRelationVisitor::visitExpressionInPredicateSubquery(
+    SubstraitPlanParser::ExpressionInPredicateSubqueryContext* ctx) {
+  ::substrait::proto::Expression expr;
+  // First find the relation created in a previous step.
+  auto symbol =
+      symbolTable_->lookupSymbolByName(ctx->relation_ref()->getText());
+  if (symbol == nullptr) {
+    errorListener_->addError(
+        ctx->getStart(), "Internal error -- Failed to find a known symbol.");
+    return expr;
+  }
+
+  // Now look at expression_list.
+  auto exprs = ANY_CAST(
+      std::vector<::substrait::proto::Expression>,
+      visitExpression_list(ctx->expression_list()));
+
+  // Now construct the subquery expression.
+  auto relationData = ANY_CAST(std::shared_ptr<RelationData>, symbol->blob);
+  expr.mutable_subquery()->mutable_in_predicate()->mutable_haystack();
+  symbolTable_->addPermanentLocation(
+      *symbol, PROTO_LOCATION(expr.subquery().in_predicate().haystack()));
+
+  for (const auto& e : exprs) {
+    *expr.mutable_subquery()->mutable_in_predicate()->add_needles() = e;
+  }
+
+  return expr;
+}
+
+std::any
+SubstraitPlanSubqueryRelationVisitor::visitExpressionSetPredicateSubquery(
+    SubstraitPlanParser::ExpressionSetPredicateSubqueryContext* ctx) {
+  ::substrait::proto::Expression expr;
+  // First find the relation created in a previous step.
+  auto symbol =
+      symbolTable_->lookupSymbolByName(ctx->relation_ref(0)->getText());
+  if (symbol == nullptr) {
+    errorListener_->addError(
+        ctx->getStart(), "Internal error -- Failed to find a known symbol.");
+    return expr;
+  }
+  auto relationData = ANY_CAST(std::shared_ptr<RelationData>, symbol->blob);
+  expr.mutable_subquery()->mutable_set_predicate()->mutable_tuples();
+  if (ctx->EXISTS() != nullptr) {
+    expr.mutable_subquery()->mutable_set_predicate()->set_predicate_op(
+        ::substrait::proto::
+            Expression_Subquery_SetPredicate_PredicateOp_PREDICATE_OP_EXISTS);
+  } else if (ctx->UNIQUE() != nullptr) {
+    expr.mutable_subquery()->mutable_set_predicate()->set_predicate_op(
+        ::substrait::proto::
+            Expression_Subquery_SetPredicate_PredicateOp_PREDICATE_OP_UNIQUE);
+  } else {
+    errorListener_->addError(
+        ctx->getStart(), "Internal error -- Unrecognized predicate operation.");
+  }
+  return expr;
+}
+
+std::any
+SubstraitPlanSubqueryRelationVisitor::visitExpressionSetComparisonSubquery(
+    SubstraitPlanParser::ExpressionSetComparisonSubqueryContext* ctx) {
+  ::substrait::proto::Expression expr;
+  *expr.mutable_subquery()->mutable_set_comparison()->mutable_left() = ANY_CAST(
+      ::substrait::proto::Expression, visitExpression(ctx->expression()));
+  expr.mutable_subquery()->mutable_set_comparison()->set_comparison_op(
+      comparisonToProto(ctx->COMPARISON()->getText()));
+  // Next find the relation created in a previous step.
+  auto symbol =
+      symbolTable_->lookupSymbolByName(ctx->relation_ref()->getText());
+  if (symbol == nullptr) {
+    errorListener_->addError(
+        ctx->getStart(), "Internal error -- Failed to find a known symbol.");
+    return expr;
+  }
+  auto relationData = ANY_CAST(std::shared_ptr<RelationData>, symbol->blob);
+  expr.mutable_subquery()->mutable_set_comparison()->mutable_right();
+  return expr;
+}
+
+std::any SubstraitPlanSubqueryRelationVisitor::visitExpression_list(
     SubstraitPlanParser::Expression_listContext* ctx) {
   std::vector<::substrait::proto::Expression> exprs;
   for (auto exprCtx : ctx->expression()) {
@@ -1249,7 +1386,7 @@ std::any SubstraitPlanRelationVisitor::visitExpression_list(
   return exprs;
 }
 
-std::any SubstraitPlanRelationVisitor::visitConstant(
+std::any SubstraitPlanSubqueryRelationVisitor::visitConstant(
     SubstraitPlanParser::ConstantContext* ctx) {
   ::substrait::proto::Expression_Literal literal;
   if (ctx->literal_basic_type() != nullptr) {
@@ -1283,7 +1420,7 @@ std::any SubstraitPlanRelationVisitor::visitConstant(
   return literal;
 }
 
-std::any SubstraitPlanRelationVisitor::visitMap_literal(
+std::any SubstraitPlanSubqueryRelationVisitor::visitMap_literal(
     SubstraitPlanParser::Map_literalContext* ctx) {
   ::substrait::proto::Expression_Literal literal;
   literal.mutable_map()->clear_key_values();
@@ -1296,7 +1433,7 @@ std::any SubstraitPlanRelationVisitor::visitMap_literal(
   return literal;
 }
 
-std::any SubstraitPlanRelationVisitor::visitMap_literal_value(
+std::any SubstraitPlanSubqueryRelationVisitor::visitMap_literal_value(
     SubstraitPlanParser::Map_literal_valueContext* ctx) {
   ::substrait::proto::Expression_Literal_Map_KeyValue keyValue;
   auto key = ANY_CAST(
@@ -1308,7 +1445,7 @@ std::any SubstraitPlanRelationVisitor::visitMap_literal_value(
   return keyValue;
 }
 
-std::any SubstraitPlanRelationVisitor::visitStruct_literal(
+std::any SubstraitPlanSubqueryRelationVisitor::visitStruct_literal(
     SubstraitPlanParser::Struct_literalContext* ctx) {
   ::substrait::proto::Expression_Literal literal;
   for (auto constant : ctx->constant()) {
@@ -1319,7 +1456,7 @@ std::any SubstraitPlanRelationVisitor::visitStruct_literal(
   return literal;
 }
 
-std::any SubstraitPlanRelationVisitor::visitColumn_name(
+std::any SubstraitPlanSubqueryRelationVisitor::visitColumn_name(
     SubstraitPlanParser::Column_nameContext* ctx) {
   auto relationData =
       ANY_CAST(std::shared_ptr<RelationData>, currentRelationScope_->blob);
@@ -1328,7 +1465,7 @@ std::any SubstraitPlanRelationVisitor::visitColumn_name(
 }
 
 ::substrait::proto::Expression_Literal
-SubstraitPlanRelationVisitor::visitConstantWithType(
+SubstraitPlanSubqueryRelationVisitor::visitConstantWithType(
     SubstraitPlanParser::ConstantContext* ctx,
     const ::substrait::proto::Type& literalType) {
   ::substrait::proto::Expression_Literal literal;
@@ -1402,7 +1539,7 @@ SubstraitPlanRelationVisitor::visitConstantWithType(
 }
 
 ::substrait::proto::Expression_Literal_Map_KeyValue
-SubstraitPlanRelationVisitor::visitMapLiteralValueWithType(
+SubstraitPlanSubqueryRelationVisitor::visitMapLiteralValueWithType(
     SubstraitPlanParser::Map_literal_valueContext* ctx,
     const ::substrait::proto::Type& literalType) {
   ::substrait::proto::Expression_Literal_Map_KeyValue keyValue;
@@ -1414,7 +1551,7 @@ SubstraitPlanRelationVisitor::visitMapLiteralValueWithType(
 }
 
 ::substrait::proto::Expression_Literal
-SubstraitPlanRelationVisitor::visitMapLiteralWithType(
+SubstraitPlanSubqueryRelationVisitor::visitMapLiteralWithType(
     SubstraitPlanParser::Map_literalContext* ctx,
     const ::substrait::proto::Type& literalType) {
   ::substrait::proto::Expression_Literal literal;
@@ -1430,7 +1567,7 @@ SubstraitPlanRelationVisitor::visitMapLiteralWithType(
 }
 
 ::substrait::proto::Expression_Literal
-SubstraitPlanRelationVisitor::visitStructLiteralWithType(
+SubstraitPlanSubqueryRelationVisitor::visitStructLiteralWithType(
     SubstraitPlanParser::Struct_literalContext* ctx,
     const ::substrait::proto::Type_Struct& literalType) {
   ::substrait::proto::Expression_Literal literal;
@@ -1454,7 +1591,7 @@ SubstraitPlanRelationVisitor::visitStructLiteralWithType(
 }
 
 ::substrait::proto::Expression_Literal
-SubstraitPlanRelationVisitor::visitString(
+SubstraitPlanSubqueryRelationVisitor::visitString(
     antlr4::tree::TerminalNode* node,
     const ::substrait::proto::Type& literalType) {
   std::string input = node->getText();
@@ -1550,7 +1687,7 @@ SubstraitPlanRelationVisitor::visitString(
   return literal;
 }
 
-std::string SubstraitPlanRelationVisitor::escapeText(
+std::string SubstraitPlanSubqueryRelationVisitor::escapeText(
     const antlr4::tree::TerminalNode* node,
     const std::string& str) {
   std::stringstream result;
@@ -1639,7 +1776,7 @@ std::string SubstraitPlanRelationVisitor::escapeText(
 }
 
 ::substrait::proto::Expression_Literal
-SubstraitPlanRelationVisitor::visitNumber(
+SubstraitPlanSubqueryRelationVisitor::visitNumber(
     antlr4::tree::TerminalNode* node,
     const ::substrait::proto::Type& literalType) {
   ::substrait::proto::Expression_Literal literal;
@@ -1727,7 +1864,8 @@ SubstraitPlanRelationVisitor::visitNumber(
   return literal;
 }
 
-::substrait::proto::Expression_Literal SubstraitPlanRelationVisitor::visitList(
+::substrait::proto::Expression_Literal
+SubstraitPlanSubqueryRelationVisitor::visitList(
     SubstraitPlanParser::ConstantContext* ctx,
     const ::substrait::proto::Type& literalType) {
   ::substrait::proto::Expression_Literal literal;
@@ -1753,7 +1891,8 @@ SubstraitPlanRelationVisitor::visitNumber(
   return literal;
 }
 
-::substrait::proto::Expression_Literal SubstraitPlanRelationVisitor::visitMap(
+::substrait::proto::Expression_Literal
+SubstraitPlanSubqueryRelationVisitor::visitMap(
     SubstraitPlanParser::ConstantContext* ctx,
     const ::substrait::proto::Type& literalType) {
   ::substrait::proto::Expression_Literal literal;
@@ -1777,7 +1916,7 @@ SubstraitPlanRelationVisitor::visitNumber(
 }
 
 ::substrait::proto::Expression_Literal
-SubstraitPlanRelationVisitor::visitStruct(
+SubstraitPlanSubqueryRelationVisitor::visitStruct(
     SubstraitPlanParser::ConstantContext* ctx,
     const ::substrait::proto::Type& literalType) {
   ::substrait::proto::Expression_Literal literal;
@@ -1795,7 +1934,7 @@ SubstraitPlanRelationVisitor::visitStruct(
 }
 
 ::substrait::proto::Expression_Literal
-SubstraitPlanRelationVisitor::visitIntervalYear(
+SubstraitPlanSubqueryRelationVisitor::visitIntervalYear(
     SubstraitPlanParser::ConstantContext* ctx) {
   ::substrait::proto::Type literalType;
   literalType.mutable_struct_()->add_types()->mutable_i32();
@@ -1812,7 +1951,7 @@ SubstraitPlanRelationVisitor::visitIntervalYear(
 }
 
 ::substrait::proto::Expression_Literal
-SubstraitPlanRelationVisitor::visitIntervalDay(
+SubstraitPlanSubqueryRelationVisitor::visitIntervalDay(
     SubstraitPlanParser::ConstantContext* ctx) {
   ::substrait::proto::Type literalType;
   literalType.mutable_struct_()->add_types()->mutable_i32();
@@ -1832,7 +1971,7 @@ SubstraitPlanRelationVisitor::visitIntervalDay(
 }
 
 ::substrait::proto::Expression_Literal
-SubstraitPlanRelationVisitor::visitTimestamp(
+SubstraitPlanSubqueryRelationVisitor::visitTimestamp(
     SubstraitPlanParser::ConstantContext* ctx) {
   ::substrait::proto::Type literalType;
   literalType.mutable_timestamp();
@@ -1853,7 +1992,7 @@ SubstraitPlanRelationVisitor::visitTimestamp(
 }
 
 ::substrait::proto::Expression_Literal
-SubstraitPlanRelationVisitor::visitTimestampTz(
+SubstraitPlanSubqueryRelationVisitor::visitTimestampTz(
     SubstraitPlanParser::ConstantContext* ctx) {
   ::substrait::proto::Type literalType;
   literalType.mutable_timestamp_tz();
@@ -1882,7 +2021,8 @@ SubstraitPlanRelationVisitor::visitTimestampTz(
   return literal;
 }
 
-::substrait::proto::Expression_Literal SubstraitPlanRelationVisitor::visitDate(
+::substrait::proto::Expression_Literal
+SubstraitPlanSubqueryRelationVisitor::visitDate(
     SubstraitPlanParser::ConstantContext* ctx) {
   ::substrait::proto::Type literalType;
   literalType.mutable_date();
@@ -1903,7 +2043,8 @@ SubstraitPlanRelationVisitor::visitTimestampTz(
   return literal;
 }
 
-::substrait::proto::Expression_Literal SubstraitPlanRelationVisitor::visitTime(
+::substrait::proto::Expression_Literal
+SubstraitPlanSubqueryRelationVisitor::visitTime(
     SubstraitPlanParser::ConstantContext* ctx) {
   ::substrait::proto::Type literalType;
   literalType.mutable_time();
@@ -1927,7 +2068,7 @@ SubstraitPlanRelationVisitor::visitTimestampTz(
   return literal;
 }
 
-std::any SubstraitPlanRelationVisitor::visitSort_field(
+std::any SubstraitPlanSubqueryRelationVisitor::visitSort_field(
     SubstraitPlanParser::Sort_fieldContext* ctx) {
   ::substrait::proto::SortField sort;
   *sort.mutable_expr() = ANY_CAST(
@@ -1939,7 +2080,7 @@ std::any SubstraitPlanRelationVisitor::visitSort_field(
   return sort;
 }
 
-int32_t SubstraitPlanRelationVisitor::visitSortDirection(
+int32_t SubstraitPlanSubqueryRelationVisitor::visitSortDirection(
     SubstraitPlanParser::IdContext* ctx) {
   std::string text = normalizeProtoEnum(ctx->getText(), kSortDirectionPrefix);
   if (text == "unspecified") {
@@ -1960,12 +2101,11 @@ int32_t SubstraitPlanRelationVisitor::visitSortDirection(
   return ::substrait::proto::SortField::SORT_DIRECTION_UNSPECIFIED;
 }
 
-void SubstraitPlanRelationVisitor::addExpressionsToSchema(
+void SubstraitPlanSubqueryRelationVisitor::addExpressionsToSchema(
     std::shared_ptr<RelationData>& relationData) {
   const auto& relation = relationData->relation;
   switch (relation.rel_type_case()) {
-    case ::substrait::proto::Rel::kProject: {
-      int expressionNumber = 0;
+    case ::substrait::proto::Rel::kProject:
       for (const auto& expr : relation.project().expressions()) {
         if (expr.selection().direct_reference().has_struct_field()) {
           if (expr.selection().direct_reference().struct_field().field() <
@@ -1977,34 +2117,24 @@ void SubstraitPlanRelationVisitor::addExpressionsToSchema(
                                                   .field()]);
           }
         } else {
-          std::string uniqueName;
-          if (relationData->generatedFieldReferenceAliases.find(
-                  expressionNumber) !=
-              relationData->generatedFieldReferenceAliases.end()) {
-            uniqueName =
-                relationData->generatedFieldReferenceAliases[expressionNumber];
-          } else {
-            uniqueName = symbolTable_->getUniqueName(kIntermediateNodeName);
-          }
           auto newSymbol = symbolTable_->defineSymbol(
-              uniqueName,
+              relationData->generatedFieldReferenceAliases
+                  [relationData->generatedFieldReferences.size()],
               PROTO_LOCATION(expr),
               SymbolType::kUnknown,
               std::nullopt,
               std::nullopt);
           relationData->generatedFieldReferences.push_back(newSymbol);
         }
-        expressionNumber++;
       }
       break;
-    }
     default:
       // Only project and aggregate relations affect the output mapping.
       break;
   }
 }
 
-std::string SubstraitPlanRelationVisitor::fullyQualifiedReference(
+std::string SubstraitPlanSubqueryRelationVisitor::fullyQualifiedReference(
     const SymbolInfo* fieldReference) {
   for (const auto& symbol : symbolTable_->getSymbols()) {
     if (symbol->type == SymbolType::kSchema &&
@@ -2017,7 +2147,8 @@ std::string SubstraitPlanRelationVisitor::fullyQualifiedReference(
   return fieldReference->name;
 }
 
-std::pair<int, int> SubstraitPlanRelationVisitor::findFieldReferenceByName(
+std::pair<int, int>
+SubstraitPlanSubqueryRelationVisitor::findFieldReferenceByName(
     antlr4::Token* token,
     const SymbolInfo* symbol,
     std::shared_ptr<RelationData>& relationData,
@@ -2060,11 +2191,30 @@ std::pair<int, int> SubstraitPlanRelationVisitor::findFieldReferenceByName(
             std::numeric_limits<int32_t>::max())};
   }
 
-  // We didn't find the symbol, but let the next visitor worry about it.
+  auto actualParentQueryLocation = getParentQueryLocation(symbol, relationData);
+  if (actualParentQueryLocation != Location::kUnknownLocation) {
+    auto parentSymbol = symbolTable_->lookupSymbolByLocationAndType(
+        actualParentQueryLocation, SymbolType::kRelation);
+    if (parentSymbol != nullptr) {
+      // This symbol is not in the current scope, try an outer one.
+      auto parentRelationData =
+          ANY_CAST(std::shared_ptr<RelationData>, parentSymbol->blob);
+
+      auto [stepsOut, fieldReference] = findFieldReferenceByName(
+          token, parentSymbol, parentRelationData, name);
+      if (fieldReference != -1) {
+        return {stepsOut + 1, fieldReference};
+      }
+      // Not found but already reported.
+      return {stepsOut + 1, -1};
+    }
+  }
+
+  errorListener_->addError(token, "Reference " + name + " does not exist.");
   return {0, -1};
 }
 
-void SubstraitPlanRelationVisitor::applyOutputMappingToSchema(
+void SubstraitPlanSubqueryRelationVisitor::applyOutputMappingToSchema(
     antlr4::Token* token,
     RelationType relationType,
     std::shared_ptr<RelationData>& relationData) {
@@ -2105,7 +2255,7 @@ void SubstraitPlanRelationVisitor::applyOutputMappingToSchema(
   }
 }
 
-bool SubstraitPlanRelationVisitor::isWithinSubquery(
+bool SubstraitPlanSubqueryRelationVisitor::isWithinSubquery(
     SubstraitPlanParser::RelationContext* ctx) {
   auto symbol = symbolTable_->lookupSymbolByLocationAndType(
       PARSER_LOCATION(ctx), SymbolType::kRelation);
@@ -2116,52 +2266,6 @@ bool SubstraitPlanRelationVisitor::isWithinSubquery(
   // Also check our scope.
   return currentRelationScope_->parentQueryLocation !=
       Location::kUnknownLocation;
-}
-
-bool SubstraitPlanRelationVisitor::hasSubquery(
-    SubstraitPlanParser::ExpressionContext* ctx) {
-  if (auto* funcUseCtx =
-          dynamic_cast<SubstraitPlanParser::ExpressionFunctionUseContext*>(
-              ctx)) {
-    for (auto* expr : funcUseCtx->expression()) {
-      if (hasSubquery(expr)) {
-        return true;
-      }
-    }
-    return false;
-  } else if (
-      auto* constantCtx =
-          dynamic_cast<SubstraitPlanParser::ExpressionConstantContext*>(ctx)) {
-    return false;
-  } else if (
-      auto* columnCtx =
-          dynamic_cast<SubstraitPlanParser::ExpressionColumnContext*>(ctx)) {
-    return false;
-  } else if (
-      auto* castCtx =
-          dynamic_cast<SubstraitPlanParser::ExpressionCastContext*>(ctx)) {
-    return hasSubquery(castCtx->expression());
-  } else if (
-      auto* scalarSubqueryCtx =
-          dynamic_cast<SubstraitPlanParser::ExpressionScalarSubqueryContext*>(
-              ctx)) {
-    return true;
-  } else if (
-      auto* inSubqueryCtx = dynamic_cast<
-          SubstraitPlanParser::ExpressionInPredicateSubqueryContext*>(ctx)) {
-    return true;
-  } else if (
-      auto* setSubqueryCtx = dynamic_cast<
-          SubstraitPlanParser::ExpressionSetPredicateSubqueryContext*>(ctx)) {
-    return true;
-  } else if (
-      auto* setComparisonCtx = dynamic_cast<
-          SubstraitPlanParser::ExpressionSetComparisonSubqueryContext*>(ctx)) {
-    return true;
-  }
-  errorListener_->addError(
-      ctx->getStart(), "Internal error: unsupported expression type.");
-  return false;
 }
 
 } // namespace io::substrait::textplan

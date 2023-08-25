@@ -137,6 +137,52 @@ void eraseInputs(::substrait::proto::Rel* relation) {
 
 } // namespace
 
+std::any InitialPlanProtoVisitor::visitExpression(
+    const ::substrait::proto::Expression& expression) {
+  if (expression.rex_type_case() ==
+      ::substrait::proto::Expression::RexTypeCase::kSubquery) {
+    outerRelations_.push_back(currentRelationScope_);
+    auto resetRelationScope = finally([&]() { outerRelations_.pop_back(); });
+
+    auto result = visitSubquery(expression.subquery());
+
+    const ::substrait::proto::Rel* subqueryRelation;
+    switch (expression.subquery().subquery_type_case()) {
+      case ::substrait::proto::Expression_Subquery::kScalar:
+        subqueryRelation =
+            &expression.subquery().scalar().input();
+        break;
+      case ::substrait::proto::Expression_Subquery::kInPredicate:
+        subqueryRelation =
+            &expression.subquery().in_predicate().haystack();
+        break;
+      case ::substrait::proto::Expression_Subquery::kSetPredicate:
+        subqueryRelation =
+            &expression.subquery().set_predicate().tuples();
+        break;
+      case ::substrait::proto::Expression_Subquery::kSetComparison:
+        subqueryRelation =
+            &expression.subquery().set_comparison().right();
+        break;
+      case ::substrait::proto::Expression_Subquery::SUBQUERY_TYPE_NOT_SET:
+        errorListener_->addError("Subquery type not set.");
+        return result;
+    }
+    if (subqueryRelation == nullptr) {
+      errorListener_->addError("Unrecognized subquery type.");
+      return result;
+    }
+
+    const SymbolInfo* symbol = symbolTable_->lookupSymbolByLocationAndType(
+        PROTO_LOCATION(*subqueryRelation), SymbolType::kRelation);
+    symbolTable_->setParentQueryLocation(
+        *symbol, PROTO_LOCATION(*currentRelationScope_));
+
+    return result;
+  }
+  return BasePlanProtoVisitor::visitExpression(expression);
+}
+
 std::any InitialPlanProtoVisitor::visitExtension(
     const ::substrait::proto::extensions::SimpleExtensionDeclaration&
         extension) {
@@ -199,12 +245,12 @@ std::any InitialPlanProtoVisitor::visitRelation(
     currentRelationScope_ = previousRelationScope;
   });
 
-  BasePlanProtoVisitor::visitRelation(relation);
-
   // Create a reduced copy of the relation for use in the symbol table.
   auto relationData = std::make_shared<RelationData>();
   relationData->relation = relation;
   eraseInputs(&relationData->relation);
+
+  BasePlanProtoVisitor::visitRelation(relation);
 
   // Update the relation data for long term use.
   updateLocalSchema(relationData, relation, relationData->relation);
@@ -225,7 +271,8 @@ std::any InitialPlanProtoVisitor::visitRelation(
       SymbolType::kRelation,
       relation.rel_type_case(),
       relationData);
-  symbolTable_->updateLocation(*symbol, PROTO_LOCATION(relationData->relation));
+  symbolTable_->addPermanentLocation(
+      *symbol, PROTO_LOCATION(relationData->relation));
   return std::nullopt;
 }
 
@@ -433,7 +480,6 @@ void InitialPlanProtoVisitor::updateLocalSchema(
             SymbolType::kMeasure,
             SourceType::kUnknown,
             std::nullopt);
-        symbol->location = PROTO_LOCATION(measure);
         relationData->generatedFieldReferences.emplace_back(symbol);
       }
       // Aggregate relations are different in that they alter the emitted fields

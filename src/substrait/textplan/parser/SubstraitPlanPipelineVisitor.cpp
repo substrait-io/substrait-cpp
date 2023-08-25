@@ -6,6 +6,7 @@
 
 #include "SubstraitPlanParser/SubstraitPlanParser.h"
 #include "substrait/textplan/Any.h"
+#include "substrait/textplan/Finally.h"
 #include "substrait/textplan/Location.h"
 #include "substrait/textplan/StructuredSymbolData.h"
 #include "substrait/textplan/SymbolTable.h"
@@ -47,7 +48,7 @@ void SubstraitPlanPipelineVisitor::updateRelationSymbol(
   } else {
     // Update the location on this symbol, so we can find it in its canonical
     // location.
-    symbolTable_->updateLocation(*symbol, Location(ctx));
+    symbolTable_->addPermanentLocation(*symbol, Location(ctx));
   }
 }
 
@@ -144,6 +145,107 @@ std::any SubstraitPlanPipelineVisitor::visitPipeline(
   }
 
   return result;
+}
+
+std::any SubstraitPlanPipelineVisitor::visitRelation(
+    SubstraitPlanParser::RelationContext* ctx) {
+  // Mark the current scope for any operations within this relation.
+  auto previousScope = currentRelationScope_;
+  auto previousScopeLocation = currentRelationScopeLocation_;
+  auto resetCurrentScopeLocation = finally([&]() {
+    currentRelationScope_ = previousScope;
+    currentRelationScopeLocation_ = previousScopeLocation;
+  });
+  auto* symbol = symbolTable_->lookupSymbolByLocationAndType(
+      Location(ctx), SymbolType::kRelation);
+  currentRelationScope_ = symbol;
+  if (symbol == nullptr) {
+    errorListener_->addError(
+        ctx->getStart(),
+        "Internal error:  Previously encountered symbol went missing.");
+    return defaultResult();
+  }
+  currentRelationScopeLocation_ = Location(ctx);
+
+  return SubstraitPlanParserBaseVisitor::visitRelation(ctx);
+}
+
+std::any SubstraitPlanPipelineVisitor::visitExpressionScalarSubquery(
+    SubstraitPlanParser::ExpressionScalarSubqueryContext* ctx) {
+  const auto* symbol =
+      symbolTable_->lookupSymbolByName(ctx->relation_ref()->id(0)->getText());
+  if (symbol == nullptr) {
+    errorListener_->addError(
+        ctx->relation_ref()->getStart(),
+        "Internal error:  Previously encountered symbol went missing.");
+    return defaultResult();
+  }
+  auto relationData =
+      ANY_CAST(std::shared_ptr<RelationData>, currentRelationScope_->blob);
+  relationData->subQueryPipelines.push_back(symbol);
+  symbolTable_->setParentQueryLocation(*symbol, currentRelationScopeLocation_);
+  return SubstraitPlanParserBaseVisitor::visitExpressionScalarSubquery(ctx);
+}
+
+std::any SubstraitPlanPipelineVisitor::visitExpressionInPredicateSubquery(
+    SubstraitPlanParser::ExpressionInPredicateSubqueryContext* ctx) {
+  const auto* symbol =
+      symbolTable_->lookupSymbolByName(ctx->relation_ref()->id(0)->getText());
+  if (symbol == nullptr) {
+    errorListener_->addError(
+        ctx->relation_ref()->id(0)->getStart(),
+        "Internal error:  Previously encountered symbol went missing.");
+    return defaultResult();
+  }
+  auto relationData =
+      ANY_CAST(std::shared_ptr<RelationData>, currentRelationScope_->blob);
+  relationData->subQueryPipelines.push_back(symbol);
+  symbolTable_->setParentQueryLocation(*symbol, currentRelationScopeLocation_);
+  return SubstraitPlanParserBaseVisitor::visitExpressionInPredicateSubquery(
+      ctx);
+}
+
+std::any SubstraitPlanPipelineVisitor::visitExpressionSetPredicateSubquery(
+    SubstraitPlanParser::ExpressionSetPredicateSubqueryContext* ctx) {
+  bool encounteredError = false;
+  for (auto ref : ctx->relation_ref()) {
+    const auto* symbol =
+        symbolTable_->lookupSymbolByName(ref->id(0)->getText());
+    if (symbol == nullptr) {
+      errorListener_->addError(
+          ref->id(0)->getStart(),
+          "Internal error:  Previously encountered symbol went missing.");
+      encounteredError = true;
+    }
+    auto relationData =
+        ANY_CAST(std::shared_ptr<RelationData>, currentRelationScope_->blob);
+    relationData->subQueryPipelines.push_back(symbol);
+    symbolTable_->setParentQueryLocation(
+        *symbol, currentRelationScopeLocation_);
+  }
+  if (encounteredError) {
+    return defaultResult();
+  }
+  return SubstraitPlanParserBaseVisitor::visitExpressionSetPredicateSubquery(
+      ctx);
+}
+
+std::any SubstraitPlanPipelineVisitor::visitExpressionSetComparisonSubquery(
+    SubstraitPlanParser::ExpressionSetComparisonSubqueryContext* ctx) {
+  const auto* symbol =
+      symbolTable_->lookupSymbolByName(ctx->relation_ref()->id(0)->getText());
+  if (symbol == nullptr) {
+    errorListener_->addError(
+        ctx->relation_ref()->id(0)->getStart(),
+        "Internal error:  Previously encountered symbol went missing.");
+    return defaultResult();
+  }
+  auto relationData =
+      ANY_CAST(std::shared_ptr<RelationData>, currentRelationScope_->blob);
+  relationData->subQueryPipelines.push_back(symbol);
+  symbolTable_->setParentQueryLocation(*symbol, currentRelationScopeLocation_);
+  return SubstraitPlanParserBaseVisitor::visitExpressionSetComparisonSubquery(
+      ctx);
 }
 
 } // namespace io::substrait::textplan

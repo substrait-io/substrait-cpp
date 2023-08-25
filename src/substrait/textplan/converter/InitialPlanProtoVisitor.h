@@ -31,6 +31,9 @@ class InitialPlanProtoVisitor : public BasePlanProtoVisitor {
   };
 
  private:
+  std::any visitExpression(
+      const ::substrait::proto::Expression& expression) override;
+
   std::any visitExtensionUri(
       const ::substrait::proto::extensions::SimpleExtensionURI& uri) override;
   std::any visitExtension(
@@ -57,6 +60,7 @@ class InitialPlanProtoVisitor : public BasePlanProtoVisitor {
   std::any visitNamedStruct(
       const ::substrait::proto::NamedStruct& named) override;
 
+  // Populates the input schema from the relations that come before.
   void updateLocalSchema(
       const std::shared_ptr<RelationData>& relationData,
       const ::substrait::proto::Rel& relation,
@@ -92,6 +96,7 @@ class InitialPlanProtoVisitor : public BasePlanProtoVisitor {
   std::shared_ptr<SubstraitErrorListener> errorListener_;
 
   const ::substrait::proto::Rel* currentRelationScope_{nullptr}; // Not owned.
+  std::vector<const ::substrait::proto::Rel*> outerRelations_;
 
   std::map<const ::substrait::proto::Rel*, const SymbolInfo*>
       readRelationSources_;

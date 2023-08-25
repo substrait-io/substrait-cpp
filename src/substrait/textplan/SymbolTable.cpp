@@ -61,7 +61,8 @@ const SymbolInfo SymbolInfo::kUnknown = {
     std::nullopt};
 
 bool operator==(const SymbolInfo& left, const SymbolInfo& right) {
-  return (left.name == right.name) && (left.location == right.location) &&
+  return (left.name == right.name) &&
+      (left.sourceLocation == right.sourceLocation) &&
       (left.type == right.type);
 }
 
@@ -118,11 +119,29 @@ size_t SymbolTable::findSymbolIndex(const SymbolInfo& symbol) {
   return symbols_.size();
 }
 
-void SymbolTable::updateLocation(
+void SymbolTable::addPermanentLocation(
     const SymbolInfo& symbol,
     const Location& location) {
   auto index = findSymbolIndex(symbol);
+  symbols_[index]->permanentLocation = location;
   symbolsByLocation_.insert(std::make_pair(location, index));
+}
+
+void SymbolTable::setParentQueryLocation(
+    const io::substrait::textplan::SymbolInfo& symbol,
+    const io::substrait::textplan::Location& location) {
+  auto index = findSymbolIndex(symbol);
+  symbols_[index]->parentQueryLocation = location;
+
+  int highestIndex = -1;
+  for (const auto& sym : symbols_) {
+    if (sym->parentQueryLocation == location) {
+      if (sym->parentQueryIndex > highestIndex) {
+        highestIndex = sym->parentQueryIndex;
+      }
+    }
+  }
+  symbols_[index]->parentQueryIndex = highestIndex + 1;
 }
 
 void SymbolTable::addAlias(const std::string& alias, const SymbolInfo* symbol) {
@@ -169,6 +188,19 @@ const SymbolInfo* SymbolTable::lookupSymbolByLocationAndTypes(
   return nullptr;
 }
 
+const SymbolInfo* SymbolTable::lookupSymbolByParentQueryAndType(
+    const Location& location,
+    int index,
+    SymbolType type) const {
+  for (const auto& symbol : symbols_) {
+    if (symbol->parentQueryLocation == location &&
+        symbol->parentQueryIndex == index && symbol->type == type) {
+      return symbol.get();
+    }
+  }
+  return nullptr;
+}
+
 const SymbolInfo& SymbolTable::nthSymbolByType(uint32_t n, SymbolType type)
     const {
   int count = 0;
@@ -200,7 +232,11 @@ std::string SymbolTable::toDebugString() const {
     }
     auto relationData = ANY_CAST(std::shared_ptr<RelationData>, symbol->blob);
     result << std::left << std::setw(4) << relationCount++;
-    result << std::left << std::setw(20) << symbol->name << std::endl;
+    result << std::left << std::setw(20) << symbol->name;
+    if (!relationData->subQueryPipelines.empty()) {
+      result << " SQC=" << relationData->subQueryPipelines.size();
+    }
+    result << std::endl;
 
     int32_t fieldNum = 0;
     for (const auto& field : relationData->fieldReferences) {

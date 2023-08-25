@@ -3,16 +3,77 @@
 #include "substrait/textplan/converter/PipelineVisitor.h"
 
 #include "substrait/textplan/Any.h"
+#include "substrait/textplan/Finally.h"
 #include "substrait/textplan/StructuredSymbolData.h"
 #include "substrait/textplan/SymbolTable.h"
 
 namespace io::substrait::textplan {
+
+std::any PipelineVisitor::visitExpression(
+    const ::substrait::proto::Expression& expression) {
+  if (expression.rex_type_case() ==
+      ::substrait::proto::Expression::RexTypeCase::kSubquery) {
+    auto result = visitSubquery(expression.subquery());
+
+    const ::substrait::proto::Rel* subqueryRelation;
+    switch (expression.subquery().subquery_type_case()) {
+      case ::substrait::proto::Expression_Subquery::kScalar:
+        subqueryRelation =
+            &expression.subquery().scalar().input();
+        break;
+      case ::substrait::proto::Expression_Subquery::kInPredicate:
+        subqueryRelation =
+            &expression.subquery().in_predicate().haystack();
+        break;
+      case ::substrait::proto::Expression_Subquery::kSetPredicate:
+        subqueryRelation =
+            &expression.subquery().set_predicate().tuples();
+        break;
+      case ::substrait::proto::Expression_Subquery::kSetComparison:
+        subqueryRelation =
+            &expression.subquery().set_comparison().right();
+        break;
+      case ::substrait::proto::Expression_Subquery::SUBQUERY_TYPE_NOT_SET:
+        // No need to raise as this would have been exposed earlier.
+        return result;
+    }
+    if (subqueryRelation == nullptr) {
+      // No need to raise as this would have been caught earlier.
+      return result;
+    }
+
+    auto subquerySymbol = symbolTable_->lookupSymbolByLocationAndType(
+        PROTO_LOCATION(*subqueryRelation), SymbolType::kRelation);
+    auto currentRelationData = ANY_CAST(std::shared_ptr<RelationData>, currentRelationScope_->blob);
+    currentRelationData->subQueryPipelines.push_back(subquerySymbol);
+
+    // Populate the start of the pipeline for easy later access.
+    const SymbolInfo* current;
+    auto thisRelationData =
+        ANY_CAST(std::shared_ptr<RelationData>, subquerySymbol->blob);
+    thisRelationData->pipelineStart = subquerySymbol;
+    while (thisRelationData->continuingPipeline != nullptr) {
+      current = thisRelationData->continuingPipeline;
+      thisRelationData = ANY_CAST(std::shared_ptr<RelationData>, current->blob);
+      thisRelationData->pipelineStart = subquerySymbol;
+    }
+    return result;
+  }
+  return BasePlanProtoVisitor::visitExpression(expression);
+}
 
 std::any PipelineVisitor::visitRelation(
     const ::substrait::proto::Rel& relation) {
   auto symbol = symbolTable_->lookupSymbolByLocationAndType(
       PROTO_LOCATION(relation), SymbolType::kRelation);
   auto relationData = ANY_CAST(std::shared_ptr<RelationData>, symbol->blob);
+
+  auto previousRelationScope = currentRelationScope_;
+  currentRelationScope_ = symbol;
+  auto resetRelationScope = finally([this, &previousRelationScope]() {
+    currentRelationScope_ = previousRelationScope;
+  });
+
   switch (relation.rel_type_case()) {
     case ::substrait::proto::Rel::RelTypeCase::kRead:
       // No relations beyond this one.

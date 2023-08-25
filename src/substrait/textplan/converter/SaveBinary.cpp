@@ -78,10 +78,17 @@ absl::Status savePlanToText(
   if (!errors.empty()) {
     return absl::UnknownError(absl::StrJoin(errors, ""));
   }
-  stream << SymbolTablePrinter::outputToText(result.getSymbolTable());
+  SubstraitErrorListener errorListener;
+  stream << SymbolTablePrinter::outputToText(
+      result.getSymbolTable(), &errorListener);
   stream.close();
   if (stream.fail()) {
     return absl::UnknownError("Failed to write the plan as text.");
+  }
+  if (!errorListener.getErrorMessages().empty()) {
+    return absl::UnknownError(fmt::format(
+        "Errors while writing to text: {}",
+        absl::StrJoin(errorListener.getErrorMessages(), "\n")));
   }
   return absl::OkStatus();
 }
