@@ -2,6 +2,8 @@
 
 #include "substrait/common/Io.h"
 
+#include <filesystem>
+
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 #include <protobuf-matchers/protocol-buffer-matchers.h>
@@ -42,23 +44,33 @@ TEST_F(IoTest, LoadMissingFile) {
 
 class SaveAndLoadTestFixture : public ::testing::TestWithParam<PlanFileFormat> {
  public:
-  ~SaveAndLoadTestFixture() override {
-    for (const auto& filename : testFiles_) {
-      unlink(filename.c_str());
+  void SetUp() override {
+    testFileDirectory_ = std::filesystem::temp_directory_path() /
+        std::filesystem::path("my_temp_dir");
+
+    if (!std::filesystem::create_directory(testFileDirectory_)) {
+      std::cerr << "Failed to create temporary directory." << std::endl;
+      testFileDirectory_.clear();
     }
   }
 
-  void registerCleanup(const char* filename) {
-    testFiles_.emplace_back(filename);
+  void TearDown() override {
+    if (!testFileDirectory_.empty()) {
+      std::filesystem::remove_all(testFileDirectory_);
+    }
   }
 
- private:
-  std::vector<std::string> testFiles_;
+  static std::string makeTempFileName() {
+    static int tempFileNum = 0;
+    return "testfile" + std::to_string(++tempFileNum);
+  }
+
+ protected:
+  std::string testFileDirectory_;
 };
 
 TEST_P(SaveAndLoadTestFixture, SaveAndLoad) {
-  auto tempFilename = std::tmpnam(nullptr);
-  registerCleanup(tempFilename);
+  auto tempFilename = testFileDirectory_ + "/" + makeTempFileName();
   PlanFileFormat encoding = GetParam();
 
   ::substrait::proto::Plan plan;

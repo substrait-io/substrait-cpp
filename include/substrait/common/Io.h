@@ -20,7 +20,7 @@ enum class PlanFileFormat {
 };
 
 /*
- * \\brief Loads a Substrait plan of any format from the given file.
+ * \brief Loads a Substrait plan of any format from the given file.
  *
  * loadPlan determines which file type the specified file is and then calls
  * the appropriate load/parse method to consume it preserving any error
@@ -29,8 +29,8 @@ enum class PlanFileFormat {
  * This will load the plan into memory and then convert it consuming twice the
  * amount of memory that it consumed on disk.
  *
- * \\param input_filename The filename containing the plan to convert.
- * \\return If loading was successful, returns a plan.  If loading was not
+ * \param input_filename The filename containing the plan to convert.
+ * \return If loading was successful, returns a plan.  If loading was not
  * successful this is a status containing a list of parse errors in the status's
  * message.
  */
@@ -38,7 +38,7 @@ absl::StatusOr<::substrait::proto::Plan> loadPlan(
     std::string_view input_filename);
 
 /*
- * \\brief Writes the provided plan to disk.
+ * \brief Writes the provided plan to disk.
  *
  * savePlan writes the provided plan in the specified format to the specified
  * location.
@@ -47,10 +47,10 @@ absl::StatusOr<::substrait::proto::Plan> loadPlan(
  * format as the original plan as well as the annotated parse tree will need to
  * reside in memory during the process.
  *
- * \\param plan
- * \\param output_filename
- * \\param format
- * \\return
+ * \param plan
+ * \param output_filename
+ * \param format
+ * \return
  */
 absl::Status savePlan(
     const ::substrait::proto::Plan& plan,

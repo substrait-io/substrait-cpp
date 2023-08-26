@@ -2,6 +2,7 @@
 
 #include "substrait/textplan/converter/SaveBinary.h"
 
+#include <absl/strings/str_join.h>
 #include <fmt/format.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/text_format.h>
@@ -34,8 +35,10 @@ absl::Status savePlanToBinary(
     return ::absl::UnknownError("Failed to write plan to stream.");
   }
 
+  if (!stream->Close()) {
+    return absl::AbortedError("Failed to close file descriptor.");
+  }
   delete stream;
-  close(outputFileDescriptor);
   return absl::OkStatus();
 }
 
@@ -54,11 +57,10 @@ absl::Status savePlanToJson(
     return absl::UnknownError("Failed to save plan as a JSON protobuf.");
   }
   stream << output;
+  stream.close();
   if (stream.fail()) {
     return absl::UnknownError("Failed to write the plan as a JSON protobuf.");
   }
-
-  stream.close();
   return absl::OkStatus();
 }
 
@@ -74,13 +76,13 @@ absl::Status savePlanToText(
   auto result = parseBinaryPlan(plan);
   auto errors = result.getAllErrors();
   if (!errors.empty()) {
-    return absl::UnknownError(joinLines(errors));
+    return absl::UnknownError(absl::StrJoin(errors, ""));
   }
   stream << SymbolTablePrinter::outputToText(result.getSymbolTable());
+  stream.close();
   if (stream.fail()) {
     return absl::UnknownError("Failed to write the plan as text.");
   }
-  stream.close();
   return absl::OkStatus();
 }
 
@@ -101,8 +103,10 @@ absl::Status savePlanToProtoText(
     return absl::UnknownError("Failed to save plan as a text protobuf.");
   }
 
+  if (!stream->Close()) {
+    return absl::AbortedError("Failed to close file descriptor.");
+  }
   delete stream;
-  close(outputFileDescriptor);
   return absl::OkStatus();
 }
 

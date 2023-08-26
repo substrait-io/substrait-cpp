@@ -55,7 +55,6 @@ absl::StatusOr<::substrait::proto::Plan> loadPlan(
     case PlanFileFormat::kText:
       return textplan::loadFromText(*contentOrError);
   }
-  return absl::UnimplementedError("Unexpected encoding requested.");
 }
 
 absl::Status savePlan(

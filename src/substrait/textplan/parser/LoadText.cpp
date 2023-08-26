@@ -2,6 +2,8 @@
 
 #include "substrait/textplan/parser/LoadText.h"
 
+#include <absl/strings/str_join.h>
+
 #include "substrait/proto/plan.pb.h"
 #include "substrait/textplan/StringManipulation.h"
 #include "substrait/textplan/SymbolTablePrinter.h"
@@ -14,7 +16,7 @@ absl::StatusOr<::substrait::proto::Plan> loadFromText(const std::string& text) {
   auto parseResult = io::substrait::textplan::parseStream(stream);
   if (!parseResult.successful()) {
     auto errors = parseResult.getAllErrors();
-    return absl::UnknownError(joinLines(errors));
+    return absl::UnknownError(absl::StrJoin(errors, ""));
   }
 
   return SymbolTablePrinter::outputToBinaryPlan(parseResult.getSymbolTable());

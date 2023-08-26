@@ -2,6 +2,7 @@
 
 #include "substrait/textplan/converter/LoadBinary.h"
 
+#include <absl/strings/str_join.h>
 #include <fmt/format.h>
 #include <google/protobuf/io/tokenizer.h>
 #include <google/protobuf/text_format.h>
@@ -83,7 +84,7 @@ absl::StatusOr<::substrait::proto::Plan> loadFromProtoText(
   parser.RecordErrorsTo(&collector);
   if (!parser.ParseFromString(text, &plan)) {
     auto errors = collector.getErrors();
-    return absl::InternalError(joinLines(errors));
+    return absl::InternalError(absl::StrJoin(errors, ""));
   }
   return plan;
 }
