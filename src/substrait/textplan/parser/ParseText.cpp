@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "ParseText.h"
+#include "substrait/textplan/parser/ParseText.h"
 
 #include <ANTLRErrorStrategy.h>
 #include <antlr4-runtime.h>

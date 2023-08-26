@@ -242,16 +242,33 @@ std::string outputSourcesSection(const SymbolTable& symbolTable) {
     auto subtype = ANY_CAST(SourceType, info.subtype);
     switch (subtype) {
       case SourceType::kNamedTable: {
-        auto table =
-            ANY_CAST(const ::substrait::proto::ReadRel_NamedTable*, info.blob);
+        if (info.blob.has_value()) {
+          // We are using the proto as is in lieu of a disciplined structure.
+          auto table = ANY_CAST(
+              const ::substrait::proto::ReadRel_NamedTable*, info.blob);
+          text << "source named_table " << info.name << " {\n";
+          text << "  names = [\n";
+          for (const auto& name : table->names()) {
+            text << "    \"" << name << "\",\n";
+          }
+          text << "  ]\n";
+          text << "}\n";
+          hasPreviousText = true;
+          break;
+        }
+        // We are using the new style data structure.
         text << "source named_table " << info.name << " {\n";
         text << "  names = [\n";
-        for (const auto& name : table->names()) {
-          text << "    \"" << name << "\",\n";
+        for (const auto& sym :
+             symbolTable.lookupSymbolsByLocation(info.location)) {
+          if (sym->type == SymbolType::kSourceDetail) {
+            text << "    \"" << sym->name << "\",\n";
+          }
         }
         text << "  ]\n";
         text << "}\n";
         hasPreviousText = true;
+
         break;
       }
       case SourceType::kLocalFiles: {

@@ -9,3 +9,13 @@ add_test_case(
   substrait_common
   gtest
   gtest_main)
+
+add_test_case(
+  substrait_io_test
+  SOURCES
+  IoTest.cpp
+  EXTRA_LINK_LIBS
+  substrait_io
+  protobuf-matchers
+  gtest
+  gtest_main)
