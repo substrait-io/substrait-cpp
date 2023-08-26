@@ -49,14 +49,16 @@ class SaveAndLoadTestFixture : public ::testing::TestWithParam<PlanFileFormat> {
         std::filesystem::path("my_temp_dir");
 
     if (!std::filesystem::create_directory(testFileDirectory_)) {
-      std::cerr << "Failed to create temporary directory." << std::endl;
+      ASSERT_TRUE(false) << "Failed to create temporary directory.";
       testFileDirectory_.clear();
     }
   }
 
   void TearDown() override {
     if (!testFileDirectory_.empty()) {
-      std::filesystem::remove_all(testFileDirectory_);
+      std::error_code err;
+      std::filesystem::remove_all(testFileDirectory_, err);
+      ASSERT_FALSE(err) << err.message();
     }
   }
 
