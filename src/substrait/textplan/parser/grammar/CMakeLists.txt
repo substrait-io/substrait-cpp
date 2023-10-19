@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/third_party/antlr4/cmake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../third_party/antlr4/cmake")
 
 set(CMAKE_CXX_STANDARD 17)
 
 add_definitions(-DANTLR4CPP_STATIC)
 
-set(GRAMMAR_DIR ${CMAKE_BINARY_DIR}/src/substrait/textplan/parser/grammar)
+set(GRAMMAR_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 # using /MD flag for antlr4_runtime (for Visual C++ compilers only)
 set(ANTLR4_WITH_STATIC_CRT OFF)

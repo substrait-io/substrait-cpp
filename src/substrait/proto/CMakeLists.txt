@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: Apache-2.0
-
 find_package(Protobuf REQUIRED)
 include_directories(${Protobuf_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
@@ -8,8 +7,9 @@ find_package(Perl REQUIRED)
 set(UPDATE_PROTO_PACKAGE_TOOL
     "${CMAKE_CURRENT_SOURCE_DIR}/update_proto_package.pl")
 
-set(PROTO_INCLUDE_DIR
-    "${CMAKE_SOURCE_DIR}/third_party/substrait/proto/substrait")
+set(RAW_PROTO_INCLUDE_DIR
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../third_party/substrait/proto/substrait")
+cmake_path(SET PROTO_INCLUDE_DIR NORMALIZE "${RAW_PROTO_INCLUDE_DIR}")
 cmake_path(GET PROTO_INCLUDE_DIR PARENT_PATH PROTO_INCLUDE_TOPLEVEL_DIR)
 set(PROTOBUF_IMPORT_DIRS ${PROTO_INCLUDE_DIR}/extensions)
 
@@ -25,7 +25,7 @@ set(GENERATED_PROTO_MIDLEVEL_DIR
 set(GENERATED_PROTOBUF_LIST)
 foreach(PROTO_FILE IN LISTS PROTOBUF_FILELIST)
   file(RELATIVE_PATH RELATIVE_PROTO_PATH
-       "${CMAKE_SOURCE_DIR}/third_party/substrait/proto/substrait"
+       "${PROTO_INCLUDE_DIR}"
        "${PROTO_FILE}")
   set(GENERATED_PROTO_FILE
       ${GENERATED_PROTO_MIDLEVEL_DIR}/${RELATIVE_PROTO_PATH})
@@ -55,7 +55,7 @@ cmake_path(GET PROTO_OUTPUT_MIDLEVEL_DIR PARENT_PATH PROTO_OUTPUT_TOPLEVEL_DIR)
 
 foreach(PROTO_FILE IN LISTS PROTOBUF_FILELIST)
   file(RELATIVE_PATH RELATIVE_PROTO_PATH
-       "${CMAKE_SOURCE_DIR}/third_party/substrait/proto/substrait"
+       "${PROTO_INCLUDE_DIR}"
        "${PROTO_FILE}")
   set(GENERATED_PROTO_FILE
       ${GENERATED_PROTO_MIDLEVEL_DIR}/${RELATIVE_PROTO_PATH})
