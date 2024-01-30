@@ -998,6 +998,7 @@ void SymbolTablePrinter::addInputsToExpression(
       } else {
         SUBSTRAIT_FAIL("Internal Error:  Known symbol is missing.");
       }
+      break;
     }
     case ::substrait::proto::Expression_Subquery::kInPredicate: {
       // First visit the needle expressions.
@@ -1051,6 +1052,7 @@ void SymbolTablePrinter::addInputsToExpression(
       } else {
         SUBSTRAIT_FAIL("Internal Error:  Known symbol is missing.");
       }
+      break;
     }
     case ::substrait::proto::Expression_Subquery::kSetComparison: {
       addInputsToExpression(
