@@ -82,9 +82,8 @@ TEST_P(RoundTripBinaryToTextFixture, RoundTrip) {
   auto textSymbols = textResult.getSymbolTable().getSymbols();
 
   SubstraitErrorListener errorListener;
-  std::string outputText =
-      SymbolTablePrinter::outputToText(textResult.getSymbolTable(),
-        &errorListener);
+  std::string outputText = SymbolTablePrinter::outputToText(
+      textResult.getSymbolTable(), &errorListener);
   textResult.addErrors(errorListener.getErrorMessages());
 
   ASSERT_THAT(textResult, ParsesOk())

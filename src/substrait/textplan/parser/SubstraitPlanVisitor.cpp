@@ -314,8 +314,7 @@ std::any SubstraitPlanVisitor::visitRelation_type(
       {"aggregate", RelationType::kAggregate},
       {"sort", RelationType::kSort},
       {"filter", RelationType::kFilter},
-      {"set", RelationType::kSet}
-  };
+      {"set", RelationType::kSet}};
   auto it = relationTypeMap.find(id);
   if (it != relationTypeMap.end()) {
     return it->second;

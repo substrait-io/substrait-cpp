@@ -174,7 +174,9 @@ class SymbolTable {
       std::unordered_set<SymbolType> types) const;
 
   [[nodiscard]] const SymbolInfo* lookupSymbolByParentQueryAndType(
-      const Location& location, int index, SymbolType type) const;
+      const Location& location,
+      int index,
+      SymbolType type) const;
 
   [[nodiscard]] const SymbolInfo& nthSymbolByType(uint32_t n, SymbolType type)
       const;

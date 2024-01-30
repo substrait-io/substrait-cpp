@@ -18,20 +18,16 @@ std::any PipelineVisitor::visitExpression(
     const ::substrait::proto::Rel* subqueryRelation;
     switch (expression.subquery().subquery_type_case()) {
       case ::substrait::proto::Expression_Subquery::kScalar:
-        subqueryRelation =
-            &expression.subquery().scalar().input();
+        subqueryRelation = &expression.subquery().scalar().input();
         break;
       case ::substrait::proto::Expression_Subquery::kInPredicate:
-        subqueryRelation =
-            &expression.subquery().in_predicate().haystack();
+        subqueryRelation = &expression.subquery().in_predicate().haystack();
         break;
       case ::substrait::proto::Expression_Subquery::kSetPredicate:
-        subqueryRelation =
-            &expression.subquery().set_predicate().tuples();
+        subqueryRelation = &expression.subquery().set_predicate().tuples();
         break;
       case ::substrait::proto::Expression_Subquery::kSetComparison:
-        subqueryRelation =
-            &expression.subquery().set_comparison().right();
+        subqueryRelation = &expression.subquery().set_comparison().right();
         break;
       case ::substrait::proto::Expression_Subquery::SUBQUERY_TYPE_NOT_SET:
         // No need to raise as this would have been exposed earlier.
@@ -44,7 +40,8 @@ std::any PipelineVisitor::visitExpression(
 
     auto subquerySymbol = symbolTable_->lookupSymbolByLocationAndType(
         PROTO_LOCATION(*subqueryRelation), SymbolType::kRelation);
-    auto currentRelationData = ANY_CAST(std::shared_ptr<RelationData>, currentRelationScope_->blob);
+    auto currentRelationData =
+        ANY_CAST(std::shared_ptr<RelationData>, currentRelationScope_->blob);
     currentRelationData->subQueryPipelines.push_back(subquerySymbol);
 
     // Populate the start of the pipeline for easy later access.

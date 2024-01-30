@@ -149,20 +149,16 @@ std::any InitialPlanProtoVisitor::visitExpression(
     const ::substrait::proto::Rel* subqueryRelation;
     switch (expression.subquery().subquery_type_case()) {
       case ::substrait::proto::Expression_Subquery::kScalar:
-        subqueryRelation =
-            &expression.subquery().scalar().input();
+        subqueryRelation = &expression.subquery().scalar().input();
         break;
       case ::substrait::proto::Expression_Subquery::kInPredicate:
-        subqueryRelation =
-            &expression.subquery().in_predicate().haystack();
+        subqueryRelation = &expression.subquery().in_predicate().haystack();
         break;
       case ::substrait::proto::Expression_Subquery::kSetPredicate:
-        subqueryRelation =
-            &expression.subquery().set_predicate().tuples();
+        subqueryRelation = &expression.subquery().set_predicate().tuples();
         break;
       case ::substrait::proto::Expression_Subquery::kSetComparison:
-        subqueryRelation =
-            &expression.subquery().set_comparison().right();
+        subqueryRelation = &expression.subquery().set_comparison().right();
         break;
       case ::substrait::proto::Expression_Subquery::SUBQUERY_TYPE_NOT_SET:
         errorListener_->addError("Subquery type not set.");

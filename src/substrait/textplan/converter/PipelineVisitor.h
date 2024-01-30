@@ -20,7 +20,7 @@ class PipelineVisitor : public BasePlanProtoVisitor {
 
  private:
   std::any visitExpression(
-    const ::substrait::proto::Expression& expression) override;
+      const ::substrait::proto::Expression& expression) override;
 
   std::any visitRelation(const ::substrait::proto::Rel& relation) override;
 

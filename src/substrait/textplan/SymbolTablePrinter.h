@@ -4,8 +4,8 @@
 
 #include <string>
 
-#include "SymbolTable.h"
 #include "SubstraitErrorListener.h"
+#include "SymbolTable.h"
 
 namespace substrait::proto {
 class Expression;

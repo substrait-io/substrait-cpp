@@ -23,8 +23,8 @@ void convertPlanToText(const char* filename) {
 
   auto result = parseBinaryPlan(*planOrError);
   SubstraitErrorListener errorListener;
-  auto textResult = SymbolTablePrinter::outputToText(result.getSymbolTable(),
-                                                     &errorListener);
+  auto textResult =
+      SymbolTablePrinter::outputToText(result.getSymbolTable(), &errorListener);
   result.addErrors(errorListener.getErrorMessages());
   auto errors = result.getAllErrors();
   if (!errors.empty()) {
