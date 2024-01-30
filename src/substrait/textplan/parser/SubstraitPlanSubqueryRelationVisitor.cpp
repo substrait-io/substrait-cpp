@@ -880,7 +880,7 @@ std::any SubstraitPlanSubqueryRelationVisitor::visitRelationEmit(
         ctx->getStart(), "Emits do not make sense for this kind of relation.");
     return defaultResult();
   }
-  typedef std::pair<int, int> intPair;
+  using intPair = std::pair<int, int>;
   auto [stepsOut, fieldReference] = ANY_CAST(intPair, result);
   if (stepsOut > 0) {
     errorListener_->addError(

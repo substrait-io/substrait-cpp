@@ -828,7 +828,7 @@ std::any SubstraitPlanRelationVisitor::visitRelationEmit(
         ctx->getStart(), "Emits do not make sense for this kind of relation.");
     return defaultResult();
   }
-  typedef std::pair<int, int> intPair;
+  using intPair = std::pair<int, int>;
   auto [stepsOut, fieldReference] = ANY_CAST(intPair, result);
   if (stepsOut > 0) {
     errorListener_->addError(
@@ -2123,12 +2123,13 @@ bool SubstraitPlanRelationVisitor::hasSubquery(
   if (auto* funcUseCtx =
           dynamic_cast<SubstraitPlanParser::ExpressionFunctionUseContext*>(
               ctx)) {
-    for (auto* expr : funcUseCtx->expression()) {
-      if (hasSubquery(expr)) {
-        return true;
-      }
-    }
-    return false;
+    const auto& expressions = funcUseCtx->expression();
+    return any_of(
+        expressions.begin(),
+        expressions.end(),
+        [&](SubstraitPlanParser::ExpressionContext* expr) {
+          return hasSubquery(expr);
+        });
   } else if (
       auto* constantCtx =
           dynamic_cast<SubstraitPlanParser::ExpressionConstantContext*>(ctx)) {
