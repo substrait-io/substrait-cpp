@@ -995,8 +995,9 @@ void SymbolTablePrinter::addInputsToExpression(
             symbolTable,
             *subquerySymbol,
             expression->mutable_subquery()->mutable_scalar()->mutable_input());
+      } else {
+        SUBSTRAIT_FAIL("Internal Error:  Known symbol is missing.");
       }
-      SUBSTRAIT_FAIL("Internal Error:  Known symbol is missing.");
     }
     case ::substrait::proto::Expression_Subquery::kInPredicate: {
       // First visit the needle expressions.
@@ -1024,8 +1025,9 @@ void SymbolTablePrinter::addInputsToExpression(
               expression->mutable_subquery()
                   ->mutable_in_predicate()
                   ->mutable_haystack());
+        } else {
+          SUBSTRAIT_FAIL("Internal Error:  Known symbol is missing.");
         }
-        SUBSTRAIT_FAIL("Internal Error:  Known symbol is missing.");
       }
       break;
     }
@@ -1046,8 +1048,9 @@ void SymbolTablePrinter::addInputsToExpression(
             expression->mutable_subquery()
                 ->mutable_set_predicate()
                 ->mutable_tuples());
+      } else {
+        SUBSTRAIT_FAIL("Internal Error:  Known symbol is missing.");
       }
-      SUBSTRAIT_FAIL("Internal Error:  Known symbol is missing.");
     }
     case ::substrait::proto::Expression_Subquery::kSetComparison: {
       addInputsToExpression(
