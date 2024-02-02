@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
+# MEGAHACK -- Given that the compiler options include lots of undesirable stuff in Debug mode, either cleanse it or refuse to build unless we're in release mode.
+
 add_library(planloader SHARED textplan.cpp)
 add_compile_options(-FPIC)
 set_target_properties(planloader PROPERTIES SUBVERSION 1)
