@@ -8,3 +8,5 @@ set_target_properties(planloader PROPERTIES SUBVERSION 1)
 
 add_dependencies(planloader substrait_io)
 target_link_libraries(planloader substrait_io)
+
+install(TARGETS planloader LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
