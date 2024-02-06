@@ -1331,7 +1331,7 @@ SubstraitPlanSubqueryRelationVisitor::visitExpressionSetPredicateSubquery(
   ::substrait::proto::Expression expr;
   // First find the relation created in a previous step.
   auto symbol =
-      symbolTable_->lookupSymbolByName(ctx->relation_ref(0)->getText());
+      symbolTable_->lookupSymbolByName(ctx->relation_ref()->getText());
   if (symbol == nullptr) {
     errorListener_->addError(
         ctx->getStart(), "Internal error -- Failed to find a known symbol.");

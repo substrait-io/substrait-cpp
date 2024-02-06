@@ -207,25 +207,19 @@ std::any SubstraitPlanPipelineVisitor::visitExpressionInPredicateSubquery(
 
 std::any SubstraitPlanPipelineVisitor::visitExpressionSetPredicateSubquery(
     SubstraitPlanParser::ExpressionSetPredicateSubqueryContext* ctx) {
-  bool encounteredError = false;
-  for (auto ref : ctx->relation_ref()) {
-    const auto* symbol =
-        symbolTable_->lookupSymbolByName(ref->id(0)->getText());
-    if (symbol == nullptr) {
-      errorListener_->addError(
-          ref->id(0)->getStart(),
-          "Internal error:  Previously encountered symbol went missing.");
-      encounteredError = true;
-    }
-    auto relationData =
-        ANY_CAST(std::shared_ptr<RelationData>, currentRelationScope_->blob);
-    relationData->subQueryPipelines.push_back(symbol);
-    symbolTable_->setParentQueryLocation(
-        *symbol, currentRelationScopeLocation_);
-  }
-  if (encounteredError) {
+  const auto* symbol =
+      symbolTable_->lookupSymbolByName(ctx->relation_ref()->id(0)->getText());
+  if (symbol == nullptr) {
+    errorListener_->addError(
+        ctx->relation_ref()->id(0)->getStart(),
+        "Internal error:  Previously encountered symbol went missing.");
     return defaultResult();
   }
+  auto relationData =
+      ANY_CAST(std::shared_ptr<RelationData>, currentRelationScope_->blob);
+  relationData->subQueryPipelines.push_back(symbol);
+  symbolTable_->setParentQueryLocation(*symbol, currentRelationScopeLocation_);
+
   return SubstraitPlanParserBaseVisitor::visitExpressionSetPredicateSubquery(
       ctx);
 }

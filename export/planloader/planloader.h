@@ -4,11 +4,14 @@
 
 extern "C" {
 
-typedef struct {
+using SerializedPlan = struct {
   char *buffer;
   uint32_t size;
   char *errorMessage;
-} SerializedPlan;
+};
+
+// Since this is actually C code, stick to C style names for exporting.
+// NOLINTBEGIN(readability-identifier-naming)
 
 // Load a Substrait plan (in any format) from disk.
 // Stores the Substrait plan in planBuffer in serialized form.
@@ -26,5 +29,7 @@ const char* save_substrait_plan(
     uint32_t planDataLength,
     const char* filename,
     io::substrait::PlanFileFormat format);
+
+// NOLINTEND(readability-identifier-naming)
 
 }  // extern "C"

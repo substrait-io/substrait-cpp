@@ -92,7 +92,7 @@ expression
    | expression AS literal_complex_type                     # expressionCast
    | SUBQUERY relation_ref                                  # expressionScalarSubquery
    | expression_list IN SUBQUERY relation_ref               # expressionInPredicateSubquery
-   | (UNIQUE|EXISTS) IN SUBQUERY relation_ref (OR SUBQUERY relation_ref)*       # expressionSetPredicateSubquery
+   | (UNIQUE|EXISTS) IN SUBQUERY relation_ref               # expressionSetPredicateSubquery
    | expression COMPARISON ALL SUBQUERY relation_ref        # expressionSetComparisonSubquery
    ;
 
