@@ -19,8 +19,8 @@ class PipelineVisitor : public BasePlanProtoVisitor {
   };
 
  private:
-  std::shared_ptr<RelationData> getRelationData(
-      const google::protobuf::Message& relation);
+  std::any visitExpression(
+      const ::substrait::proto::Expression& expression) override;
 
   std::any visitRelation(const ::substrait::proto::Rel& relation) override;
 
@@ -28,6 +28,8 @@ class PipelineVisitor : public BasePlanProtoVisitor {
       const ::substrait::proto::PlanRel& relation) override;
 
   std::shared_ptr<SymbolTable> symbolTable_;
+
+  const SymbolInfo* currentRelationScope_{nullptr};
 };
 
 } // namespace io::substrait::textplan

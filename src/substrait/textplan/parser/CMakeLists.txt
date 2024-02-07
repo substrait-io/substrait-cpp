@@ -12,6 +12,8 @@ add_library(
   SubstraitPlanPipelineVisitor.h
   SubstraitPlanRelationVisitor.cpp
   SubstraitPlanRelationVisitor.h
+  SubstraitPlanSubqueryRelationVisitor.cpp
+  SubstraitPlanSubqueryRelationVisitor.h
   SubstraitPlanTypeVisitor.cpp
   SubstraitPlanTypeVisitor.h
   LoadText.cpp

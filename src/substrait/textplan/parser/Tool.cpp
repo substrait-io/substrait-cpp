@@ -15,7 +15,7 @@ void readText(const char* filename) {
     std::cerr << "An error occurred while reading: " << filename << std::endl;
     return;
   }
-  auto parseResult = io::substrait::textplan::parseStream(*stream);
+  auto parseResult = io::substrait::textplan::parseStream(&*stream);
   if (!parseResult.successful()) {
     for (const std::string& msg : parseResult.getAllErrors()) {
       std::cout << msg << std::endl;
@@ -23,7 +23,17 @@ void readText(const char* filename) {
     return;
   }
 
-  std::cout << SymbolTablePrinter::outputToText(parseResult.getSymbolTable());
+  SubstraitErrorListener errorListener;
+  auto text = SymbolTablePrinter::outputToText(
+      parseResult.getSymbolTable(), &errorListener);
+  if (errorListener.hasErrors()) {
+    for (const std::string& msg : errorListener.getErrorMessages()) {
+      std::cout << msg << std::endl;
+    }
+    return;
+  }
+
+  std::cout << text;
 }
 
 } // namespace

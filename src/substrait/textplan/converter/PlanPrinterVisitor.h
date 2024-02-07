@@ -35,10 +35,23 @@ class PlanPrinterVisitor : public BasePlanProtoVisitor {
 
  private:
   std::string lookupFieldReference(
-      uint32_t field_reference,
+      uint32_t fieldReference,
+      const SymbolInfo* currentScope,
+      uint32_t stepsOut,
       bool needFullyQualified);
   std::string lookupFunctionReference(uint32_t function_reference);
 
+  std::any visitSubqueryScalar(
+      const ::substrait::proto::Expression_Subquery_Scalar& query) override;
+  std::any visitSubqueryInPredicate(
+      const ::substrait::proto::Expression_Subquery_InPredicate& query)
+      override;
+  std::any visitSubquerySetPredicate(
+      const ::substrait::proto::Expression_Subquery_SetPredicate& query)
+      override;
+  std::any visitSubquerySetComparison(
+      const ::substrait::proto::Expression_Subquery_SetComparison& query)
+      override;
   std::any visitSelect(
       const ::substrait::proto::Expression_MaskExpression_Select& select)
       override;
@@ -64,8 +77,6 @@ class PlanPrinterVisitor : public BasePlanProtoVisitor {
   std::any visitMultiOrList(
       const ::substrait::proto::Expression::MultiOrList& expression) override;
   std::any visitCast(const ::substrait::proto::Expression::Cast& cast) override;
-  std::any visitSubquery(
-      const ::substrait::proto::Expression_Subquery& query) override;
   std::any visitNested(
       const ::substrait::proto::Expression_Nested& structure) override;
   std::any visitEnum(const ::substrait::proto::Expression_Enum& value) override;
@@ -121,6 +132,7 @@ class PlanPrinterVisitor : public BasePlanProtoVisitor {
   std::shared_ptr<SymbolTable> symbolTable_;
   std::shared_ptr<SubstraitErrorListener> errorListener_;
   const SymbolInfo* currentScope_; /* not owned */
+  int currentScopeIndex_{-1};
   int functionDepth_;
 };
 

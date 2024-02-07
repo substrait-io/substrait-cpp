@@ -1061,9 +1061,11 @@ std::vector<TestCase> getTestCases() {
               "1:0 → extraneous input 'relation' expecting {<EOF>, "
               "'EXTENSION_SPACE', 'NAMED', 'SCHEMA', 'PIPELINES', 'FILTER', "
               "'GROUPING', 'MEASURE', 'SORT', 'COUNT', 'TYPE', 'EMIT', "
-              "'SOURCE', 'ROOT', 'NULL', IDENTIFIER}",
+              "'ALL', COMPARISON, 'SOURCE', 'ROOT', 'NULL', IDENTIFIER}",
               "1:24 → mismatched input '{' expecting 'RELATION'",
               "1:9 → Unrecognized relation type: notyperelation",
+              "1:9 → Internal error:  Previously encountered symbol "
+              "went missing.",
           }),
       },
       {
@@ -1182,7 +1184,7 @@ std::vector<TestCase> getTestCases() {
 TEST(TextPlanParser, LoadFromFile) {
   auto stream = loadTextFile("data/provided_sample1.splan");
   ASSERT_TRUE(stream.has_value()) << "Test input file missing.";
-  auto result = parseStream(*stream);
+  auto result = parseStream(&*stream);
   ASSERT_THAT(result, ParsesOk());
 }
 
@@ -1190,7 +1192,7 @@ TEST_P(TextPlanParserTestFixture, Parse) {
   auto [name, input, matcher] = GetParam();
 
   auto stream = loadTextString(input);
-  auto result = parseStream(stream);
+  auto result = parseStream(&stream);
 
   ASSERT_THAT(result, matcher);
 }

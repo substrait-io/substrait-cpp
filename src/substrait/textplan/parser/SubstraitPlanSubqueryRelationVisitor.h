@@ -21,9 +21,9 @@ namespace io::substrait::textplan {
 class RelationData;
 
 // See README.md for how this visitor fits in the parse implementation.
-class SubstraitPlanRelationVisitor : public SubstraitPlanTypeVisitor {
+class SubstraitPlanSubqueryRelationVisitor : public SubstraitPlanTypeVisitor {
  public:
-  SubstraitPlanRelationVisitor(
+  SubstraitPlanSubqueryRelationVisitor(
       const SymbolTable& symbolTable,
       std::shared_ptr<SubstraitParserErrorListener> errorListener)
       : SubstraitPlanTypeVisitor(symbolTable, std::move(errorListener)) {}
@@ -103,6 +103,19 @@ class SubstraitPlanRelationVisitor : public SubstraitPlanTypeVisitor {
 
   std::any visitExpressionColumn(
       SubstraitPlanParser::ExpressionColumnContext* ctx) override;
+
+  std::any visitExpressionScalarSubquery(
+      SubstraitPlanParser::ExpressionScalarSubqueryContext* ctx) override;
+
+  std::any visitExpressionInPredicateSubquery(
+      SubstraitPlanParser::ExpressionInPredicateSubqueryContext* ctx) override;
+
+  std::any visitExpressionSetPredicateSubquery(
+      SubstraitPlanParser::ExpressionSetPredicateSubqueryContext* ctx) override;
+
+  std::any visitExpressionSetComparisonSubquery(
+      SubstraitPlanParser::ExpressionSetComparisonSubqueryContext* ctx)
+      override;
 
   std::any visitExpression_list(
       SubstraitPlanParser::Expression_listContext* ctx) override;
@@ -202,7 +215,6 @@ class SubstraitPlanRelationVisitor : public SubstraitPlanTypeVisitor {
       const std::string& name);
 
   bool isWithinSubquery(SubstraitPlanParser::RelationContext* ctx);
-  bool hasSubquery(SubstraitPlanParser::ExpressionContext* ctx);
 
   const SymbolInfo* currentRelationScope_{nullptr}; // Not owned.
 };

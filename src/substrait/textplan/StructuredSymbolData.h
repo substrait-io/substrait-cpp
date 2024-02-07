@@ -24,6 +24,8 @@ struct RelationData {
   const SymbolInfo* continuingPipeline{nullptr};
   // The next nodes in the pipelines that this node starts.
   std::vector<const SymbolInfo*> newPipelines;
+  // Expressions in this relation consume subqueries with these symbols.
+  std::vector<const SymbolInfo*> subQueryPipelines;
 
   // The information corresponding to the relation without any references to
   // other relations or inputs.
@@ -45,6 +47,10 @@ struct RelationData {
   // normal form symbols would take for this relation's use only.  (Later
   // references to the symbol would use the alias.)
   std::map<size_t, std::string> generatedFieldReferenceAlternativeExpression;
+
+  // Temporary storage for global aliases for expressions.  Used during the
+  // construction of a relation.
+  std::map<size_t, std::string> generatedFieldReferenceAliases;
 
   // If populated, supersedes the combination of fieldReferences and
   // generatedFieldReferences for the field symbols exposed by this relation.

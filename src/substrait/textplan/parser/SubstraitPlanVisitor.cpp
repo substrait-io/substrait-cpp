@@ -208,7 +208,7 @@ std::any SubstraitPlanVisitor::visitSchema_definition(
       continue;
     }
     symbol->schema = schemaSymbol;
-    symbol->location = Location(ctx);
+    symbol->sourceLocation = Location(ctx);
   }
 
   return nullptr;
@@ -305,25 +305,19 @@ std::any SubstraitPlanVisitor::visitRelation_type(
   std::transform(id.begin(), id.end(), id.begin(), [](unsigned char c) {
     return std::tolower(c);
   });
-  // TODO -- Replace this with a handcrafted function or a trie.
-  if (id == "read") {
-    return RelationType::kRead;
-  } else if (id == "project") {
-    return RelationType::kProject;
-  } else if (id == "join") {
-    return RelationType::kJoin;
-  } else if (id == "cross") {
-    return RelationType::kCross;
-  } else if (id == "fetch") {
-    return RelationType::kFetch;
-  } else if (id == "aggregate") {
-    return RelationType::kAggregate;
-  } else if (id == "sort") {
-    return RelationType::kSort;
-  } else if (id == "filter") {
-    return RelationType::kFilter;
-  } else if (id == "set") {
-    return RelationType::kSet;
+  const std::unordered_map<std::string, RelationType> relationTypeMap = {
+      {"read", RelationType::kRead},
+      {"project", RelationType::kProject},
+      {"join", RelationType::kJoin},
+      {"cross", RelationType::kCross},
+      {"fetch", RelationType::kFetch},
+      {"aggregate", RelationType::kAggregate},
+      {"sort", RelationType::kSort},
+      {"filter", RelationType::kFilter},
+      {"set", RelationType::kSet}};
+  auto it = relationTypeMap.find(id);
+  if (it != relationTypeMap.end()) {
+    return it->second;
   }
   this->errorListener_->addError(
       ctx->getStart(), "Unrecognized relation type: " + ctx->getText());
@@ -573,7 +567,7 @@ std::any SubstraitPlanVisitor::visitRelation_ref(
     SubstraitPlanParser::Relation_refContext* ctx) {
   auto rel = ANY_CAST(std::string, visitId(ctx->id(0)));
   if (ctx->id().size() > 1) {
-    visitId(ctx->id(1)); // TODO -- Make use of the reference.
+    visitId(ctx->id(1)); // TODO -- Make use of the schema reference.
   }
   return rel;
 }

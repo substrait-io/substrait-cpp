@@ -46,6 +46,10 @@ class ParseResult {
     return errors;
   }
 
+  void addErrors(const std::vector<std::string>& errors) {
+    syntaxErrors_.insert(syntaxErrors_.end(), errors.begin(), errors.end());
+  }
+
   // Add the capability for ::testing::PrintToString to print ParseResult.
   friend std::ostream& operator<<(std::ostream& os, const ParseResult& result);
 

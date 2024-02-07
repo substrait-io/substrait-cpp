@@ -218,8 +218,10 @@ class WhenSerializedMatcher {
   bool MatchAndExplain(
       const ParseResult& result,
       ::testing::MatchResultListener* listener) const {
-    std::string outputText =
-        SymbolTablePrinter::outputToText(result.getSymbolTable());
+    SubstraitErrorListener errorListener;
+    std::string outputText = SymbolTablePrinter::outputToText(
+        result.getSymbolTable(), &errorListener);
+    // Ignores errors as other matchers check for that.
     return MatchPrintAndExplain(outputText, stringMatcher_, listener);
   }
 
