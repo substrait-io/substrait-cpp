@@ -1061,8 +1061,7 @@ std::vector<TestCase> getTestCases() {
               "1:0 → extraneous input 'relation' expecting {<EOF>, "
               "'EXTENSION_SPACE', 'NAMED', 'SCHEMA', 'PIPELINES', 'FILTER', "
               "'GROUPING', 'MEASURE', 'SORT', 'COUNT', 'TYPE', 'EMIT', "
-              "'OR', 'ALL', COMPARISON, "
-              "'SOURCE', 'ROOT', 'NULL', IDENTIFIER}",
+              "'ALL', COMPARISON, 'SOURCE', 'ROOT', 'NULL', IDENTIFIER}",
               "1:24 → mismatched input '{' expecting 'RELATION'",
               "1:9 → Unrecognized relation type: notyperelation",
               "1:9 → Internal error:  Previously encountered symbol "
