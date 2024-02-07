@@ -148,7 +148,8 @@ class SymbolTable {
       const std::any& subtype,
       const std::any& blob);
 
-  // Changes the permanent location for a specified existing symbol.
+  // Changes the permanent location (the version stored in the symbol table)
+  // for a specified existing symbol.
   void addPermanentLocation(const SymbolInfo& symbol, const Location& location);
 
   // Sets the location of the parent query.

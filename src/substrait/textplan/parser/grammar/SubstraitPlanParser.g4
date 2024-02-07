@@ -236,5 +236,4 @@ simple_id
    | NAMED
    | ALL
    | COMPARISON
-   | OR
    ;

@@ -9,7 +9,7 @@ internal representation (stored inside a ```SymbolTable`````).
    * Stores the connections between the relations as determined by the pipelines 
      section.
 * ```SubstraitPlanRelationVisitor```
-   * 
+   * Determines the input fields for all of the trivally reachable relations.
 * ```SubstraitPlanSubqueryRelationVisitor```
    * Determines the input fields for subqueries. 
 

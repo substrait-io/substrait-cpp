@@ -20,6 +20,7 @@ namespace io::substrait::textplan {
 
 class RelationData;
 
+// See README.md for how this visitor fits in the parse implementation.
 class SubstraitPlanSubqueryRelationVisitor : public SubstraitPlanTypeVisitor {
  public:
   SubstraitPlanSubqueryRelationVisitor(

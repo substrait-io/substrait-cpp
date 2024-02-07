@@ -305,7 +305,7 @@ std::any SubstraitPlanVisitor::visitRelation_type(
   std::transform(id.begin(), id.end(), id.begin(), [](unsigned char c) {
     return std::tolower(c);
   });
-  std::unordered_map<std::string, RelationType> relationTypeMap = {
+  const std::unordered_map<std::string, RelationType> relationTypeMap = {
       {"read", RelationType::kRead},
       {"project", RelationType::kProject},
       {"join", RelationType::kJoin},
