@@ -5,8 +5,11 @@
 extern "C" {
 
 using SerializedPlan = struct {
+  // If set, contains a serialized ::substrait::proto::Plan object.
   char *buffer;
+  // If buffer is set, this is the size of the buffer.
   uint32_t size;
+  // If null the buffer is valid, otherwise this points to an error message.
   char *errorMessage;
 };
 
