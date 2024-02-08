@@ -55,3 +55,4 @@ if(${SUBSTRAIT_CPP_BUILD_TESTING})
 endif()
 
 add_subdirectory(src/substrait)
+add_subdirectory(export)
