@@ -1362,6 +1362,15 @@ SubstraitPlanSubqueryRelationVisitor::visitExpressionSetComparisonSubquery(
       ::substrait::proto::Expression, visitExpression(ctx->expression()));
   expr.mutable_subquery()->mutable_set_comparison()->set_comparison_op(
       comparisonToProto(ctx->COMPARISON()->getText()));
+  if (ctx->ANY() != nullptr) {
+    expr.mutable_subquery()->mutable_set_comparison()->set_reduction_op(
+        ::substrait::proto::
+            Expression_Subquery_SetComparison_ReductionOp_REDUCTION_OP_ANY);
+  } else {
+    expr.mutable_subquery()->mutable_set_comparison()->set_reduction_op(
+        ::substrait::proto::
+            Expression_Subquery_SetComparison_ReductionOp_REDUCTION_OP_ALL);
+  }
   // Next find the relation created in a previous step.
   auto symbol =
       symbolTable_->lookupSymbolByName(ctx->relation_ref()->getText());

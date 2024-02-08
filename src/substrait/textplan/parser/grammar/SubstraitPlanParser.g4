@@ -93,7 +93,7 @@ expression
    | SUBQUERY relation_ref                                  # expressionScalarSubquery
    | expression_list IN SUBQUERY relation_ref               # expressionInPredicateSubquery
    | (UNIQUE|EXISTS) IN SUBQUERY relation_ref               # expressionSetPredicateSubquery
-   | expression COMPARISON ALL SUBQUERY relation_ref        # expressionSetComparisonSubquery
+   | expression COMPARISON (ALL|ANY) SUBQUERY relation_ref  # expressionSetComparisonSubquery
    ;
 
 expression_list
@@ -235,5 +235,6 @@ simple_id
    | EMIT
    | NAMED
    | ALL
+   | ANY
    | COMPARISON
    ;
