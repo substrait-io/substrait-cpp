@@ -285,7 +285,7 @@ std::any PlanPrinterVisitor::visitSubquerySetComparison(
     const ::substrait::proto::Expression_Subquery_SetComparison& query) {
   std::stringstream result;
   if (query.has_left()) {
-    result << ANY_CAST(std::string, visitExpression(query.left()));
+    result << ANY_CAST(std::string, visitExpression(query.left())) << " ";
   } else {
     errorListener_->addError(
         "No expression defined for set comparison operation.");
