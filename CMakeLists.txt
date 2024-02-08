@@ -11,11 +11,17 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_compile_options($<$<CONFIG:Debug>:-fsanitize=undefined>)
-add_link_options($<$<CONFIG:Debug>:-fsanitize=undefined>)
+option(SUBSTRAIT_CPP_SANITIZE_DEBUG_BUILD
+       "Turns on address and undefined memory sanitization runtime checking."
+       ON)
 
-add_compile_options($<$<CONFIG:Debug>:-fsanitize=address>)
-add_link_options($<$<CONFIG:Debug>:-fsanitize=address>)
+if(${SUBSTRAIT_CPP_SANITIZE_DEBUG_BUILD})
+  add_compile_options($<$<CONFIG:Debug>:-fsanitize=undefined>)
+  add_link_options($<$<CONFIG:Debug>:-fsanitize=undefined>)
+
+  add_compile_options($<$<CONFIG:Debug>:-fsanitize=address>)
+  add_link_options($<$<CONFIG:Debug>:-fsanitize=address>)
+endif()
 
 option(
   SUBSTRAIT_CPP_BUILD_TESTING
