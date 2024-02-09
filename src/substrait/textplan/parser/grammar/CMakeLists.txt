@@ -12,7 +12,6 @@ set(GRAMMAR_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 # using /MD flag for antlr4_runtime (for Visual C++ compilers only)
 set(ANTLR4_WITH_STATIC_CRT OFF)
-set(CMAKE_POSITION_INDEPDENDENT_CODE ON)
 
 set(ANTLR4_TAG 4.13.0)
 set(ANTLR4_ZIP_REPOSITORY
