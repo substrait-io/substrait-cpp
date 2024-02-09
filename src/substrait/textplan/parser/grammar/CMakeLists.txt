@@ -4,7 +4,6 @@ list(APPEND CMAKE_MODULE_PATH
      "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../third_party/antlr4/cmake")
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 add_definitions(-DANTLR4CPP_STATIC)
 
@@ -58,6 +57,5 @@ message(STATUS "generated dir:  ${GRAMMAR_DIR}/antlr4cpp_generated_src")
 
 target_include_directories(textplan_grammar
                            PUBLIC "${GRAMMAR_DIR}/antlr4cpp_generated_src")
-set_target_properties(textplan_grammar PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_link_libraries(textplan_grammar antlr4_static)
