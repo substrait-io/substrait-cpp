@@ -36,12 +36,12 @@ SerializedPlan* load_substrait_plan(const char* filename) {
 
 void free_substrait_plan(SerializedPlan* plan) {
   if (plan->buffer) {
-    free(plan->buffer);
+    delete plan->buffer;
   }
   if (plan->errorMessage) {
-    free(plan->errorMessage);
+    delete plan->errorMessage;
   }
-  free(plan);
+  delete plan;
 }
 
 // Write a serialized Substrait plan to disk in the specified format.
