@@ -29,7 +29,6 @@ find_package(ANTLR REQUIRED)
 
 antlr_target(SubstraitPlanLexer SubstraitPlanLexer.g4 LEXER PACKAGE
              io::substrait::textplan)
-#set_target_properties(SubstraitPlanLexer PROPERTIES POSITION_INDEPENDENT_CODE ON)
 antlr_target(
   SubstraitPlanParser
   SubstraitPlanParser.g4
@@ -42,7 +41,6 @@ antlr_target(
   -lib
   ${ANTLR_SubstraitPlanLexer_OUTPUT_DIR}
   VISITOR)
-#set_target_properties(SubstraitPlanParser PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 include_directories(${ANTLR_SubstraitPlanLexer_OUTPUT_DIR})
 include_directories(${ANTLR_SubstraitPlanParser_OUTPUT_DIR})

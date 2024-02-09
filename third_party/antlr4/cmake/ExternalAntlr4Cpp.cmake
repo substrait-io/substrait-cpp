@@ -124,8 +124,6 @@ else()
       EXCLUDE_FROM_ALL 1)
 endif()
 
-set_target_properties(antlr4_runtime PROPERTIES POSITION_INDEPENDENT_CODE ON)
-
 # Separate build step as rarely people want both
 set(ANTLR4_BUILD_DIR ${ANTLR4_ROOT})
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.14.0")
@@ -149,8 +147,6 @@ add_library(antlr4_static STATIC IMPORTED)
 add_dependencies(antlr4_static antlr4_runtime-build_static)
 set_target_properties(antlr4_static PROPERTIES
                       IMPORTED_LOCATION ${ANTLR4_STATIC_LIBRARIES})
-set_target_properties(antlr4_static PROPERTIES
-                      POSITION_INDEPENDENT_CODE ON)
 target_include_directories(antlr4_static
     INTERFACE
         ${ANTLR4_INCLUDE_DIRS}
