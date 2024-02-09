@@ -97,6 +97,7 @@ if(ANTLR4_ZIP_REPOSITORY)
           -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
           -DWITH_STATIC_CRT:BOOL=${ANTLR4_WITH_STATIC_CRT}
           -DDISABLE_WARNINGS:BOOL=ON
+	  -DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=ON
           # -DCMAKE_CXX_STANDARD:STRING=17 # if desired, compile the runtime with a different C++ standard
           # -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD} # alternatively, compile the runtime with the same C++ standard as the outer project
       INSTALL_COMMAND ""
@@ -116,11 +117,14 @@ else()
           -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
           -DWITH_STATIC_CRT:BOOL=${ANTLR4_WITH_STATIC_CRT}
           -DDISABLE_WARNINGS:BOOL=ON
+	  -DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=ON
           # -DCMAKE_CXX_STANDARD:STRING=17 # if desired, compile the runtime with a different C++ standard
           # -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD} # alternatively, compile the runtime with the same C++ standard as the outer project
       INSTALL_COMMAND ""
       EXCLUDE_FROM_ALL 1)
 endif()
+
+set_target_properties(antlr4_runtime PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # Separate build step as rarely people want both
 set(ANTLR4_BUILD_DIR ${ANTLR4_ROOT})
@@ -146,7 +150,7 @@ add_dependencies(antlr4_static antlr4_runtime-build_static)
 set_target_properties(antlr4_static PROPERTIES
                       IMPORTED_LOCATION ${ANTLR4_STATIC_LIBRARIES})
 set_target_properties(antlr4_static PROPERTIES
-                      CMAKE_POSITION_INDEPENDENT_CODE ON)
+                      POSITION_INDEPENDENT_CODE ON)
 target_include_directories(antlr4_static
     INTERFACE
         ${ANTLR4_INCLUDE_DIRS}

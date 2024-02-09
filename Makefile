@@ -15,6 +15,7 @@ build-common:
 	cmake -Wno-dev \
 		  -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
 		  -DPREFER_STATIC_LIBS=OFF \
+		  -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
 		  $(FORCE_COLOR) \
 		  ..
 

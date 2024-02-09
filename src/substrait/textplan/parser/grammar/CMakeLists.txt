@@ -4,6 +4,7 @@ list(APPEND CMAKE_MODULE_PATH
      "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../third_party/antlr4/cmake")
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 add_definitions(-DANTLR4CPP_STATIC)
 
@@ -11,6 +12,7 @@ set(GRAMMAR_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 # using /MD flag for antlr4_runtime (for Visual C++ compilers only)
 set(ANTLR4_WITH_STATIC_CRT OFF)
+set(CMAKE_POSITION_INDEPDENDENT_CODE ON)
 
 set(ANTLR4_TAG 4.13.0)
 set(ANTLR4_ZIP_REPOSITORY
@@ -27,6 +29,7 @@ find_package(ANTLR REQUIRED)
 
 antlr_target(SubstraitPlanLexer SubstraitPlanLexer.g4 LEXER PACKAGE
              io::substrait::textplan)
+#set_target_properties(SubstraitPlanLexer PROPERTIES POSITION_INDEPENDENT_CODE ON)
 antlr_target(
   SubstraitPlanParser
   SubstraitPlanParser.g4
@@ -39,6 +42,7 @@ antlr_target(
   -lib
   ${ANTLR_SubstraitPlanLexer_OUTPUT_DIR}
   VISITOR)
+#set_target_properties(SubstraitPlanParser PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 include_directories(${ANTLR_SubstraitPlanLexer_OUTPUT_DIR})
 include_directories(${ANTLR_SubstraitPlanParser_OUTPUT_DIR})
@@ -57,5 +61,6 @@ message(STATUS "generated dir:  ${GRAMMAR_DIR}/antlr4cpp_generated_src")
 
 target_include_directories(textplan_grammar
                            PUBLIC "${GRAMMAR_DIR}/antlr4cpp_generated_src")
+set_target_properties(textplan_grammar PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_link_libraries(textplan_grammar antlr4_static)
