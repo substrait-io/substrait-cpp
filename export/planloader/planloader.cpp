@@ -35,12 +35,8 @@ SerializedPlan* load_substrait_plan(const char* filename) {
 }
 
 void free_substrait_plan(SerializedPlan* plan) {
-  if (plan->buffer) {
-    delete[] plan->buffer;
-  }
-  if (plan->errorMessage) {
-    delete[] plan->errorMessage;
-  }
+  delete[] plan->buffer;
+  delete[] plan->errorMessage;
   delete plan;
 }
 
