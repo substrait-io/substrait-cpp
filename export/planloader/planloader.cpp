@@ -2,6 +2,7 @@
 
 #include "planloader.h"
 
+#include <limits>
 #include <substrait/common/Io.h>
 
 extern "C" {
@@ -27,7 +28,9 @@ SerializedPlan* load_substrait_plan(const char* filename) {
   std::string text = plan.SerializeAsString();
   newPlan->buffer = new char[text.length()+1];
   memcpy(newPlan->buffer, text.data(), text.length()+1);
-  newPlan->size = text.length();
+  newPlan->size = static_cast<int32_t>(
+            text.length() &
+            std::numeric_limits<int32_t>::max());
   return newPlan;
 }
 
