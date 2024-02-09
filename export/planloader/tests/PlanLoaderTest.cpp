@@ -11,7 +11,7 @@ namespace {
 
 TEST(PlanLoaderTest, LoadAndSave) {
   auto serializedPlan = load_substrait_plan("data/q6_first_stage.json");
-  ASSERT_EQ(serializedPlan->errorMessage, nullptr);
+  ASSERT_EQ(serializedPlan->error_message, nullptr);
 
   ::substrait::proto::Plan plan;
   bool parseStatus =

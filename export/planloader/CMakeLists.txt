@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
-
 if(NOT BUILD_SUBDIR_NAME EQUAL "release")
   message(
     SEND_ERROR,
@@ -10,7 +8,6 @@ if(NOT BUILD_SUBDIR_NAME EQUAL "release")
 endif()
 
 add_library(planloader SHARED planloader.cpp)
-set_target_properties(planloader PROPERTIES SUBVERSION 1)
 
 add_dependencies(planloader substrait_io)
 target_link_libraries(planloader substrait_io)
