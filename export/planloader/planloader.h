@@ -9,7 +9,8 @@ using SerializedPlan = struct {
   char *buffer;
   // If buffer is set, this is the size of the buffer.
   int32_t size;
-  // If null the buffer is valid, otherwise this points to an error message.
+  // If null the buffer is valid, otherwise this points to a null terminated
+  // error string.
   char *errorMessage;
 };
 
