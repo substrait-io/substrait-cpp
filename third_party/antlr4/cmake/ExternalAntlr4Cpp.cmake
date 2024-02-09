@@ -6,8 +6,6 @@ endif()
 
 include(ExternalProject)
 
-set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
-
 set(ANTLR4_ROOT ${CMAKE_CURRENT_BINARY_DIR}/antlr4_runtime/src/antlr4_runtime)
 set(ANTLR4_INCLUDE_DIRS ${ANTLR4_ROOT}/runtime/Cpp/runtime/src)
 set(ANTLR4_GIT_REPOSITORY https://github.com/antlr/antlr4.git)
@@ -147,6 +145,8 @@ add_library(antlr4_static STATIC IMPORTED)
 add_dependencies(antlr4_static antlr4_runtime-build_static)
 set_target_properties(antlr4_static PROPERTIES
                       IMPORTED_LOCATION ${ANTLR4_STATIC_LIBRARIES})
+set_target_properties(antlr4_static PROPERTIES
+                      CMAKE_POSITION_INDEPENDENT_CODE ON)
 target_include_directories(antlr4_static
     INTERFACE
         ${ANTLR4_INCLUDE_DIRS}
