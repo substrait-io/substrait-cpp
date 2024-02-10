@@ -45,7 +45,7 @@ void free_substrait_plan(SerializedPlan* plan) {
 // On success a nullptr is returned.
 const char* save_substrait_plan(
     const unsigned char* plan_data,
-    uint32_t plan_data_length,
+    int32_t plan_data_length,
     const char* filename,
     io::substrait::PlanFileFormat format) {
   ::substrait::proto::Plan plan;
