@@ -4,6 +4,9 @@
 
 extern "C" {
 
+// Since this is actually C code, stick to C style names for exporting.
+// NOLINTBEGIN(readability-identifier-naming)
+
 using SerializedPlan = struct {
   // If set, contains a serialized ::substrait::proto::Plan object.
   unsigned char *buffer;
@@ -13,9 +16,6 @@ using SerializedPlan = struct {
   // error string.
   char *error_message;
 };
-
-// Since this is actually C code, stick to C style names for exporting.
-// NOLINTBEGIN(readability-identifier-naming)
 
 // Load a Substrait plan (in any format) from disk.
 //
