@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 #include <functional>
 
@@ -26,6 +27,13 @@ TEST(PlanLoaderTest, LoadAndSave) {
   ASSERT_EQ(saveStatus, nullptr);
 
   free_substrait_plan(serializedPlan);
+}
+
+TEST(PlanLoaderTest, LoadMissingFile) {
+  auto serializedPlan = load_substrait_plan("no_such_file.json");
+  ASSERT_THAT(
+      serializedPlan->error_message,
+      ::testing::StartsWith("Failed to open file no_such_file.json"));
 }
 
 } // namespace

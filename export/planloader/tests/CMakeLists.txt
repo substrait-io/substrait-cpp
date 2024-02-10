@@ -14,6 +14,7 @@ add_test_case(
   PlanLoaderTest.cpp
   EXTRA_LINK_LIBS
   planloader
+  gmock
   gtest
   gtest_main)
 
