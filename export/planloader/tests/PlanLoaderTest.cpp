@@ -34,6 +34,8 @@ TEST(PlanLoaderTest, LoadMissingFile) {
   ASSERT_THAT(
       serializedPlan->error_message,
       ::testing::StartsWith("Failed to open file no_such_file.json"));
+
+  free_substrait_plan(serializedPlan);
 }
 
 } // namespace
