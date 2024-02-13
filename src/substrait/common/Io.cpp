@@ -55,6 +55,8 @@ absl::StatusOr<::substrait::proto::Plan> loadPlan(
     case PlanFileFormat::kText:
       return textplan::loadFromText(*contentOrError);
   }
+  // There are no other possibilities so this can't happen.
+  return absl::UnimplementedError("Unexpected format encountered.");
 }
 
 absl::Status savePlan(

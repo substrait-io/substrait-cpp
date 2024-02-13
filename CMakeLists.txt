@@ -10,6 +10,7 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
 option(SUBSTRAIT_CPP_SANITIZE_DEBUG_BUILD
        "Turns on address and undefined memory sanitization runtime checking."
@@ -55,3 +56,4 @@ if(${SUBSTRAIT_CPP_BUILD_TESTING})
 endif()
 
 add_subdirectory(src/substrait)
+add_subdirectory(export)
