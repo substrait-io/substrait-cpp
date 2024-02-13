@@ -1,0 +1,126 @@
+# "CREATE TABLE NATION (N_REGIONKEY BIGINT NOT NULL)" "SELECT * FROM NATION WHERE N_REGIONKEY < ANY (SELECT N_REGIONKEY FROM NATION)"   
+{
+  "extensionUris": [],
+  "extensions": [],
+  "relations": [{
+    "root": {
+      "input": {
+        "project": {
+          "common": {
+            "emit": {
+              "outputMapping": [1]
+            }
+          },
+          "input": {
+            "filter": {
+              "common": {
+                "direct": {
+                }
+              },
+              "input": {
+                "read": {
+                  "common": {
+                    "direct": {
+                    }
+                  },
+                  "baseSchema": {
+                    "names": ["N_REGIONKEY"],
+                    "struct": {
+                      "types": [{
+                        "i64": {
+                          "typeVariationReference": 0,
+                          "nullability": "NULLABILITY_REQUIRED"
+                        }
+                      }],
+                      "typeVariationReference": 0,
+                      "nullability": "NULLABILITY_REQUIRED"
+                    }
+                  },
+                  "namedTable": {
+                    "names": ["NATION"]
+                  }
+                }
+              },
+              "condition": {
+                "subquery": {
+                  "setComparison": {
+                    "comparisonOp": 3,
+                    "reductionOp": 1,
+                    "left": {
+                      "selection": {
+                        "directReference": {
+                          "structField": {
+                            "field": 0
+                          }
+                        },
+                        "rootReference": {
+                        }
+                      }
+                    },
+                    "right": {
+                      "project": {
+                        "common": {
+                          "emit": {
+                            "outputMapping": [1]
+                          }
+                        },
+                        "input": {
+                          "read": {
+                            "common": {
+                              "direct": {
+                              }
+                            },
+                            "baseSchema": {
+                              "names": ["N_REGIONKEY"],
+                              "struct": {
+                                "types": [{
+                                  "i64": {
+                                    "typeVariationReference": 0,
+                                    "nullability": "NULLABILITY_REQUIRED"
+                                  }
+                                }],
+                                "typeVariationReference": 0,
+                                "nullability": "NULLABILITY_REQUIRED"
+                              }
+                            },
+                            "namedTable": {
+                              "names": ["NATION"]
+                            }
+                          }
+                        },
+                        "expressions": [{
+                          "selection": {
+                            "directReference": {
+                              "structField": {
+                                "field": 0
+                              }
+                            },
+                            "rootReference": {
+                            }
+                          }
+                        }]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "expressions": [{
+            "selection": {
+              "directReference": {
+                "structField": {
+                  "field": 0
+                }
+              },
+              "rootReference": {
+              }
+            }
+          }]
+        }
+      },
+      "names": ["N_REGIONKEY"]
+    }
+  }],
+  "expectedTypeUrls": []
+}

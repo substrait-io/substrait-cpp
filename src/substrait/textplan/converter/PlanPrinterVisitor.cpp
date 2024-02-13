@@ -285,7 +285,7 @@ std::any PlanPrinterVisitor::visitSubquerySetComparison(
     const ::substrait::proto::Expression_Subquery_SetComparison& query) {
   std::stringstream result;
   if (query.has_left()) {
-    result << ANY_CAST(std::string, visitExpression(query.left()));
+    result << ANY_CAST(std::string, visitExpression(query.left())) << " ";
   } else {
     errorListener_->addError(
         "No expression defined for set comparison operation.");
@@ -324,7 +324,25 @@ std::any PlanPrinterVisitor::visitSubquerySetComparison(
       errorListener_->addError("Did not recognize the subquery comparison.");
       return std::string("UNSUPPORTED SUBQUERY");
   }
-  result << "ALL SUBQUERY ";
+  switch (query.reduction_op()) {
+    case ::substrait::proto::
+        Expression_Subquery_SetComparison_ReductionOp_REDUCTION_OP_ANY:
+      result << "ANY ";
+      break;
+    case ::substrait::proto::
+        Expression_Subquery_SetComparison_ReductionOp_REDUCTION_OP_ALL:
+      result << "ALL ";
+      break;
+    case ::substrait::proto::
+        Expression_Subquery_SetComparison_ReductionOp_REDUCTION_OP_UNSPECIFIED:
+    case ::substrait::proto::
+        Expression_Subquery_SetComparison_ReductionOp_Expression_Subquery_SetComparison_ReductionOp_INT_MIN_SENTINEL_DO_NOT_USE_:
+    case ::substrait::proto::
+        Expression_Subquery_SetComparison_ReductionOp_Expression_Subquery_SetComparison_ReductionOp_INT_MAX_SENTINEL_DO_NOT_USE_:
+      errorListener_->addError("Did not recognize the subquery reduction op.");
+      return std::string("UNSUPPORTED SUBQUERY");
+  }
+  result << "SUBQUERY ";
   if (query.has_right()) {
     const SymbolInfo* symbol = symbolTable_->lookupSymbolByParentQueryAndType(
         currentScope_->sourceLocation,
