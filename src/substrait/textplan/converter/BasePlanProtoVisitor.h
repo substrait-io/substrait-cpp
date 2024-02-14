@@ -170,10 +170,20 @@ class BasePlanProtoVisitor {
       const ::substrait::proto::ExtensionLeafRel& relation);
   virtual std::any visitCrossRelation(
       const ::substrait::proto::CrossRel& relation);
+
+  virtual std::any visitReferenceRelation(
+      const ::substrait::proto::ReferenceRel& relation);
+  virtual std::any visitWriteRelation(
+      const ::substrait::proto::WriteRel& relation);
+  virtual std::any visitDdlRelation(
+      const ::substrait::proto::DdlRel& relation);
+
   virtual std::any visitHashJoinRelation(
       const ::substrait::proto::HashJoinRel& relation);
   virtual std::any visitMergeJoinRelation(
       const ::substrait::proto::MergeJoinRel& relation);
+  virtual std::any visitNestedLoopJoinRelation(
+      const ::substrait::proto::NestedLoopJoinRel& relation);
   virtual std::any visitWindowRelation(
       const ::substrait::proto::ConsistentPartitionWindowRel& relation);
   virtual std::any visitExchangeRelation(

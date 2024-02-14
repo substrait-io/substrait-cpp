@@ -165,6 +165,17 @@ std::any PipelineVisitor::visitRelation(
       relationData->newPipelines.push_back(rightSymbol);
       break;
     }
+    case ::substrait::proto::Rel::kNestedLoopJoin: {
+      const auto* leftSymbol = symbolTable_->lookupSymbolByLocationAndType(
+          PROTO_LOCATION(relation.nested_loop_join().left()),
+          SymbolType::kRelation);
+      const auto* rightSymbol = symbolTable_->lookupSymbolByLocationAndType(
+          PROTO_LOCATION(relation.nested_loop_join().right()),
+          SymbolType::kRelation);
+      relationData->newPipelines.push_back(leftSymbol);
+      relationData->newPipelines.push_back(rightSymbol);
+      break;
+    }
     case ::substrait::proto::Rel::kWindow: {
       const auto* inputSymbol = symbolTable_->lookupSymbolByLocationAndType(
           PROTO_LOCATION(relation.window().input()), SymbolType::kRelation);
@@ -183,6 +194,16 @@ std::any PipelineVisitor::visitRelation(
       relationData->continuingPipeline = inputSymbol;
       break;
     }
+    case ::substrait::proto::Rel::kReference:
+      // TODO -- Add support for references in text plans.
+      break;
+    case ::substrait::proto::Rel::kWrite: {
+      const auto* inputSymbol = symbolTable_->lookupSymbolByLocationAndType(
+          PROTO_LOCATION(relation.write().input()), SymbolType::kRelation);
+      relationData->continuingPipeline = inputSymbol;
+      break;
+    }
+    case ::substrait::proto::Rel::kDdl:
     case ::substrait::proto::Rel::REL_TYPE_NOT_SET:
       break;
   }
