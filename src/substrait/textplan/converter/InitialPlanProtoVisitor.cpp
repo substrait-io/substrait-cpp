@@ -68,6 +68,14 @@ void eraseInputs(::substrait::proto::Rel* relation) {
       relation->mutable_cross()->clear_left();
       relation->mutable_cross()->clear_right();
       break;
+    case ::substrait::proto::Rel::kReference:
+      break;
+    case ::substrait::proto::Rel::kWrite:
+      relation->mutable_write()->clear_input();
+      break;
+    case ::substrait::proto::Rel::kDdl:
+      relation->mutable_ddl()->clear_view_definition();
+      break;
     case ::substrait::proto::Rel::kHashJoin:
       relation->mutable_hash_join()->clear_left();
       relation->mutable_hash_join()->clear_right();
@@ -75,6 +83,10 @@ void eraseInputs(::substrait::proto::Rel* relation) {
     case ::substrait::proto::Rel::kMergeJoin:
       relation->mutable_merge_join()->clear_left();
       relation->mutable_merge_join()->clear_right();
+      break;
+    case ::substrait::proto::Rel::kNestedLoopJoin:
+      relation->mutable_nested_loop_join()->clear_left();
+      relation->mutable_nested_loop_join()->clear_right();
       break;
     case ::substrait::proto::Rel::kWindow:
       relation->mutable_window()->clear_input();
@@ -117,10 +129,19 @@ void eraseInputs(::substrait::proto::Rel* relation) {
       return relation.extension_leaf().common().emit().output_mapping();
     case ::substrait::proto::Rel::kCross:
       return relation.cross().common().emit().output_mapping();
+    case ::substrait::proto::Rel::kReference:
+      // There is no common message in a ReferenceRel.
+      break;
+    case ::substrait::proto::Rel::kWrite:
+      return relation.write().common().emit().output_mapping();
+    case ::substrait::proto::Rel::kDdl:
+      return relation.ddl().common().emit().output_mapping();
     case ::substrait::proto::Rel::kHashJoin:
       return relation.hash_join().common().emit().output_mapping();
     case ::substrait::proto::Rel::kMergeJoin:
       return relation.merge_join().common().emit().output_mapping();
+    case ::substrait::proto::Rel::kNestedLoopJoin:
+      return relation.nested_loop_join().common().emit().output_mapping();
     case ::substrait::proto::Rel::kWindow:
       return relation.window().common().emit().output_mapping();
     case ::substrait::proto::Rel::kExchange:
@@ -566,6 +587,14 @@ void InitialPlanProtoVisitor::updateLocalSchema(
       addFieldsToRelation(
           relationData, relation.cross().left(), relation.cross().right());
       break;
+    case ::substrait::proto::Rel::kReference:
+      break;
+    case ::substrait::proto::Rel::kWrite:
+      addFieldsToRelation(relationData, relation.write().input());
+      break;
+    case ::substrait::proto::Rel::kDdl:
+      addFieldsToRelation(relationData, relation.ddl().view_definition());
+      break;
     case ::substrait::proto::Rel::RelTypeCase::kHashJoin:
       addFieldsToRelation(
           relationData,
@@ -577,6 +606,12 @@ void InitialPlanProtoVisitor::updateLocalSchema(
           relationData,
           relation.merge_join().left(),
           relation.merge_join().right());
+      break;
+    case ::substrait::proto::Rel::kNestedLoopJoin:
+      addFieldsToRelation(
+          relationData,
+          relation.nested_loop_join().left(),
+          relation.nested_loop_join().right());
       break;
     case ::substrait::proto::Rel::kWindow:
       addFieldsToRelation(relationData, relation.window().input());
