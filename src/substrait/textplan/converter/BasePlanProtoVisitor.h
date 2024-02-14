@@ -175,8 +175,7 @@ class BasePlanProtoVisitor {
       const ::substrait::proto::ReferenceRel& relation);
   virtual std::any visitWriteRelation(
       const ::substrait::proto::WriteRel& relation);
-  virtual std::any visitDdlRelation(
-      const ::substrait::proto::DdlRel& relation);
+  virtual std::any visitDdlRelation(const ::substrait::proto::DdlRel& relation);
 
   virtual std::any visitHashJoinRelation(
       const ::substrait::proto::HashJoinRel& relation);
