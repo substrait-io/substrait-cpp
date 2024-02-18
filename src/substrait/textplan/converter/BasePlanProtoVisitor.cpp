@@ -973,6 +973,44 @@ std::any BasePlanProtoVisitor::visitCrossRelation(
   return std::nullopt;
 }
 
+std::any BasePlanProtoVisitor::visitReferenceRelation(
+    const ::substrait::proto::ReferenceRel& relation) {
+  return std::nullopt;
+}
+
+std::any BasePlanProtoVisitor::visitWriteRelation(
+    const ::substrait::proto::WriteRel& relation) {
+  // TODO -- Add support for write_type.
+  if (relation.has_table_schema()) {
+    visitNamedStruct(relation.table_schema());
+  }
+  if (relation.has_input()) {
+    visitRelation(relation.input());
+  }
+  if (relation.has_common()) {
+    visitRelationCommon(relation.common());
+  }
+  return std::nullopt;
+}
+
+std::any BasePlanProtoVisitor::visitDdlRelation(
+    const ::substrait::proto::DdlRel& relation) {
+  // TODO -- Add support for write_type.
+  if (relation.has_table_schema()) {
+    visitNamedStruct(relation.table_schema());
+  }
+  if (relation.has_table_defaults()) {
+    visitExpressionLiteralStruct(relation.table_defaults());
+  }
+  if (relation.has_view_definition()) {
+    visitRelation(relation.view_definition());
+  }
+  if (relation.has_common()) {
+    visitRelationCommon(relation.common());
+  }
+  return std::nullopt;
+}
+
 std::any BasePlanProtoVisitor::visitHashJoinRelation(
     const ::substrait::proto::HashJoinRel& relation) {
   if (relation.has_common()) {
@@ -1018,6 +1056,26 @@ std::any BasePlanProtoVisitor::visitMergeJoinRelation(
   }
   if (relation.has_post_join_filter()) {
     visitExpression(relation.post_join_filter());
+  }
+  if (relation.has_advanced_extension()) {
+    visitAdvancedExtension(relation.advanced_extension());
+  };
+  return std::nullopt;
+}
+
+std::any BasePlanProtoVisitor::visitNestedLoopJoinRelation(
+    const ::substrait::proto::NestedLoopJoinRel& relation) {
+  if (relation.has_common()) {
+    visitRelationCommon(relation.common());
+  }
+  if (relation.has_left()) {
+    visitRelation(relation.left());
+  }
+  if (relation.has_right()) {
+    visitRelation(relation.right());
+  }
+  if (relation.has_expression()) {
+    visitExpression(relation.expression());
   }
   if (relation.has_advanced_extension()) {
     visitAdvancedExtension(relation.advanced_extension());
@@ -1103,10 +1161,18 @@ std::any BasePlanProtoVisitor::visitRelation(
       return visitExtensionLeafRelation(relation.extension_leaf());
     case ::substrait::proto::Rel::RelTypeCase::kCross:
       return visitCrossRelation(relation.cross());
+    case ::substrait::proto::Rel::RelTypeCase::kReference:
+      return visitReferenceRelation(relation.reference());
+    case ::substrait::proto::Rel::RelTypeCase::kWrite:
+      return visitWriteRelation(relation.write());
+    case ::substrait::proto::Rel::RelTypeCase::kDdl:
+      return visitDdlRelation(relation.ddl());
     case ::substrait::proto::Rel::RelTypeCase::kHashJoin:
       return visitHashJoinRelation(relation.hash_join());
     case ::substrait::proto::Rel::RelTypeCase::kMergeJoin:
       return visitMergeJoinRelation(relation.merge_join());
+    case ::substrait::proto::Rel::RelTypeCase::kNestedLoopJoin:
+      return visitNestedLoopJoinRelation(relation.nested_loop_join());
     case ::substrait::proto::Rel::kWindow:
       return visitWindowRelation(relation.window());
     case ::substrait::proto::Rel::kExchange:
