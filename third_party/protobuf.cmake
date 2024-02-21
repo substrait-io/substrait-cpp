@@ -13,7 +13,6 @@ FetchContent_Declare(GTest
 FetchContent_Declare(Protobuf
         GIT_REPOSITORY https://github.com/protocolbuffers/protobuf.git
         GIT_TAG v23.4
-        #SOURCE_SUBDIR cmake
         OVERRIDE_FIND_PACKAGE
 )
 set(protobuf_BUILD_TESTS OFF CACHE INTERNAL "")
