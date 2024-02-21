@@ -9,7 +9,7 @@ include(datetime.cmake)
 
 add_subdirectory(fmt)
 
-find_package(GTest QUIET CONFIG)
+find_package(GTest QUIET)
 if(NOT ${GTEST_FOUND})
   message(STATUS "Retrieving external GoogleTest library.")
   include(FetchContent)
