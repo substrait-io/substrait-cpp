@@ -10,6 +10,7 @@ include(datetime.cmake)
 add_subdirectory(fmt)
 
 if(NOT ${GOOGLETEST_INCLUDED_WITH_PROTOBUF})
+  message(STATUS "Using bundled GoogleTest library.")
   add_subdirectory(googletest)
 endif()
 
