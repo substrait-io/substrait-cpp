@@ -9,11 +9,10 @@ include(datetime.cmake)
 
 add_subdirectory(fmt)
 
-find_package(GTest QUIET)
+find_package(GTest QUIET CONFIG)
 if(NOT ${GTEST_FOUND})
   message(STATUS "Using bundled GoogleTest library.")
-  #add_subdirectory(googletest)
-  find_package(GTest REQUIRED PATHS gogoogletest)
+  add_subdirectory(googletest)
 endif()
 
 add_subdirectory(protobuf-matchers)
