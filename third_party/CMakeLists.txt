@@ -12,11 +12,12 @@ add_subdirectory(fmt)
 find_package(GTest QUIET CONFIG)
 if(NOT ${GTEST_FOUND})
   message(STATUS "Using bundled GoogleTest library.")
-  add_subdirectory(googletest)
-  FetchContent_SetPopulated(
+  include(ExternalProject)
+  ExternalProject_Add(
           GTest
-          SOURCE_DIR googletest
+          SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/googletest
           BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/googletest
+          INSTALL_COMMAND ""
   )
 endif()
 
