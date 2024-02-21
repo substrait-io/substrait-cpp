@@ -21,7 +21,10 @@ if(NOT ${GTEST_FOUND})
   FetchContent_MakeAvailable(GTest)
 endif()
 
+set(PREVIOUS_BUILD_TESTING ${BUILD_TESTING})
+set(BUILD_TESTING OFF)
 add_subdirectory(protobuf-matchers)
+set(BUILD_TESTING ${PREVIOUS_BUILD_TESTING})
 
 set(YAML_CPP_BUILD_TESTS
     OFF
