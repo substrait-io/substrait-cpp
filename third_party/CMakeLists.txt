@@ -11,14 +11,14 @@ add_subdirectory(fmt)
 
 find_package(GTest QUIET CONFIG)
 if(NOT ${GTEST_FOUND})
-  message(STATUS "Using bundled GoogleTest library.")
-  include(ExternalProject)
-  ExternalProject_Add(
-          GTest
-          SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/googletest
-          BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/googletest
-          INSTALL_COMMAND ""
+  message(STATUS "Retrieving external GoogleTest library.")
+  include(FetchContent)
+  FetchContent_Declare(GTest
+          GIT_REPOSITORY https://github.com/google/googletest.git
+          GIT_TAG v1.14.0
+          OVERRIDE_FIND_PACKAGE
   )
+  FetchContent_MakeAvailable(GTest)
 endif()
 
 add_subdirectory(protobuf-matchers)
