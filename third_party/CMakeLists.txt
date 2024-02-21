@@ -13,11 +13,11 @@ find_package(GTest QUIET)
 if(NOT ${GTEST_FOUND})
   message(STATUS "Retrieving external GoogleTest library.")
   include(FetchContent)
-  FetchContent_Declare(GTest
-          GIT_REPOSITORY https://github.com/google/googletest.git
-          GIT_TAG v1.14.0
-          OVERRIDE_FIND_PACKAGE
-  )
+  FetchContent_Declare(
+    GTest
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    GIT_TAG v1.14.0
+    OVERRIDE_FIND_PACKAGE)
   FetchContent_MakeAvailable(GTest)
 endif()
 
