@@ -9,7 +9,8 @@ include(datetime.cmake)
 
 add_subdirectory(fmt)
 
-if(NOT ${GOOGLETEST_INCLUDED_WITH_PROTOBUF})
+find_package(GTest QUIET)
+if(NOT ${GTEST_FOUND})
   message(STATUS "Using bundled GoogleTest library.")
   add_subdirectory(googletest)
 endif()
