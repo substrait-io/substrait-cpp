@@ -3,7 +3,7 @@
 if(CMAKE_BUILD_TYPE MATCHES Debug)
   message(
     WARNING
-    "The planloader library does not work well in Debug mode due to bundled heap checking."
+      "The planloader library does not work well in Debug mode due to bundled heap checking."
   )
 endif()
 
