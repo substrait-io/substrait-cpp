@@ -9,7 +9,7 @@ include(datetime.cmake)
 
 add_subdirectory(fmt)
 
-if(NOT ${GOOGLTEST_INCLUDED_WITH_PROTOBUF})
+if(NOT ${GOOGLETEST_INCLUDED_WITH_PROTOBUF})
   add_subdirectory(googletest)
 endif()
 
