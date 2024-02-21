@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if(NOT BUILD_SUBDIR_NAME EQUAL "release")
+if(CMAKE_BUILD_TYPE MATCHES Debug)
   message(
-    SEND_ERROR,
-    "The planloader library does not work in Debug mode due to its dependencies."
+    WARNING
+    "The planloader library does not work well in Debug mode due to bundled heap checking."
   )
 endif()
 
