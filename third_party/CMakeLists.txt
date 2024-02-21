@@ -8,7 +8,10 @@ endif()
 include(datetime.cmake)
 
 add_subdirectory(fmt)
-add_subdirectory(googletest)
+
+if(NOT ${GOOGLETEST_INCLUDED_WITH_ABSL})
+  add_subdirectory(googletest)
+endif()
 
 add_subdirectory(protobuf-matchers)
 
