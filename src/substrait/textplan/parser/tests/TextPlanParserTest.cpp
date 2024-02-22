@@ -698,10 +698,8 @@ std::vector<TestCase> getTestCases() {
                 } } }
                 expressions { literal {
                   empty_map { key { fp32 { nullability: NULLABILITY_REQUIRED } } value { string {nullability: NULLABILITY_REQUIRED  } } nullability: NULLABILITY_REQUIRED} } }
-                } }
                 expressions { literal {
                   empty_map { key { fp32 { nullability: NULLABILITY_REQUIRED } } value { string {nullability: NULLABILITY_REQUIRED  } } nullability: NULLABILITY_NULLABLE} } }
-                } }
                 expressions { literal {
                   empty_map { key { fp32 { nullability: NULLABILITY_REQUIRED } } value { string {nullability: NULLABILITY_NULLABLE  } } nullability: NULLABILITY_REQUIRED} } }
               } } } })")),
