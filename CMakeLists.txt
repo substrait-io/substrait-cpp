@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.24)
 
 # set the project name
 project(substrait-cpp)
@@ -39,11 +39,19 @@ include_directories(src)
 # available otherwise we fallback to the older protobuf method.
 find_package(Protobuf QUIET CONFIG)
 if(${Protobuf_FOUND})
+  message(STATUS "Modern protobuf library located.")
   set(ABSL_INCLUDED_WITH_PROTOBUF ON)
 else()
-  find_package(Protobuf REQUIRED)
-  include_directories(${Protobuf_INCLUDE_DIRS})
-  set(ABSL_INCLUDED_WITH_PROTOBUF OFF)
+  find_package(Protobuf QUIET)
+  if(${Protobuf_FOUND})
+    message(STATUS "Legacy protobuf library located.")
+    include_directories(${Protobuf_INCLUDE_DIRS})
+    set(ABSL_INCLUDED_WITH_PROTOBUF OFF)
+  else()
+    message(STATUS "Fetching external protobuf library.")
+    include(third_party/protobuf.cmake)
+    set(ABSL_INCLUDED_WITH_PROTOBUF ON)
+  endif()
 endif()
 
 add_subdirectory(third_party)
