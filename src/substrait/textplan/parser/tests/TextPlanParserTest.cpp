@@ -686,6 +686,8 @@ std::vector<TestCase> getTestCases() {
           R"(project relation literalexamples {
             expression {42 : "life", 32 : "everything"}_map<i16, string>;
             expression {}_map<fp32, string>;
+            expression {}_map?<fp32, string>;
+            expression {}_map<fp32, string?>;
           })",
           AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(
               R"(relations { root { input { project {
@@ -696,6 +698,10 @@ std::vector<TestCase> getTestCases() {
                 } } }
                 expressions { literal {
                   empty_map { key { fp32 { nullability: NULLABILITY_REQUIRED } } value { string {nullability: NULLABILITY_REQUIRED  } } nullability: NULLABILITY_REQUIRED} } }
+                expressions { literal {
+                  empty_map { key { fp32 { nullability: NULLABILITY_REQUIRED } } value { string {nullability: NULLABILITY_REQUIRED  } } nullability: NULLABILITY_NULLABLE} } }
+                expressions { literal {
+                  empty_map { key { fp32 { nullability: NULLABILITY_REQUIRED } } value { string {nullability: NULLABILITY_NULLABLE  } } nullability: NULLABILITY_REQUIRED} } }
               } } } })")),
       },
       {
