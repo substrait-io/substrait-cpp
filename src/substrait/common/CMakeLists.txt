@@ -20,9 +20,9 @@ target_include_directories(
 target_link_libraries(substrait_io substrait_proto substrait_textplan_converter
                       substrait_textplan_loader absl::status absl::statusor)
 
-if (${SUBSTRAIT_CPP_BUILD_TESTING})
+if(${SUBSTRAIT_CPP_BUILD_TESTING})
   add_subdirectory(tests)
-endif ()
+endif()
 
 install(TARGETS substrait_io LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(FILES ../../../include/substrait/common/Io.h
