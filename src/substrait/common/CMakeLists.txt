@@ -28,6 +28,6 @@ install(TARGETS substrait_io LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(FILES ../../../include/substrait/common/Io.h
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/substrait/common")
 
-add_executable(plantransformer Tool.cpp)
+add_executable(plantransformer PlanTransformerTool.cpp)
 
 target_link_libraries(plantransformer substrait_io)
