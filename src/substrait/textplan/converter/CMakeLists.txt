@@ -24,7 +24,6 @@ target_link_libraries(
   substrait_textplan_converter
   substrait_common
   substrait_expression
-  substrait_io
   substrait_proto
   symbol_table
   error_listener
