@@ -85,4 +85,5 @@ target_link_libraries(substrait_proto protobuf::libprotobuf)
 
 # Make sure we can see our own generated include files.
 target_include_directories(substrait_proto
-                           PUBLIC "${PROTO_OUTPUT_TOPLEVEL_DIR}/src")
+                           PUBLIC "${PROTO_OUTPUT_TOPLEVEL_DIR}/src"
+                           PUBLIC "${protobuf_SOURCE_DIR}/src")
