@@ -3,9 +3,9 @@
 #include "substrait/textplan/converter/ParseBinary.h"
 
 #include "substrait/proto/plan.pb.h"
+#include "substrait/textplan/PlanPrinterVisitor.h"
 #include "substrait/textplan/converter/InitialPlanProtoVisitor.h"
 #include "substrait/textplan/converter/PipelineVisitor.h"
-#include "substrait/textplan/converter/PlanPrinterVisitor.h"
 
 namespace io::substrait::textplan {
 

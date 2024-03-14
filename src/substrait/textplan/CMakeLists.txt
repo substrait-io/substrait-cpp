@@ -7,6 +7,8 @@ add_library(
   symbol_table
   Location.cpp
   Location.h
+  PlanPrinterVisitor.cpp
+  PlanPrinterVisitor.h
   StringManipulation.cpp
   StringManipulation.h
   SymbolTable.cpp
@@ -23,8 +25,8 @@ add_library(parse_result ParseResult.cpp ParseResult.h)
 add_dependencies(symbol_table substrait_proto substrait_common absl::strings
                  fmt::fmt-header-only)
 
-target_link_libraries(symbol_table substrait_proto substrait_common
-                      absl::strings fmt::fmt-header-only )
+target_link_libraries(symbol_table substrait_base_proto_visitor substrait_proto substrait_common substrait_expression
+                      absl::strings fmt::fmt-header-only date::date)
 
 # Provide access to the generated protobuffer headers hierarchy.
 target_include_directories(symbol_table
