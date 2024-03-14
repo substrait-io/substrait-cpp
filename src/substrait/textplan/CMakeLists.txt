@@ -25,12 +25,19 @@ add_library(parse_result ParseResult.cpp ParseResult.h)
 add_dependencies(symbol_table substrait_proto substrait_common absl::strings
                  fmt::fmt-header-only)
 
-target_link_libraries(symbol_table substrait_base_proto_visitor substrait_proto substrait_common substrait_expression
-                      absl::strings fmt::fmt-header-only date::date)
+target_link_libraries(
+  symbol_table
+  substrait_base_proto_visitor
+  substrait_proto
+  substrait_common
+  substrait_expression
+  absl::strings
+  fmt::fmt-header-only
+  date::date)
 
 # Provide access to the generated protobuffer headers hierarchy.
 target_include_directories(symbol_table
-        PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/../..")
+                           PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/../..")
 
 if(${SUBSTRAIT_CPP_BUILD_TESTING})
   add_subdirectory(tests)

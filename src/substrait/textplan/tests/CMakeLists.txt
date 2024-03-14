@@ -4,7 +4,8 @@ add_library(parse_result_matchers ParseResultMatchers.cpp ParseResultMatchers.h)
 
 add_dependencies(parse_result_matchers parse_result)
 
-target_link_libraries(parse_result_matchers parse_result symbol_table substrait_proto gmock)
+target_link_libraries(parse_result_matchers parse_result symbol_table
+                      substrait_proto gmock)
 
 add_test_case(
   symbol_table_test
