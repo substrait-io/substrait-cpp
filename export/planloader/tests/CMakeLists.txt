@@ -15,7 +15,8 @@ add_test_case(
   gtest
   gtest_main)
 
-set(TEXTPLAN_SOURCE_DIR "${CMAKE_SOURCE_DIR}/src/substrait/textplan")
+set(TEXTPLAN_SOURCE_DIR
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../src/substrait/textplan")
 
 add_custom_command(
   TARGET planloader_test
