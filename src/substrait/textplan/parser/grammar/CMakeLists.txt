@@ -55,7 +55,8 @@ add_library(textplan_grammar ${ANTLR_SubstraitPlanLexer_CXX_OUTPUTS}
 
 message(STATUS "generated dir:  ${GRAMMAR_DIR}/antlr4cpp_generated_src")
 
-target_include_directories(textplan_grammar
-                           PUBLIC "${GRAMMAR_DIR}/antlr4cpp_generated_src")
+target_include_directories(
+  textplan_grammar
+  PUBLIC $<BUILD_INTERFACE:${GRAMMAR_DIR}/antlr4cpp_generated_src>)
 
 target_link_libraries(textplan_grammar antlr4_static)

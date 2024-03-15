@@ -18,9 +18,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY
 set(ADDITIONAL_CLEAN_FILES
     "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY};${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
 
-add_subdirectory(common)
 add_subdirectory(type)
 add_subdirectory(expression)
 add_subdirectory(function)
 add_subdirectory(proto)
 add_subdirectory(textplan)
+add_subdirectory(common)
