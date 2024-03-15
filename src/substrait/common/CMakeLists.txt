@@ -4,6 +4,9 @@ add_library(substrait_common Exceptions.cpp)
 target_link_libraries(substrait_common fmt::fmt-header-only)
 
 add_library(substrait_io STATIC Io.cpp)
+set_target_properties(
+  substrait_io PROPERTIES PUBLIC_HEADER ../../../include/substrait/common/Io.h)
+
 add_dependencies(
   substrait_io
   substrait_proto
@@ -27,3 +30,9 @@ endif()
 add_executable(plantransformer PlanTransformerTool.cpp)
 
 target_link_libraries(plantransformer substrait_io)
+
+install(
+  TARGETS substrait_common substrait_io
+  EXPORT SubstraitTargets
+  LIBRARY
+  PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/substrait/common")

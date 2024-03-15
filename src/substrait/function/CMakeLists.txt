@@ -9,3 +9,5 @@ target_link_libraries(substrait_function substrait_type yaml-cpp)
 if(${SUBSTRAIT_CPP_BUILD_TESTING})
   add_subdirectory(tests)
 endif()
+
+install(TARGETS substrait_function EXPORT SubstraitTargets)

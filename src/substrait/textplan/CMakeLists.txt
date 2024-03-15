@@ -42,3 +42,6 @@ target_include_directories(
 if(${SUBSTRAIT_CPP_BUILD_TESTING})
   add_subdirectory(tests)
 endif()
+
+install(TARGETS error_listener parse_result symbol_table
+        EXPORT SubstraitTargets)

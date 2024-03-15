@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
+# Ensure `option()` in subdirectories honors normal variables set here.
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+
 set(ABSL_ENABLE_INSTALL ON)
 if(NOT ${ABSL_INCLUDED_WITH_PROTOBUF})
   set(ABSL_PROPAGATE_CXX_STD ON)
@@ -27,6 +30,7 @@ set(BUILD_TESTING OFF)
 add_subdirectory(protobuf-matchers)
 set(BUILD_TESTING ${PREVIOUS_BUILD_TESTING})
 
+set(YAML_CPP_INSTALL ON)
 set(YAML_CPP_BUILD_TESTS
     OFF
     CACHE BOOL "Enable testing")

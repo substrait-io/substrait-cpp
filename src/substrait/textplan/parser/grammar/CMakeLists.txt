@@ -60,3 +60,5 @@ target_include_directories(
   PUBLIC $<BUILD_INTERFACE:${GRAMMAR_DIR}/antlr4cpp_generated_src>)
 
 target_link_libraries(textplan_grammar antlr4_static)
+
+install(TARGETS textplan_grammar EXPORT SubstraitTargets)

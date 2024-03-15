@@ -79,6 +79,7 @@ endforeach()
 # Add the generated protobuf C++ files to our exported library.
 add_library(substrait_proto ${PROTO_SRCS} ${PROTO_HDRS} ProtoUtils.cpp
                             ProtoUtils.h)
+set_target_properties(substrait_proto PROPERTIES PUBLIC_HEADER "${PROTO_HDRS}")
 
 # Include the protobuf library as a dependency to use this class.
 target_link_libraries(substrait_proto protobuf::libprotobuf)
@@ -90,3 +91,9 @@ target_include_directories(
          $<INSTALL_INTERFACE:include>
   PUBLIC $<BUILD_INTERFACE:${protobuf_SOURCE_DIR}/src>
          $<INSTALL_INTERFACE:include>)
+
+install(
+  TARGETS substrait_proto
+  EXPORT SubstraitTargets
+  LIBRARY
+  PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/substrait/proto")
