@@ -1,12 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if(CMAKE_BUILD_TYPE MATCHES Debug)
-  message(
-    WARNING
-      "The planloader library does not work well in Debug mode due to bundled heap checking."
-  )
-endif()
-
 add_library(planloader SHARED planloader.cpp)
 
 add_dependencies(planloader substrait_io)

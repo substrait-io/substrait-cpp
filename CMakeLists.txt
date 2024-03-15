@@ -14,7 +14,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
 option(SUBSTRAIT_CPP_SANITIZE_DEBUG_BUILD
        "Turns on address and undefined memory sanitization runtime checking."
-       ON)
+       OFF)
 
 if(${SUBSTRAIT_CPP_SANITIZE_DEBUG_BUILD})
   add_compile_options($<$<CONFIG:Debug>:-fsanitize=undefined>)
