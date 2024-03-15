@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
+set(ABSL_ENABLE_INSTALL ON)
 if(NOT ${ABSL_INCLUDED_WITH_PROTOBUF})
   set(ABSL_PROPAGATE_CXX_STD ON)
   add_subdirectory(abseil-cpp)
