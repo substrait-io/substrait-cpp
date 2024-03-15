@@ -5,12 +5,8 @@ include(../../../../third_party/datetime.cmake)
 set(TEXTPLAN_SRCS
     InitialPlanProtoVisitor.cpp
     InitialPlanProtoVisitor.h
-    BasePlanProtoVisitor.cpp
-    BasePlanProtoVisitor.h
     PipelineVisitor.cpp
     PipelineVisitor.h
-    PlanPrinterVisitor.cpp
-    PlanPrinterVisitor.h
     LoadBinary.cpp
     LoadBinary.h
     SaveBinary.cpp
@@ -18,17 +14,27 @@ set(TEXTPLAN_SRCS
     ParseBinary.cpp
     ParseBinary.h)
 
+add_library(substrait_base_proto_visitor BasePlanProtoVisitor.cpp
+                                         BasePlanProtoVisitor.h)
+
+target_link_libraries(
+  substrait_base_proto_visitor
+  substrait_common
+  substrait_proto
+  error_listener
+  fmt::fmt-header-only
+  absl::status
+  absl::statusor)
+
 add_library(substrait_textplan_converter ${TEXTPLAN_SRCS})
 
 target_link_libraries(
   substrait_textplan_converter
+  substrait_base_proto_visitor
   substrait_common
-  substrait_expression
-  substrait_io
   substrait_proto
   symbol_table
   error_listener
-  date::date
   fmt::fmt-header-only
   absl::status
   absl::statusor)
@@ -39,7 +45,7 @@ endif()
 
 add_executable(planconverter Tool.cpp)
 
-target_link_libraries(planconverter substrait_textplan_converter)
+target_link_libraries(planconverter substrait_textplan_converter substrait_io)
 
 set(NORMALIZER_SRCS ReferenceNormalizer.cpp ReferenceNormalizer.h)
 

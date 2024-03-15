@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "substrait/textplan/converter/PlanPrinterVisitor.h"
+#include "substrait/textplan/PlanPrinterVisitor.h"
 #include <unistd.h>
 
 #include <sstream>

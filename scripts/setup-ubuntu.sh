@@ -18,8 +18,6 @@ sudo --preserve-env apt install -y \
   clang-tidy \
   git \
   wget \
-  libprotobuf-dev \
-  libprotobuf23 \
   protobuf-compiler \
   clang-format \
   uuid-dev \

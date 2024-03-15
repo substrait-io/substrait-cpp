@@ -8,9 +8,9 @@
 #include "substrait/common/Exceptions.h"
 #include "substrait/proto/algebra.pb.h"
 #include "substrait/textplan/Any.h"
+#include "substrait/textplan/PlanPrinterVisitor.h"
 #include "substrait/textplan/StructuredSymbolData.h"
 #include "substrait/textplan/SymbolTable.h"
-#include "substrait/textplan/converter/PlanPrinterVisitor.h"
 
 namespace io::substrait::textplan {
 
