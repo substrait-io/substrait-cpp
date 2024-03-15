@@ -35,10 +35,13 @@ jobs:
         with:
           submodules: recursive
       - name: Setup Ubuntu
-        run: ./scripts/setup-ubuntu.sh
-      - run: mkdir build
+        run: |
+          ./scripts/setup-ubuntu.sh
+          mkdir build
       - name: Run cmake
-        run: cmake -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Debug -DBUILD_TZ_LIB=ON
+        run: |
+          cmake --version
+          cmake -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Debug -DBUILD_TZ_LIB=ON
       - name: Build
         run: ninja -C build
       - name: Test
