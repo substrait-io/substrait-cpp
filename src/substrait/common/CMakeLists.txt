@@ -1,11 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 add_library(substrait_common Exceptions.cpp)
+target_sources(
+  substrait_common PUBLIC FILE_SET HEADERS BASE_DIRS ../../../include/ FILES
+                          ../../../include/substrait/common/Exceptions.h)
 target_link_libraries(substrait_common fmt::fmt-header-only)
 
 add_library(substrait_io STATIC Io.cpp)
-set_target_properties(
-  substrait_io PROPERTIES PUBLIC_HEADER ../../../include/substrait/common/Io.h)
+target_sources(substrait_io PUBLIC FILE_SET HEADERS BASE_DIRS ../../../include/
+                                   FILES ../../../include/substrait/common/Io.h)
 
 add_dependencies(
   substrait_io
@@ -32,7 +35,6 @@ add_executable(plantransformer PlanTransformerTool.cpp)
 target_link_libraries(plantransformer substrait_io)
 
 install(
-  TARGETS substrait_common substrait_io
+  TARGETS substrait_common substrait_io plantransformer
   EXPORT SubstraitTargets
-  LIBRARY
-  PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/substrait/common")
+  LIBRARY FILE_SET HEADERS)

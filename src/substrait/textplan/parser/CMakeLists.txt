@@ -44,4 +44,4 @@ if(${SUBSTRAIT_CPP_BUILD_TESTING})
   add_subdirectory(tests)
 endif()
 
-install(TARGETS substrait_textplan_loader EXPORT SubstraitTargets)
+install(TARGETS planparser substrait_textplan_loader EXPORT SubstraitTargets)

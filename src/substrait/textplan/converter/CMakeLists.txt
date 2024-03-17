@@ -54,5 +54,6 @@ add_library(substrait_textplan_normalizer ${NORMALIZER_SRCS})
 target_link_libraries(substrait_textplan_normalizer
                       substrait_textplan_converter)
 
-install(TARGETS substrait_textplan_converter substrait_base_proto_visitor
-                substrait_textplan_normalizer EXPORT SubstraitTargets)
+install(TARGETS planconverter substrait_textplan_converter
+                substrait_base_proto_visitor substrait_textplan_normalizer
+        EXPORT SubstraitTargets)

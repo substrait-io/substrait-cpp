@@ -10,5 +10,3 @@ if(${SUBSTRAIT_CPP_BUILD_TESTING})
 endif()
 
 install(TARGETS planloader EXPORT SubstraitTargets)
-
-install(EXPORT SubstraitTargets DESTINATION lib/cmake/Substrait)
