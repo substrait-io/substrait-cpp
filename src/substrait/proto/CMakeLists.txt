@@ -77,8 +77,17 @@ foreach(PROTO_FILE IN LISTS PROTOBUF_FILELIST)
 endforeach()
 
 # Add the generated protobuf C++ files to our exported library.
-add_library(substrait_proto ${PROTO_SRCS} ${PROTO_HDRS} ProtoUtils.cpp
-                            ProtoUtils.h)
+add_library(substrait_proto ${PROTO_SRCS} ${PROTO_HDRS} ProtoUtils.cpp)
+target_sources(
+  substrait_proto
+  PUBLIC FILE_SET
+         HEADERS
+         BASE_DIRS
+         ${PROTO_OUTPUT_TOPLEVEL_DIR}/src
+         ../..
+         FILES
+         ${PROTO_HDRS}
+         ProtoUtils.h)
 
 # Include the protobuf library as a dependency to use this class.
 target_link_libraries(substrait_proto protobuf::libprotobuf)
@@ -86,5 +95,12 @@ target_link_libraries(substrait_proto protobuf::libprotobuf)
 # Make sure we can see our own generated include files.
 target_include_directories(
   substrait_proto
-  PUBLIC "${PROTO_OUTPUT_TOPLEVEL_DIR}/src"
-  PUBLIC "${protobuf_SOURCE_DIR}/src")
+  PUBLIC $<BUILD_INTERFACE:${PROTO_OUTPUT_TOPLEVEL_DIR}/src>
+         $<INSTALL_INTERFACE:include>
+  PUBLIC $<BUILD_INTERFACE:${protobuf_SOURCE_DIR}/src>
+         $<INSTALL_INTERFACE:include>)
+
+install(
+  TARGETS substrait_proto
+  EXPORT SubstraitTargets
+  LIBRARY FILE_SET HEADERS)

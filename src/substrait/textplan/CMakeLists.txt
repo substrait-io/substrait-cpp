@@ -36,9 +36,12 @@ target_link_libraries(
   date::date)
 
 # Provide access to the generated protobuffer headers hierarchy.
-target_include_directories(symbol_table
-                           PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/../..")
+target_include_directories(
+  symbol_table PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../..>)
 
 if(${SUBSTRAIT_CPP_BUILD_TESTING})
   add_subdirectory(tests)
 endif()
+
+install(TARGETS error_listener parse_result symbol_table
+        EXPORT SubstraitTargets)

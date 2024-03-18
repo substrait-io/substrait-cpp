@@ -63,5 +63,7 @@ if(${SUBSTRAIT_CPP_BUILD_TESTING})
   enable_testing()
 endif()
 
+install(EXPORT SubstraitTargets DESTINATION lib/cmake/Substrait)
+
 add_subdirectory(src/substrait)
 add_subdirectory(export)
