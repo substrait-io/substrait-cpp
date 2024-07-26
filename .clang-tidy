@@ -77,8 +77,7 @@ Checks: >
   -bugprone-implicit-widening-of-multiplication-result,
   -bugprone-unchecked-optional-access
 WarningsAsErrors: '*'
-ExtraArgs: ['-Wno-attributes']
-HeaderFilterRegex: 'io/substrait/*.\\.h$'
+HeaderFilterRegex: 'io/substrait/.*\\.h$|protobuf/.*\\.h$'
 AnalyzeTemporaryDtors: false
 FormatStyle: none
 CheckOptions:
