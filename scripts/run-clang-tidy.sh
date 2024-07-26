@@ -6,7 +6,7 @@ WORKDIR="$( cd $SCRIPTDIR/.. && pwd )"
 set -o errexit
 
 echo Making compile_command.json
-rm -rf tmp && mkdir tmp && cmake -Btmp -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DSUBSTRAIT_CPP_ROUNDTRIP_TESTING=ON
+rm -rf tmp && mkdir tmp && cmake -Btmp -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DSUBSTRAIT_CPP_BUILD_TESTING=OFF -DCLANG_TIDY_BUILD=ON
 echo Building substrait protobuf
 pushd tmp/src/substrait/proto
 make -j
