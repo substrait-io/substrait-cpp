@@ -27,7 +27,7 @@ jobs:
         run: git diff --exit-code
       - name: Checking code style
         run: ./scripts/run-clang-tidy.sh
-  build:
+  linux-build:
     runs-on: ubuntu-latest
 
     steps:
@@ -46,8 +46,8 @@ jobs:
         run: ninja -C build
       - name: Test
         run: ctest --test-dir build --output-on-failure --timeout 30
-  darwin-arm64-check:
-    runs-on: macos-14-arm64
+  darwin-amd64-build-and-test:
+    runs-on: macos-14
     steps:
       - uses: actions/checkout@v3
         with:
