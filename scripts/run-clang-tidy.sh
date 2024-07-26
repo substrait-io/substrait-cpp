@@ -4,7 +4,7 @@ SCRIPTDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 WORKDIR="$( cd $SCRIPTDIR/.. && pwd )"
 
 # Make compile_command.json
-rm -rf tmp && mkdir tmp && cmake -Btmp -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DSUBSTRAIT_CPP_ROUNDTRIP_TESTING=ON -wattributes
+rm -rf tmp && mkdir tmp && cmake -Btmp -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DSUBSTRAIT_CPP_ROUNDTRIP_TESTING=ON -Wattributes
 # Build substrait protobuf
 pushd tmp/src/substrait/proto && make -j && popd || exit
 # Build textplan grammar
