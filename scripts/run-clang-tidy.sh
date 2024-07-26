@@ -4,6 +4,7 @@ SCRIPTDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 WORKDIR="$( cd $SCRIPTDIR/.. && pwd )"
 
 # Make compile_command.json
+export CXXFLAGS=-Wno-attributes
 rm -rf tmp && mkdir tmp && cmake -Btmp -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DSUBSTRAIT_CPP_ROUNDTRIP_TESTING=ON
 # Build substrait protobuf
 pushd tmp/src/substrait/proto && make -j && popd || exit

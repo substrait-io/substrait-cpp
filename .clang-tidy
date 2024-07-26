@@ -77,7 +77,7 @@ Checks: >
   -bugprone-implicit-widening-of-multiplication-result,
   -bugprone-unchecked-optional-access
 WarningsAsErrors: '*'
-HeaderFilterRegex: 'io/substrait/.*\\.h$|protobuf/.*\\.h$'
+HeaderFilterRegex: 'io/substrait/.*\\.h$'
 AnalyzeTemporaryDtors: false
 FormatStyle: none
 CheckOptions:
