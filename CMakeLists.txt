@@ -51,9 +51,7 @@ if(${SUBSTRAIT_CPP_BUILD_TESTING})
 endif()
 
 if(${CLANG_TIDY_BUILD})
-  add_compile_options(
-          "-Wno-attributes;-Wno-deprecated-declarations"
-  )
+  add_compile_options("-Wno-attributes;-Wno-deprecated-declarations")
 endif()
 
 install(EXPORT SubstraitTargets DESTINATION lib/cmake/Substrait)
