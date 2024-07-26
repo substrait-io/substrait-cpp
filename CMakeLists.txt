@@ -33,6 +33,10 @@ option(
 include_directories(include)
 include_directories(src)
 
+if(${CLANG_TIDY_BUILD})
+  add_compile_options("-Wno-attributes;-Wno-deprecated-declarations")
+endif()
+
 find_package(Protobuf QUIET CONFIG)
 if(${Protobuf_FOUND})
   message(STATUS "Modern protobuf library located.")
@@ -48,10 +52,6 @@ include(BuildUtils)
 
 if(${SUBSTRAIT_CPP_BUILD_TESTING})
   enable_testing()
-endif()
-
-if(${CLANG_TIDY_BUILD})
-  add_compile_options("-Wno-attributes;-Wno-deprecated-declarations")
 endif()
 
 install(EXPORT SubstraitTargets DESTINATION lib/cmake/Substrait)
