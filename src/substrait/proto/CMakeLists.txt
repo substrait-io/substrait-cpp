@@ -67,7 +67,8 @@ foreach(PROTO_FILE IN LISTS PROTOBUF_FILELIST)
     OUTPUT ${PROTO_SRC} ${PROTO_HDR}
     COMMAND
       protobuf::protoc
-      "--proto_path=${GENERATED_PROTO_TOPLEVEL_DIR}:${protobuf_SOURCE_DIR}/src"
+      "--proto_path=${GENERATED_PROTO_TOPLEVEL_DIR}"
+      "--proto_path=${protobuf_SOURCE_DIR}/src"
       "--cpp_out=${PROTO_OUTPUT_MIDLEVEL_DIR}" ${GENERATED_PROTO_FILE}
     DEPENDS ${GENERATED_PROTOBUF_LIST} protobuf::protoc
     COMMENT "Generated C++ protobuf module for ${PROTO_FILE}"
