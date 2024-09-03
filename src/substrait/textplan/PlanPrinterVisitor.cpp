@@ -1,7 +1,12 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include "substrait/textplan/PlanPrinterVisitor.h"
+
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 #include <sstream>
 #include <string>
