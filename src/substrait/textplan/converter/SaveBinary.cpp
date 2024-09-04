@@ -7,8 +7,14 @@
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/util/json_util.h>
+
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <sys/fcntl.h>
 #include <sys/stat.h>
+#endif
+
 #include <fstream>
 
 #include "substrait/proto/plan.pb.h"
