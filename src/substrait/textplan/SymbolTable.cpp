@@ -12,7 +12,7 @@
 #include "substrait/textplan/Location.h"
 #include "substrait/textplan/StructuredSymbolData.h"
 
-namespace io::substrait::textplan {
+using namespace io::substrait::textplan;
 
 const std::string& symbolTypeName(SymbolType type) {
   static std::vector<std::string> names = {
@@ -60,13 +60,17 @@ const SymbolInfo SymbolInfo::kUnknown = {
     std::nullopt,
     std::nullopt};
 
-bool operator==(const SymbolInfo& left, const SymbolInfo& right) {
+bool io::substrait::textplan::operator==(
+    const SymbolInfo& left,
+    const SymbolInfo& right) {
   return (left.name == right.name) &&
       (left.sourceLocation == right.sourceLocation) &&
       (left.type == right.type);
 }
 
-bool operator!=(const SymbolInfo& left, const SymbolInfo& right) {
+bool io::substrait::textplan::operator!=(
+    const SymbolInfo& left,
+    const SymbolInfo& right) {
   return !(left == right);
 }
 
@@ -288,5 +292,3 @@ std::string SymbolTable::toDebugString() const {
   }
   return result.str();
 }
-
-} // namespace io::substrait::textplan
