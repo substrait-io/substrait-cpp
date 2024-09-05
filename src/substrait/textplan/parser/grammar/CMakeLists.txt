@@ -61,4 +61,9 @@ target_include_directories(
 
 target_link_libraries(textplan_grammar antlr4_static)
 
+# Things which link against textplan_grammar (and pull in antlr4 headers) should
+# always set 'ANTLR4CPP_STATIC', to avoid declaring things in the antlr4
+# headers as dllexport'ed.
+target_compile_definitions(textplan_grammar PUBLIC ANTLR4CPP_STATIC)
+
 install(TARGETS textplan_grammar EXPORT SubstraitTargets)
