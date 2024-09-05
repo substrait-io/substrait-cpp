@@ -13,7 +13,6 @@ include(datetime.cmake)
 
 add_subdirectory(fmt)
 
-
 if(WIN32)
   # For Windows: Prevent overriding the parent project's compiler/linker settings
   set(gtest_force_shared_crt
