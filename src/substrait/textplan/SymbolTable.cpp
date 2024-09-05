@@ -14,7 +14,7 @@
 
 using namespace io::substrait::textplan;
 
-const std::string& symbolTypeName(SymbolType type) {
+const std::string& io::substrait::textplan::symbolTypeName(SymbolType type) {
   static std::vector<std::string> names = {
       "kExtensionSpace",
       "kFunction",
