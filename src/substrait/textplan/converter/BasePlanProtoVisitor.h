@@ -17,8 +17,8 @@ class BasePlanProtoVisitor {
   BasePlanProtoVisitor() = default;
 
   // visit() begins the traversal of the entire plan.
-  virtual void visit(const ::substrait::proto::Plan& plan) {
-    visitPlan(plan);
+  virtual std::any visit(const ::substrait::proto::Plan& plan) {
+    return visitPlan(plan);
   }
 
  protected:
