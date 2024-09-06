@@ -12,7 +12,7 @@ set(GRAMMAR_DIR ${CMAKE_CURRENT_BINARY_DIR})
 # using /MD flag for antlr4_runtime (for Visual C++ compilers only)
 set(ANTLR4_WITH_STATIC_CRT OFF)
 
-set(ANTLR4_TAG 4.13.0)
+set(ANTLR4_TAG 4.13.2)
 set(ANTLR4_ZIP_REPOSITORY
     https://github.com/antlr/antlr4/archive/refs/tags/${ANTLR4_TAG}.zip)
 
@@ -20,7 +20,7 @@ include(ExternalAntlr4Cpp)
 
 include_directories(${ANTLR4_INCLUDE_DIRS})
 
-file(DOWNLOAD https://www.antlr.org/download/antlr-4.13.0-complete.jar
+file(DOWNLOAD https://www.antlr.org/download/antlr-4.13.2-complete.jar
      "${GRAMMAR_DIR}/antlr.jar")
 set(ANTLR_EXECUTABLE "${GRAMMAR_DIR}/antlr.jar")
 find_package(ANTLR REQUIRED)
