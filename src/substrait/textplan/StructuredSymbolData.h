@@ -9,7 +9,7 @@
 
 namespace io::substrait::textplan {
 
-class SymbolInfo;
+struct SymbolInfo;
 
 // Used by the PlanRelation and Relation concepts to track connectivity.
 struct RelationData {
