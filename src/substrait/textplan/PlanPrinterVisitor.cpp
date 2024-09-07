@@ -71,6 +71,19 @@ std::string visitEnumArgument(const std::string& str) {
   return text.str();
 }
 
+bool isAggregate(const SymbolInfo* symbol) {
+  if (symbol->subtype.type() == typeid(::substrait::proto::Rel::RelTypeCase) &&
+      ANY_CAST(::substrait::proto::Rel::RelTypeCase, symbol->subtype) ==
+          ::substrait::proto::Rel::kAggregate) {
+    return true;
+  }
+  if (symbol->subtype.type() == typeid(RelationType) &&
+      ANY_CAST(RelationType, symbol->subtype) == RelationType::kAggregate) {
+    return true;
+  }
+  return false;
+}
+
 } // namespace
 
 std::string PlanPrinterVisitor::printRelation(const SymbolInfo& symbol) {
@@ -156,6 +169,65 @@ std::string PlanPrinterVisitor::lookupFieldReference(
   auto fieldReferencesSize = relationData->fieldReferences.size();
   const SymbolInfo* symbol{nullptr};
   if (fieldReference < fieldReferencesSize) {
+    symbol = relationData->fieldReferences[fieldReference];
+  } else if (
+      fieldReference <
+      fieldReferencesSize + relationData->generatedFieldReferences.size()) {
+    symbol =
+        relationData
+            ->generatedFieldReferences[fieldReference - fieldReferencesSize];
+  } else {
+    errorListener_->addError(
+        "Encountered field reference out of range: " +
+        std::to_string(fieldReference));
+    return "field#" + std::to_string(fieldReference);
+  }
+  if (!symbol->alias.empty()) {
+    return symbol->alias;
+  } else if (needFullyQualified && symbol->schema != nullptr) {
+    return symbol->schema->name + "." + symbol->name;
+  }
+  return symbol->name;
+}
+
+std::string PlanPrinterVisitor::lookupFieldReferenceForEmit(
+    uint32_t fieldReference,
+    const SymbolInfo* currentScope,
+    uint32_t stepsOut,
+    bool needFullyQualified) {
+  if (currentScope == nullptr || *currentScope_ == SymbolInfo::kUnknown) {
+    errorListener_->addError(
+        "Field number " + std::to_string(fieldReference) +
+        " mysteriously requested outside of a relation.");
+    return "field#" + std::to_string(fieldReference);
+  }
+  auto actualScope = currentScope;
+  if (stepsOut > 0) {
+    for (auto stepsLeft = stepsOut; stepsLeft > 0; stepsLeft--) {
+      auto actualParentQueryLocation = getParentQueryLocation(actualScope);
+      if (actualParentQueryLocation == Location::kUnknownLocation) {
+        errorListener_->addError(
+            "Requested steps out of " + std::to_string(stepsOut) +
+            " but not within subquery depth that high.");
+        return "field#" + std::to_string(fieldReference);
+      }
+      actualScope = symbolTable_->lookupSymbolByLocationAndType(
+          actualParentQueryLocation, SymbolType::kRelation);
+      if (actualScope == nullptr) {
+        errorListener_->addError(
+            "Internal error: Missing previously encountered parent query symbol.");
+        return "field#" + std::to_string(fieldReference);
+      }
+    }
+  }
+  auto relationData =
+      ANY_CAST(std::shared_ptr<RelationData>, actualScope->blob);
+  const SymbolInfo* symbol{nullptr};
+  auto fieldReferencesSize = relationData->fieldReferences.size();
+  if (isAggregate(currentScope) &&
+      fieldReference < relationData->generatedFieldReferences.size()) {
+    symbol = relationData->generatedFieldReferences[fieldReference];
+  } else if (fieldReference < fieldReferencesSize) {
     symbol = relationData->fieldReferences[fieldReference];
   } else if (
       fieldReference <
@@ -813,7 +885,7 @@ std::any PlanPrinterVisitor::visitRelationCommon(
   }
   for (const auto& mapping : common.emit().output_mapping()) {
     text << "  emit "
-         << lookupFieldReference(
+         << lookupFieldReferenceForEmit(
                 mapping, currentScope_, /* stepsOut= */ 0, true)
          << ";\n";
   }
@@ -1028,6 +1100,7 @@ std::any PlanPrinterVisitor::visitAggregateRelation(
     }
     text << "  }\n";
   }
+  text << ANY_CAST(std::string, visitRelationCommon(relation.common()));
   return text.str();
 }
 

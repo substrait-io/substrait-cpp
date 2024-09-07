@@ -590,6 +590,60 @@ std::vector<TestCase> getTestCases() {
                                                   "  hashjoin -> root;\n"
                                                   "}\n"))),
       },
+      {
+          "aggregate with emits",
+          R"(extensions {
+             extension_function {
+               function_anchor: 0
+               name: "sum:i32"
+             }
+          }
+          relations: { root: { input: {
+              aggregate: { common { emit { output_mapping: 1 } } input {
+                  read: { base_schema { names: 'a' names: 'b'
+                  struct { types { string {} } types { i32 {} } } }
+                  local_files { items { uri_file: 'x.parquet' parquet { } } }
+                  } }
+                  measures { measure { output_type { i32 {} } arguments { value { selection { direct_reference { struct_field { field: 1 } } } } } } }
+                  measures { measure { output_type { i32 {} } arguments { value { selection { direct_reference { struct_field { field: 0 } } } } } } }
+          } } } })",
+          AllOf(
+              WhenSerialized(EqSquashingWhitespace(
+                "pipelines {\n"
+                "  read -> aggregate -> root;\n"
+                "}\n"
+                "\n"
+                "read relation read {\n"
+                "  source local;\n"
+                "  base_schema schema;\n"
+                "}\n"
+                "\n"
+                "aggregate relation aggregate {\n"
+                "  measure {\n"
+                "    measure sum(schema.b)->i32@AGGREGATION_PHASE_UNSPECIFIED NAMED measurename;\n"
+                "  }\n"
+                "  measure {\n"
+                "    measure sum(schema.a)->i32@AGGREGATION_PHASE_UNSPECIFIED NAMED measurename2;\n"
+                "  }\n"
+                "\n"
+                "  emit measurename2;\n"
+                "}\n"
+                "\n"
+                "schema schema {\n"
+                "  a string;\n"
+                "  b i32;\n"
+                "}\n"
+                "\n"
+                "source local_files local {\n"
+                "  items = [\n"
+                "    {uri_file: \"x.parquet\" parquet: {}}\n"
+                "  ]\n"
+                "}\n"
+                "\n"
+                "extension_space {\n"
+                "  function sum:i32 as sum;\n"
+                "}\n"))),
+      },
   };
   return cases;
 }

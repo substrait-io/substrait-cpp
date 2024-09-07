@@ -499,6 +499,7 @@ void InitialPlanProtoVisitor::updateLocalSchema(
             std::nullopt);
         relationData->generatedFieldReferences.emplace_back(symbol);
       }
+      // TODO -- If there are multiple groupings add the additional output.
       // Aggregate relations are different in that they alter the emitted fields
       // by default.
       relationData->outputFieldReferences.insert(
@@ -629,9 +630,24 @@ void InitialPlanProtoVisitor::updateLocalSchema(
   // Revamp the output based on the output mapping if present.
   auto mapping = getOutputMapping(relation);
   if (!mapping.empty()) {
+    // TODO -- Use a more explicit check.
     if (!relationData->outputFieldReferences.empty()) {
-      errorListener_->addError(
-          "Aggregate relations do not yet support output mapping changes.");
+      // We are processing an aggregate node which is the only relation with
+      // output field references.
+      auto generatedFieldReferenceSize =
+          relationData->generatedFieldReferences.size();
+      relationData->outputFieldReferences.clear(); // Start over.
+      for (auto item : mapping) {
+        if (item < generatedFieldReferenceSize) {
+          relationData->outputFieldReferences.push_back(
+              relationData->generatedFieldReferences[item]);
+        } else {
+          // TODO -- Add support for grouping fields (needs text syntax).
+          errorListener_->addError(
+              "Asked to emit a field (" + std::to_string(item) +
+              " beyond what the aggregate produced.");
+        }
+      }
       return;
     }
     for (auto item : mapping) {

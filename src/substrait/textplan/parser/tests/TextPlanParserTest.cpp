@@ -1183,6 +1183,120 @@ std::vector<TestCase> getTestCases() {
                   }
                 })"))),
       },
+      {
+          "test20-aggregation-emit",
+          R"(pipelines {
+            read -> aggregate -> root;
+          }
+
+          read relation read {
+            source local;
+            base_schema schema;
+          }
+
+          aggregate relation aggregate {
+            measure {
+              measure sum(schema.b)->i32@AGGREGATION_PHASE_UNSPECIFIED NAMED measurename;
+            }
+            measure {
+              measure sum(schema.a)->i32@AGGREGATION_PHASE_UNSPECIFIED NAMED measurename2;
+            }
+
+            emit measurename2;
+          }
+
+          schema schema {
+            a string;
+            b i32;
+          }
+
+          source local_files local {
+            items = [
+              { uri_file: "x.parquet" parquet: {} }
+            ]
+          }
+
+          extension_space {
+            function sum:i32 as sum;
+          })",
+          AllOf(
+              HasSymbolsWithTypes(
+                  {"read", "aggregate", "root"}, {SymbolType::kRelation}),
+              HasErrors({}),
+              AsBinaryPlan(EqualsProto<::substrait::proto::Plan>(R"(
+                extensions {
+                  extension_function {
+                    name: "sum:i32"
+                  }
+                }
+                relations {
+                  root {
+                    input {
+                      aggregate {
+                        common {
+                          emit {
+                            output_mapping: 1
+                          }
+                        }
+                        input {
+                          read {
+                            common {
+                              direct { }
+                            }
+                            base_schema {
+                              names: 'a' names: 'b'
+                              struct {
+                                types {
+                                  string { nullability: NULLABILITY_REQUIRED }
+                                }
+                                types {
+                                  i32 { nullability: NULLABILITY_REQUIRED }
+                                }
+                                nullability: NULLABILITY_REQUIRED
+                              }
+                            }
+                            local_files {
+                              items { uri_file: 'x.parquet' parquet { } }
+                            }
+                          }
+                        }
+                        groupings {
+                        }
+                        measures {
+                          measure {
+                            output_type {
+                              i32 { nullability: NULLABILITY_REQUIRED }
+                            }
+                            arguments {
+                              value {
+                                selection {
+                                  direct_reference { struct_field { field: 1 } }
+                                  root_reference: { }
+                                }
+                              }
+                            }
+                          }
+                        }
+                        measures {
+                          measure {
+                            output_type {
+                              i32 { nullability: NULLABILITY_REQUIRED }
+                            }
+                            arguments {
+                              value {
+                                selection {
+                                  direct_reference { struct_field { field: 0 } }
+                                  root_reference: { }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                })"))),
+      },
   };
   return cases;
 }
