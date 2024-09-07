@@ -29,6 +29,8 @@ option(
   "Enable substrait-cpp tests. This will enable all other build options automatically."
   ON)
 
+set(SUBSTRAIT_CPP_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
 # Local files come first.
 include_directories(include)
 include_directories(src)
