@@ -19,10 +19,8 @@ add_dependencies(
   absl::status
   absl::statusor)
 target_include_directories(
-  substrait_io
-  INTERFACE
-    $<BUILD_INTERFACE:${SUBSTRAIT_CPP_INCLUDE_DIR}>
-    $<INSTALL_INTERFACE:include>)
+  substrait_io INTERFACE $<BUILD_INTERFACE:${SUBSTRAIT_CPP_INCLUDE_DIR}>
+                         $<INSTALL_INTERFACE:include>)
 target_link_libraries(substrait_io substrait_proto substrait_textplan_converter
                       substrait_textplan_loader absl::status absl::statusor)
 
