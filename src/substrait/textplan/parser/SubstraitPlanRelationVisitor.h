@@ -205,7 +205,7 @@ class SubstraitPlanRelationVisitor : public SubstraitPlanTypeVisitor {
   bool hasSubquery(SubstraitPlanParser::ExpressionContext* ctx);
 
   const SymbolInfo* currentRelationScope_{nullptr}; // Not owned.
-  bool processingEmit{false};
+  bool processingEmit_{false};
 };
 
 } // namespace io::substrait::textplan

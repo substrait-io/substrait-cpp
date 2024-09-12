@@ -874,9 +874,9 @@ std::any SubstraitPlanSubqueryRelationVisitor::visitRelationEmit(
       SymbolType::kRelation);
   auto parentRelationData =
       ANY_CAST(std::shared_ptr<RelationData>, parentSymbol->blob);
-  this->processingEmit = true;
+  this->processingEmit_ = true;
   auto result = visitChildren(ctx);
-  this->processingEmit = false;
+  this->processingEmit_ = false;
   auto parentRelationType = ANY_CAST(RelationType, parentSymbol->subtype);
   auto common =
       findCommonRelation(parentRelationType, &parentRelationData->relation);
@@ -2168,7 +2168,7 @@ SubstraitPlanSubqueryRelationVisitor::findFieldReferenceByName(
     std::shared_ptr<RelationData>& relationData,
     const std::string& name) {
   auto fieldReferencesSize = relationData->fieldReferences.size();
-  if (isAggregate(symbol) && this->processingEmit) {
+  if (isAggregate(symbol) && this->processingEmit_) {
     fieldReferencesSize = 0;
   }
 
