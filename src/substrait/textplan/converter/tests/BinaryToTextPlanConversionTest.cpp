@@ -608,40 +608,40 @@ std::vector<TestCase> getTestCases() {
                   measures { measure { output_type { i32 {} } arguments { value { selection { direct_reference { struct_field { field: 0 } } } } } } }
           } } } })",
           AllOf(WhenSerialized(EqSquashingWhitespace(
-              "pipelines {\n"
-              "  read -> aggregate -> root;\n"
-              "}\n"
-              "\n"
-              "read relation read {\n"
-              "  source local;\n"
-              "  base_schema schema;\n"
-              "}\n"
-              "\n"
-              "aggregate relation aggregate {\n"
-              "  measure {\n"
-              "    measure sum(schema.b)->i32@AGGREGATION_PHASE_UNSPECIFIED NAMED measurename;\n"
-              "  }\n"
-              "  measure {\n"
-              "    measure sum(schema.a)->i32@AGGREGATION_PHASE_UNSPECIFIED NAMED measurename2;\n"
-              "  }\n"
-              "\n"
-              "  emit measurename2;\n"
-              "}\n"
-              "\n"
-              "schema schema {\n"
-              "  a string;\n"
-              "  b i32;\n"
-              "}\n"
-              "\n"
-              "source local_files local {\n"
-              "  items = [\n"
-              "    {uri_file: \"x.parquet\" parquet: {}}\n"
-              "  ]\n"
-              "}\n"
-              "\n"
-              "extension_space {\n"
-              "  function sum:i32 as sum;\n"
-              "}\n"))),
+              R"(pipelines {
+                read -> aggregate -> root;
+              }
+
+              read relation read {
+                source local;
+                base_schema schema;
+              }
+
+              aggregate relation aggregate {
+                measure {
+                  measure sum(schema.b)->i32@AGGREGATION_PHASE_UNSPECIFIED NAMED measurename;
+                }
+                measure {
+                  measure sum(schema.a)->i32@AGGREGATION_PHASE_UNSPECIFIED NAMED measurename2;
+                }
+
+                emit measurename2;
+              }
+
+              schema schema {
+                a string;
+                b i32;
+              }
+
+              source local_files local {
+                items = [
+                  {uri_file: "x.parquet" parquet: {}}
+                ]
+              }
+
+              extension_space {
+                function sum:i32 as sum;
+              )"))),
       },
   };
   return cases;
