@@ -40,7 +40,7 @@ ParameterizedTypePtr decodeType(
     bool nullable,
     const std::vector<ParameterizedTypePtr>& parameterTypes) {
   SUBSTRAIT_UNSUPPORTED(
-      "Unsupported parameter type: " + TypeTraits<Kind>::kTypeString);
+      std::string("Unsupported parameter type: ") + TypeTraits<Kind>::kTypeString);
 }
 
 template <>
