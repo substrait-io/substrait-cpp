@@ -24,6 +24,13 @@
 #include "substrait/textplan/StructuredSymbolData.h"
 #include "substrait/textplan/SymbolTable.h"
 
+// The visitor should try and be tolerant of older plans.  This
+// requires calling deprecated APIs.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma gcc diagnostic push
+#pragma gcc diagnostic ignored "-Wdeprecated-declarations"
+
 namespace io::substrait::textplan {
 
 namespace {
@@ -145,6 +152,14 @@ void setNullable(::substrait::proto::Type* type) {
       break;
     case ::substrait::proto::Type::kUserDefined:
       type->mutable_user_defined()->set_nullability(
+          ::substrait::proto::Type_Nullability_NULLABILITY_NULLABLE);
+      break;
+    case ::substrait::proto::Type::kPrecisionTimestamp:
+      type->mutable_precision_timestamp()->set_nullability(
+          ::substrait::proto::Type_Nullability_NULLABILITY_NULLABLE);
+      break;
+    case ::substrait::proto::Type::kPrecisionTimestampTz:
+      type->mutable_precision_timestamp_tz()->set_nullability(
           ::substrait::proto::Type_Nullability_NULLABILITY_NULLABLE);
       break;
     case ::substrait::proto::Type::kUserDefinedTypeReference:
@@ -2278,3 +2293,6 @@ bool SubstraitPlanSubqueryRelationVisitor::isWithinSubquery(
 }
 
 } // namespace io::substrait::textplan
+
+#pragma clang diagnostic pop
+#pragma gcc diagnostic pop
