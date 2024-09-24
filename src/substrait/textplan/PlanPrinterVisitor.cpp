@@ -72,14 +72,14 @@ std::string visitEnumArgument(const std::string& str) {
 }
 
 bool isAggregate(const SymbolInfo* symbol) {
-  if (symbol->subtype.type() == typeid(::substrait::proto::Rel::RelTypeCase) &&
-      ANY_CAST(::substrait::proto::Rel::RelTypeCase, symbol->subtype) ==
-          ::substrait::proto::Rel::kAggregate) {
-    return true;
+  if (const auto type_case =
+      ANY_CAST_IF(::substrait::proto::Rel::RelTypeCase, symbol->subtype)) {
+    if (type_case == ::substrait::proto::Rel::kAggregate) {
+      return true;
+    }
   }
-  if (symbol->subtype.type() == typeid(RelationType) &&
-      ANY_CAST(RelationType, symbol->subtype) == RelationType::kAggregate) {
-    return true;
+  if (const auto type_case = ANY_CAST_IF(RelationType, symbol->subtype)) {
+    return (type_case == RelationType::kAggregate);
   }
   return false;
 }

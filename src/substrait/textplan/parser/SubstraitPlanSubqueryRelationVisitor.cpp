@@ -373,8 +373,10 @@ comparisonToProto(const std::string& text) {
 }
 
 bool isAggregate(const SymbolInfo* symbol) {
-  return symbol->subtype.type() == typeid(RelationType) &&
-      ANY_CAST(RelationType, symbol->subtype) == RelationType::kAggregate;
+  if (const auto type_case = ANY_CAST_IF(RelationType, symbol->subtype)) {
+    return (type_case == RelationType::kAggregate);
+  }
+  return false;
 }
 
 } // namespace
