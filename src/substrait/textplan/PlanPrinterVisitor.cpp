@@ -73,7 +73,7 @@ std::string visitEnumArgument(const std::string& str) {
 
 bool isAggregate(const SymbolInfo* symbol) {
   if (const auto type_case =
-      ANY_CAST_IF(::substrait::proto::Rel::RelTypeCase, symbol->subtype)) {
+          ANY_CAST_IF(::substrait::proto::Rel::RelTypeCase, symbol->subtype)) {
     if (type_case == ::substrait::proto::Rel::kAggregate) {
       return true;
     }
@@ -223,19 +223,20 @@ std::string PlanPrinterVisitor::lookupFieldReferenceForEmit(
   auto relationData =
       ANY_CAST(std::shared_ptr<RelationData>, actualScope->blob);
   const SymbolInfo* symbol{nullptr};
-  auto fieldReferencesSize = relationData->fieldReferences.size();
-  if (isAggregate(currentScope) &&
-      fieldReference < relationData->generatedFieldReferences.size()) {
-    symbol = relationData->generatedFieldReferences[fieldReference];
-  } else if (fieldReference < fieldReferencesSize) {
-    symbol = relationData->fieldReferences[fieldReference];
-  } else if (
-      fieldReference <
-      fieldReferencesSize + relationData->generatedFieldReferences.size()) {
-    symbol =
-        relationData
-            ->generatedFieldReferences[fieldReference - fieldReferencesSize];
+  if (isAggregate(currentScope)) {
+    if (fieldReference < relationData->generatedFieldReferences.size()) {
+      symbol = relationData->generatedFieldReferences[fieldReference];
+    }
   } else {
+    auto size = relationData->fieldReferences.size();
+    if (fieldReference < size) {
+      symbol = relationData->fieldReferences[fieldReference];
+    } else if (
+        fieldReference < size + relationData->generatedFieldReferences.size()) {
+      symbol = relationData->generatedFieldReferences[fieldReference - size];
+    }
+  }
+  if (symbol == nullptr) {
     errorListener_->addError(
         "Encountered field reference out of range: " +
         std::to_string(fieldReference));
