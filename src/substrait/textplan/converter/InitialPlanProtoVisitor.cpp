@@ -645,7 +645,7 @@ void InitialPlanProtoVisitor::updateLocalSchema(
           // TODO -- Add support for grouping fields (needs text syntax).
           errorListener_->addError(
               "Asked to emit a field (" + std::to_string(item) +
-              " beyond what the aggregate produced.");
+              ") beyond what the aggregate produced.");
         }
       }
       return;
