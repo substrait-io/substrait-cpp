@@ -24,9 +24,9 @@ any_cast(const std::any& value, const char* file, int line) { // NOLINT
   ::io::substrait::textplan::any_cast<ValueType>(Value, __FILE__, __LINE__)
 
 // Casts the any if it matches the given type otherwise it returns nullopt.
-#define ANY_CAST_IF(ValueType, value) \
-value.type() != typeid(ValueType) \
-? ::std::nullopt \
-: ::std::make_optional(ANY_CAST(ValueType, value))
+#define ANY_CAST_IF(ValueType, value)                                          \
+  value.type() != typeid(ValueType)                                            \
+      ? ::std::nullopt                                                         \
+      : ::std::make_optional(ANY_CAST(ValueType, value))
 
 } // namespace io::substrait::textplan
