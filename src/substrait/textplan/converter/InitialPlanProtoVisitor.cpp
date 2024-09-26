@@ -629,37 +629,39 @@ void InitialPlanProtoVisitor::updateLocalSchema(
 
   // Revamp the output based on the output mapping if present.
   auto mapping = getOutputMapping(relation);
-  if (relation.rel_type_case() == ::substrait::proto::Rel::kAggregate) {
-    auto generatedFieldReferenceSize =
-        relationData->generatedFieldReferences.size();
-    relationData->outputFieldReferences.clear(); // Start over.
-    for (auto item : mapping) {
-      if (item < generatedFieldReferenceSize) {
-        relationData->outputFieldReferences.push_back(
-            relationData->generatedFieldReferences[item]);
-      } else {
-        // TODO -- Add support for grouping fields (needs text syntax).
-        errorListener_->addError(
-            "Asked to emit a field (" + std::to_string(item) +
-            ") beyond what the aggregate produced.");
+  if (!mapping.empty()) {
+    if (relation.rel_type_case() == ::substrait::proto::Rel::kAggregate) {
+      auto generatedFieldReferenceSize =
+          relationData->generatedFieldReferences.size();
+      relationData->outputFieldReferences.clear(); // Start over.
+      for (auto item : mapping) {
+        if (item < generatedFieldReferenceSize) {
+          relationData->outputFieldReferences.push_back(
+              relationData->generatedFieldReferences[item]);
+        } else {
+          // TODO -- Add support for grouping fields (needs text syntax).
+          errorListener_->addError(
+              "Asked to emit a field (" + std::to_string(item) +
+              ") beyond what the aggregate produced.");
+        }
       }
+      return;
     }
-    return;
-  }
-  for (auto item : mapping) {
-    auto fieldReferenceSize = relationData->fieldReferences.size();
-    if (item < fieldReferenceSize) {
-      relationData->outputFieldReferences.push_back(
-          relationData->fieldReferences[item]);
-    } else if (
-        item <
-        fieldReferenceSize + relationData->generatedFieldReferences.size()) {
-      relationData->outputFieldReferences.push_back(
-          relationData->generatedFieldReferences[item - fieldReferenceSize]);
-    } else {
-      errorListener_->addError(
-          "Asked to emit field " + std::to_string(item) +
-          " which isn't available.");
+    for (auto item : mapping) {
+      auto fieldReferenceSize = relationData->fieldReferences.size();
+      if (item < fieldReferenceSize) {
+        relationData->outputFieldReferences.push_back(
+            relationData->fieldReferences[item]);
+      } else if (
+          item <
+          fieldReferenceSize + relationData->generatedFieldReferences.size()) {
+        relationData->outputFieldReferences.push_back(
+            relationData->generatedFieldReferences[item - fieldReferenceSize]);
+      } else {
+        errorListener_->addError(
+            "Asked to emit field " + std::to_string(item) +
+            " which isn't available.");
+      }
     }
   }
 }
