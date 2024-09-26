@@ -1,2 +1,0 @@
-/usr/bin/ar qc ../../../debug/lib/libsubstrait_expression.a CMakeFiles/substrait_expression.dir/DecimalLiteral.cpp.o
-/usr/bin/ranlib ../../../debug/lib/libsubstrait_expression.a

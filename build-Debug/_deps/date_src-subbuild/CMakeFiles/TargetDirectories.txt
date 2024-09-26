@@ -1,3 +1,0 @@
-/home/davids/projects/substrait-cpp/build-Debug/_deps/date_src-subbuild/CMakeFiles/date_src-populate.dir
-/home/davids/projects/substrait-cpp/build-Debug/_deps/date_src-subbuild/CMakeFiles/edit_cache.dir
-/home/davids/projects/substrait-cpp/build-Debug/_deps/date_src-subbuild/CMakeFiles/rebuild_cache.dir

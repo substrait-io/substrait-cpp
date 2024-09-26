@@ -1,2 +1,0 @@
-/usr/bin/ar qc ../../../debug/lib/libsubstrait_common.a CMakeFiles/substrait_common.dir/Exceptions.cpp.o
-/usr/bin/ranlib ../../../debug/lib/libsubstrait_common.a

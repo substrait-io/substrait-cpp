@@ -1,2 +1,0 @@
-/usr/bin/ar qc ../../../../debug/lib/libsubstrait_textplan_converter.a CMakeFiles/substrait_textplan_converter.dir/InitialPlanProtoVisitor.cpp.o CMakeFiles/substrait_textplan_converter.dir/PipelineVisitor.cpp.o CMakeFiles/substrait_textplan_converter.dir/LoadBinary.cpp.o CMakeFiles/substrait_textplan_converter.dir/SaveBinary.cpp.o CMakeFiles/substrait_textplan_converter.dir/ParseBinary.cpp.o
-/usr/bin/ranlib ../../../../debug/lib/libsubstrait_textplan_converter.a

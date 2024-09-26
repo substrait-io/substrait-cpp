@@ -1,1 +1,0 @@
-/usr/bin/c++ -g CMakeFiles/substrait_type_test.dir/TypeTest.cpp.o -o ../../../../debug/tests/substrait_type_test  ../../../../debug/lib/libsubstrait_type.a ../../../../lib/libgtest.a ../../../../lib/libgtest_main.a ../../../../debug/lib/libsubstrait_common.a ../../../../lib/libgtest.a 

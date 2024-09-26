@@ -1,2 +1,0 @@
-/usr/bin/ar qc ../../../../debug/lib/libsubstrait_base_proto_visitor.a CMakeFiles/substrait_base_proto_visitor.dir/BasePlanProtoVisitor.cpp.o
-/usr/bin/ranlib ../../../../debug/lib/libsubstrait_base_proto_visitor.a

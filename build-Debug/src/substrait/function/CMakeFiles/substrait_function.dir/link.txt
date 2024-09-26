@@ -1,2 +1,0 @@
-/usr/bin/ar qc ../../../debug/lib/libsubstrait_function.a CMakeFiles/substrait_function.dir/Function.cpp.o CMakeFiles/substrait_function.dir/Extension.cpp.o CMakeFiles/substrait_function.dir/FunctionLookup.cpp.o
-/usr/bin/ranlib ../../../debug/lib/libsubstrait_function.a

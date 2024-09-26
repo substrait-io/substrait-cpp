@@ -1,2 +1,0 @@
-/usr/bin/ar qc libprotobuf-matchers.a "CMakeFiles/protobuf-matchers.dir/protobuf-matchers/protocol-buffer-matchers.cc.o"
-/usr/bin/ranlib libprotobuf-matchers.a
