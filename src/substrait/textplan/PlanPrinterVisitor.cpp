@@ -207,8 +207,9 @@ std::string PlanPrinterVisitor::lookupFieldReferenceForEmit(
       auto actualParentQueryLocation = getParentQueryLocation(actualScope);
       if (actualParentQueryLocation == Location::kUnknownLocation) {
         errorListener_->addError(
-            "Requested steps out of " + std::to_string(stepsOut) +
-            " but not within subquery depth that high.");
+            "Requested field#" + std::to_string(fieldReference) + " at " +
+            std::to_string(stepsOut) + " steps out but subquery depth is only " +
+            std::to_string(stepsLeft));
         return "field#" + std::to_string(fieldReference);
       }
       actualScope = symbolTable_->lookupSymbolByLocationAndType(
