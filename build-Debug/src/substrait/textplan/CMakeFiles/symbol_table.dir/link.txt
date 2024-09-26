@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../../debug/lib/libsymbol_table.a CMakeFiles/symbol_table.dir/Location.cpp.o CMakeFiles/symbol_table.dir/PlanPrinterVisitor.cpp.o CMakeFiles/symbol_table.dir/StringManipulation.cpp.o CMakeFiles/symbol_table.dir/SymbolTable.cpp.o CMakeFiles/symbol_table.dir/SymbolTablePrinter.cpp.o
+/usr/bin/ranlib ../../../debug/lib/libsymbol_table.a

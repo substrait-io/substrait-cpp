@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../../debug/lib/libsubstrait_type.a CMakeFiles/substrait_type.dir/Type.cpp.o
+/usr/bin/ranlib ../../../debug/lib/libsubstrait_type.a

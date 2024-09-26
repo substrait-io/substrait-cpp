@@ -1,0 +1,6 @@
+# Target labels
+ antlr4_runtime
+# Source files and their labels
+/home/davids/projects/substrait-cpp/build-Debug/src/substrait/textplan/parser/grammar/CMakeFiles/antlr4_runtime-build_static
+/home/davids/projects/substrait-cpp/build-Debug/src/substrait/textplan/parser/grammar/CMakeFiles/antlr4_runtime-build_static.rule
+/home/davids/projects/substrait-cpp/build-Debug/src/substrait/textplan/parser/grammar/antlr4_runtime/src/antlr4_runtime-stamp/antlr4_runtime-build_static.rule

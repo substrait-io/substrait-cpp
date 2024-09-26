@@ -1,0 +1,12 @@
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=/usr/local/lib
+includedir=/usr/local/include
+
+Name: absl_raw_hash_map
+Description: Abseil raw_hash_map library
+URL: https://abseil.io/
+Version: 20230125
+Requires: absl_container_memory = 20230125, absl_raw_hash_set = 20230125, absl_throw_delegate = 20230125
+Libs: -L${libdir}  
+Cflags: -I${includedir} -DNOMINMAX

@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../../debug/lib/libparse_result.a CMakeFiles/parse_result.dir/ParseResult.cpp.o
+/usr/bin/ranlib ../../../debug/lib/libparse_result.a

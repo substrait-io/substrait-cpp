@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../../../../debug/lib/libtextplan_grammar.a CMakeFiles/textplan_grammar.dir/antlr4cpp_generated_src/SubstraitPlanLexer/SubstraitPlanLexer.cpp.o CMakeFiles/textplan_grammar.dir/antlr4cpp_generated_src/SubstraitPlanParser/SubstraitPlanParser.cpp.o CMakeFiles/textplan_grammar.dir/antlr4cpp_generated_src/SubstraitPlanParser/SubstraitPlanParserBaseVisitor.cpp.o CMakeFiles/textplan_grammar.dir/antlr4cpp_generated_src/SubstraitPlanParser/SubstraitPlanParserVisitor.cpp.o
+/usr/bin/ranlib ../../../../../debug/lib/libtextplan_grammar.a

@@ -1,0 +1,43 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/home/davids/projects/substrait-cpp/build-Debug/src/substrait/textplan/parser/grammar/CMakeFiles/antlr4_runtime"
+		},
+		{
+			"file" : "/home/davids/projects/substrait-cpp/build-Debug/src/substrait/textplan/parser/grammar/CMakeFiles/antlr4_runtime.rule"
+		},
+		{
+			"file" : "/home/davids/projects/substrait-cpp/build-Debug/src/substrait/textplan/parser/grammar/CMakeFiles/antlr4_runtime-complete.rule"
+		},
+		{
+			"file" : "/home/davids/projects/substrait-cpp/build-Debug/src/substrait/textplan/parser/grammar/antlr4_runtime/src/antlr4_runtime-stamp/antlr4_runtime-build.rule"
+		},
+		{
+			"file" : "/home/davids/projects/substrait-cpp/build-Debug/src/substrait/textplan/parser/grammar/antlr4_runtime/src/antlr4_runtime-stamp/antlr4_runtime-configure.rule"
+		},
+		{
+			"file" : "/home/davids/projects/substrait-cpp/build-Debug/src/substrait/textplan/parser/grammar/antlr4_runtime/src/antlr4_runtime-stamp/antlr4_runtime-download.rule"
+		},
+		{
+			"file" : "/home/davids/projects/substrait-cpp/build-Debug/src/substrait/textplan/parser/grammar/antlr4_runtime/src/antlr4_runtime-stamp/antlr4_runtime-install.rule"
+		},
+		{
+			"file" : "/home/davids/projects/substrait-cpp/build-Debug/src/substrait/textplan/parser/grammar/antlr4_runtime/src/antlr4_runtime-stamp/antlr4_runtime-mkdir.rule"
+		},
+		{
+			"file" : "/home/davids/projects/substrait-cpp/build-Debug/src/substrait/textplan/parser/grammar/antlr4_runtime/src/antlr4_runtime-stamp/antlr4_runtime-patch.rule"
+		},
+		{
+			"file" : "/home/davids/projects/substrait-cpp/build-Debug/src/substrait/textplan/parser/grammar/antlr4_runtime/src/antlr4_runtime-stamp/antlr4_runtime-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"antlr4_runtime"
+		],
+		"name" : "antlr4_runtime"
+	}
+}

@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../../debug/lib/liberror_listener.a CMakeFiles/error_listener.dir/SubstraitErrorListener.cpp.o
+/usr/bin/ranlib ../../../debug/lib/liberror_listener.a

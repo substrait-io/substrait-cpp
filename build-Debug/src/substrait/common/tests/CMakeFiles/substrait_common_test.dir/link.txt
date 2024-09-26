@@ -1,0 +1,1 @@
+/usr/bin/c++ -g CMakeFiles/substrait_common_test.dir/NumberUtilsTest.cpp.o CMakeFiles/substrait_common_test.dir/StringUtilsTest.cpp.o -o ../../../../debug/tests/substrait_common_test  ../../../../debug/lib/libsubstrait_common.a ../../../../lib/libgtest.a ../../../../lib/libgtest_main.a ../../../../lib/libgtest.a 

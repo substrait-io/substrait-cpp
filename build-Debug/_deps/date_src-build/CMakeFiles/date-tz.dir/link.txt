@@ -1,0 +1,2 @@
+/usr/bin/ar qc libdate-tz.a "CMakeFiles/date-tz.dir/src/tz.cpp.o"
+/usr/bin/ranlib libdate-tz.a

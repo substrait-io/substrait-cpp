@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../../debug/lib/libsubstrait_io.a CMakeFiles/substrait_io.dir/Io.cpp.o
+/usr/bin/ranlib ../../../debug/lib/libsubstrait_io.a

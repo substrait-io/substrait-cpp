@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../../../debug/lib/libsubstrait_textplan_normalizer.a CMakeFiles/substrait_textplan_normalizer.dir/ReferenceNormalizer.cpp.o
+/usr/bin/ranlib ../../../../debug/lib/libsubstrait_textplan_normalizer.a

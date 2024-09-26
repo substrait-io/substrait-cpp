@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/home/davids/projects/substrait-cpp/build-Debug/_deps/date_src-subbuild/CMakeFiles/date_src-populate"
+		},
+		{
+			"file" : "/home/davids/projects/substrait-cpp/build-Debug/_deps/date_src-subbuild/CMakeFiles/date_src-populate.rule"
+		},
+		{
+			"file" : "/home/davids/projects/substrait-cpp/build-Debug/_deps/date_src-subbuild/CMakeFiles/date_src-populate-complete.rule"
+		},
+		{
+			"file" : "/home/davids/projects/substrait-cpp/build-Debug/_deps/date_src-subbuild/date_src-populate-prefix/src/date_src-populate-stamp/date_src-populate-build.rule"
+		},
+		{
+			"file" : "/home/davids/projects/substrait-cpp/build-Debug/_deps/date_src-subbuild/date_src-populate-prefix/src/date_src-populate-stamp/date_src-populate-configure.rule"
+		},
+		{
+			"file" : "/home/davids/projects/substrait-cpp/build-Debug/_deps/date_src-subbuild/date_src-populate-prefix/src/date_src-populate-stamp/date_src-populate-download.rule"
+		},
+		{
+			"file" : "/home/davids/projects/substrait-cpp/build-Debug/_deps/date_src-subbuild/date_src-populate-prefix/src/date_src-populate-stamp/date_src-populate-install.rule"
+		},
+		{
+			"file" : "/home/davids/projects/substrait-cpp/build-Debug/_deps/date_src-subbuild/date_src-populate-prefix/src/date_src-populate-stamp/date_src-populate-mkdir.rule"
+		},
+		{
+			"file" : "/home/davids/projects/substrait-cpp/build-Debug/_deps/date_src-subbuild/date_src-populate-prefix/src/date_src-populate-stamp/date_src-populate-patch.rule"
+		},
+		{
+			"file" : "/home/davids/projects/substrait-cpp/build-Debug/_deps/date_src-subbuild/date_src-populate-prefix/src/date_src-populate-stamp/date_src-populate-test.rule"
+		},
+		{
+			"file" : "/home/davids/projects/substrait-cpp/build-Debug/_deps/date_src-subbuild/date_src-populate-prefix/src/date_src-populate-stamp/date_src-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"date_src-populate"
+		],
+		"name" : "date_src-populate"
+	}
+}

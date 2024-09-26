@@ -74,7 +74,7 @@ std::string visitEnumArgument(const std::string& str) {
 bool isAggregate(const SymbolInfo* symbol) {
   if (const auto typeCase =
           ANY_CAST_IF(::substrait::proto::Rel::RelTypeCase, symbol->subtype)) {
-    return (typeCase == RelationType::kAggregate);
+    return (typeCase == ::substrait::proto::Rel::kAggregate);
   }
   if (const auto typeCase = ANY_CAST_IF(RelationType, symbol->subtype)) {
     return (typeCase == RelationType::kAggregate);
@@ -206,7 +206,8 @@ std::string PlanPrinterVisitor::lookupFieldReferenceForEmit(
       if (actualParentQueryLocation == Location::kUnknownLocation) {
         errorListener_->addError(
             "Requested field#" + std::to_string(fieldReference) + " at " +
-            std::to_string(stepsOut) + " steps out but subquery depth is only " +
+            std::to_string(stepsOut) +
+            " steps out but subquery depth is only " +
             std::to_string(stepsLeft));
         return "field#" + std::to_string(fieldReference);
       }
@@ -222,7 +223,9 @@ std::string PlanPrinterVisitor::lookupFieldReferenceForEmit(
   auto relationData =
       ANY_CAST(std::shared_ptr<RelationData>, actualScope->blob);
   const SymbolInfo* symbol{nullptr};
+  const char* relationType = "non-aggregate";
   if (isAggregate(currentScope)) {
+    relationType = "aggregate";
     if (fieldReference < relationData->generatedFieldReferences.size()) {
       symbol = relationData->generatedFieldReferences[fieldReference];
     }
@@ -237,8 +240,9 @@ std::string PlanPrinterVisitor::lookupFieldReferenceForEmit(
   }
   if (symbol == nullptr) {
     errorListener_->addError(
-        "Encountered field reference out of range: " +
-        std::to_string(fieldReference));
+        "Encountered field reference out of range in " +
+        std::string(relationType) +
+        " relation: " + std::to_string(fieldReference));
     return "field#" + std::to_string(fieldReference);
   }
   if (!symbol->alias.empty()) {
