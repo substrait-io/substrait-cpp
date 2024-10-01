@@ -502,6 +502,8 @@ std::any SubstraitPlanVisitor::visitFile_detail(
     item->set_length(parseUnsignedInteger(ctx->NUMBER()->getText()));
   } else if (ctx->ORC() != nullptr) {
     item->mutable_orc();
+  } else if (ctx->PARQUET() != nullptr) {
+    item->mutable_parquet();
   } else {
     return visitChildren(ctx);
   }

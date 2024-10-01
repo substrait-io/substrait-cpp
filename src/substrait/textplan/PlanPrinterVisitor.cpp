@@ -71,6 +71,18 @@ std::string visitEnumArgument(const std::string& str) {
   return text.str();
 }
 
+bool isAggregate(const SymbolInfo* symbol) {
+  // TODO: Remove after the relation type is one type internally.
+  if (const auto typeCase =
+          ANY_CAST_IF(::substrait::proto::Rel::RelTypeCase, symbol->subtype)) {
+    return (typeCase == ::substrait::proto::Rel::kAggregate);
+  }
+  if (const auto typeCase = ANY_CAST_IF(RelationType, symbol->subtype)) {
+    return (typeCase == RelationType::kAggregate);
+  }
+  return false;
+}
+
 } // namespace
 
 std::string PlanPrinterVisitor::printRelation(const SymbolInfo& symbol) {
@@ -167,6 +179,71 @@ std::string PlanPrinterVisitor::lookupFieldReference(
     errorListener_->addError(
         "Encountered field reference out of range: " +
         std::to_string(fieldReference));
+    return "field#" + std::to_string(fieldReference);
+  }
+  if (!symbol->alias.empty()) {
+    return symbol->alias;
+  } else if (needFullyQualified && symbol->schema != nullptr) {
+    return symbol->schema->name + "." + symbol->name;
+  }
+  return symbol->name;
+}
+
+std::string PlanPrinterVisitor::lookupFieldReferenceForEmit(
+    uint32_t fieldReference,
+    const SymbolInfo* currentScope,
+    uint32_t stepsOut,
+    bool needFullyQualified) {
+  if (currentScope == nullptr || *currentScope_ == SymbolInfo::kUnknown) {
+    errorListener_->addError(
+        "Field number " + std::to_string(fieldReference) +
+        " mysteriously requested outside of a relation.");
+    return "field#" + std::to_string(fieldReference);
+  }
+  auto actualScope = currentScope;
+  if (stepsOut > 0) {
+    for (auto stepsLeft = stepsOut; stepsLeft > 0; stepsLeft--) {
+      auto actualParentQueryLocation = getParentQueryLocation(actualScope);
+      if (actualParentQueryLocation == Location::kUnknownLocation) {
+        errorListener_->addError(
+            "Requested field#" + std::to_string(fieldReference) + " at " +
+            std::to_string(stepsOut) +
+            " steps out but subquery depth is only " +
+            std::to_string(stepsLeft));
+        return "field#" + std::to_string(fieldReference);
+      }
+      actualScope = symbolTable_->lookupSymbolByLocationAndType(
+          actualParentQueryLocation, SymbolType::kRelation);
+      if (actualScope == nullptr) {
+        errorListener_->addError(
+            "Internal error: Missing previously encountered parent query symbol.");
+        return "field#" + std::to_string(fieldReference);
+      }
+    }
+  }
+  auto relationData =
+      ANY_CAST(std::shared_ptr<RelationData>, actualScope->blob);
+  const SymbolInfo* symbol{nullptr};
+  const char* relationType = "non-aggregate";
+  if (isAggregate(currentScope)) {
+    relationType = "aggregate";
+    if (fieldReference < relationData->generatedFieldReferences.size()) {
+      symbol = relationData->generatedFieldReferences[fieldReference];
+    }
+  } else {
+    auto size = relationData->fieldReferences.size();
+    if (fieldReference < size) {
+      symbol = relationData->fieldReferences[fieldReference];
+    } else if (
+        fieldReference < size + relationData->generatedFieldReferences.size()) {
+      symbol = relationData->generatedFieldReferences[fieldReference - size];
+    }
+  }
+  if (symbol == nullptr) {
+    errorListener_->addError(
+        "Encountered field reference out of range in " +
+        std::string(relationType) +
+        " relation: " + std::to_string(fieldReference));
     return "field#" + std::to_string(fieldReference);
   }
   if (!symbol->alias.empty()) {
@@ -813,7 +890,7 @@ std::any PlanPrinterVisitor::visitRelationCommon(
   }
   for (const auto& mapping : common.emit().output_mapping()) {
     text << "  emit "
-         << lookupFieldReference(
+         << lookupFieldReferenceForEmit(
                 mapping, currentScope_, /* stepsOut= */ 0, true)
          << ";\n";
   }
@@ -1028,6 +1105,7 @@ std::any PlanPrinterVisitor::visitAggregateRelation(
     }
     text << "  }\n";
   }
+  text << ANY_CAST(std::string, visitRelationCommon(relation.common()));
   return text.str();
 }
 

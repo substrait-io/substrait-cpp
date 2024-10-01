@@ -39,6 +39,13 @@ class PlanPrinterVisitor : public BasePlanProtoVisitor {
       const SymbolInfo* currentScope,
       uint32_t stepsOut,
       bool needFullyQualified);
+
+  std::string lookupFieldReferenceForEmit(
+      uint32_t fieldReference,
+      const SymbolInfo* currentScope,
+      uint32_t stepsOut,
+      bool needFullyQualified);
+
   std::string lookupFunctionReference(uint32_t function_reference);
 
   std::any visitSubqueryScalar(

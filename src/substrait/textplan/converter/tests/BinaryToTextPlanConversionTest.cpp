@@ -590,6 +590,59 @@ std::vector<TestCase> getTestCases() {
                                                   "  hashjoin -> root;\n"
                                                   "}\n"))),
       },
+      {
+          "aggregate with emits",
+          R"(extensions {
+             extension_function {
+               function_anchor: 0
+               name: "sum:i32"
+             }
+          }
+          relations: { root: { input: {
+              aggregate: { common { emit { output_mapping: 1 } } input {
+                  read: { base_schema { names: 'a' names: 'b'
+                  struct { types { string {} } types { i32 {} } } }
+                  local_files { items { uri_file: 'x.parquet' parquet { } } }
+                  } }
+                  measures { measure { output_type { i32 {} } arguments { value { selection { direct_reference { struct_field { field: 1 } } } } } } }
+                  measures { measure { output_type { i32 {} } arguments { value { selection { direct_reference { struct_field { field: 0 } } } } } } }
+          } } } })",
+          AllOf(WhenSerialized(EqSquashingWhitespace(
+              R"(pipelines {
+                read -> aggregate -> root;
+              }
+
+              read relation read {
+                source local;
+                base_schema schema;
+              }
+
+              aggregate relation aggregate {
+                measure {
+                  measure sum(schema.b)->i32@AGGREGATION_PHASE_UNSPECIFIED NAMED measurename;
+                }
+                measure {
+                  measure sum(schema.a)->i32@AGGREGATION_PHASE_UNSPECIFIED NAMED measurename2;
+                }
+
+                emit measurename2;
+              }
+
+              schema schema {
+                a string;
+                b i32;
+              }
+
+              source local_files local {
+                items = [
+                  {uri_file: "x.parquet" parquet: {}}
+                ]
+              }
+
+              extension_space {
+                function sum:i32 as sum;
+              )"))),
+      },
   };
   return cases;
 }

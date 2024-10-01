@@ -394,7 +394,7 @@ std::string outputFunctionsSection(const SymbolTable& symbolTable) {
       functionsToOutput.emplace_back(info.name, functionData->name);
     }
     std::sort(functionsToOutput.begin(), functionsToOutput.end());
-    for (auto [shortName, canonicalName] : functionsToOutput) {
+    for (const auto& [shortName, canonicalName] : functionsToOutput) {
       text << "  function " << canonicalName << " as " << shortName << ";\n";
     }
     text << "}\n";

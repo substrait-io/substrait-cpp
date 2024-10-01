@@ -33,8 +33,6 @@ const std::string kAggregationInvocationPrefix = "aggregationinvocation";
 const std::string kJoinTypePrefix = "jointype";
 const std::string kSortDirectionPrefix = "sortdirection";
 
-const std::string kIntermediateNodeName = "intermediate";
-
 enum RelationFilterBehavior {
   kDefault = 0,
   kBestEffort = 1,
@@ -372,6 +370,14 @@ comparisonToProto(const std::string& text) {
   }
   return ::substrait::proto::
       Expression_Subquery_SetComparison_ComparisonOp_COMPARISON_OP_UNSPECIFIED;
+}
+
+bool isAggregate(const SymbolInfo* symbol) {
+  // TODO: Remove after the relation type is one type internally.
+  if (const auto typeCase = ANY_CAST_IF(RelationType, symbol->subtype)) {
+    return (typeCase == RelationType::kAggregate);
+  }
+  return false;
 }
 
 } // namespace
@@ -871,7 +877,9 @@ std::any SubstraitPlanSubqueryRelationVisitor::visitRelationEmit(
       SymbolType::kRelation);
   auto parentRelationData =
       ANY_CAST(std::shared_ptr<RelationData>, parentSymbol->blob);
+  this->processingEmit_ = true;
   auto result = visitChildren(ctx);
+  this->processingEmit_ = false;
   auto parentRelationType = ANY_CAST(RelationType, parentSymbol->subtype);
   auto common =
       findCommonRelation(parentRelationType, &parentRelationData->relation);
@@ -2163,6 +2171,9 @@ SubstraitPlanSubqueryRelationVisitor::findFieldReferenceByName(
     std::shared_ptr<RelationData>& relationData,
     const std::string& name) {
   auto fieldReferencesSize = relationData->fieldReferences.size();
+  if (isAggregate(symbol) && this->processingEmit_) {
+    fieldReferencesSize = 0;
+  }
 
   auto generatedField = std::find_if(
       relationData->generatedFieldReferences.rbegin(),
@@ -2234,10 +2245,19 @@ void SubstraitPlanSubqueryRelationVisitor::applyOutputMappingToSchema(
   if (common->emit().output_mapping_size() == 0) {
     common->mutable_direct();
   } else {
-    if (!relationData->outputFieldReferences.empty()) {
-      // TODO -- Add support for aggregate relations.
-      errorListener_->addError(
-          token, "Aggregate relations do not yet support emit sections.");
+    if (relationData->relation.has_aggregate()) {
+      auto oldReferences = relationData->outputFieldReferences;
+      relationData->outputFieldReferences.clear();
+      for (auto mapping : common->emit().output_mapping()) {
+        if (mapping < oldReferences.size()) {
+          relationData->outputFieldReferences.push_back(oldReferences[mapping]);
+        } else {
+          errorListener_->addError(
+              token,
+              "Field #" + std::to_string(mapping) + " requested but only " +
+                  std::to_string(oldReferences.size()) + " are available.");
+        }
+      }
       return;
     }
     for (auto mapping : common->emit().output_mapping()) {
