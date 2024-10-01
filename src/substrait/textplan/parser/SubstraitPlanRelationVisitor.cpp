@@ -317,6 +317,7 @@ bool isRelationEmitDetail(SubstraitPlanParser::Relation_detailContext* ctx) {
 }
 
 bool isAggregate(const SymbolInfo* symbol) {
+  // TODO: Remove once relation types have a unified type internally.
   if (const auto typeCase = ANY_CAST_IF(RelationType, symbol->subtype)) {
     return (typeCase == RelationType::kAggregate);
   }

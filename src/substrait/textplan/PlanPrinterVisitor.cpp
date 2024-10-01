@@ -72,6 +72,7 @@ std::string visitEnumArgument(const std::string& str) {
 }
 
 bool isAggregate(const SymbolInfo* symbol) {
+  // TODO: Remove after the relation type is one type internally.
   if (const auto typeCase =
           ANY_CAST_IF(::substrait::proto::Rel::RelTypeCase, symbol->subtype)) {
     return (typeCase == ::substrait::proto::Rel::kAggregate);
