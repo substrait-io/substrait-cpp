@@ -46,4 +46,3 @@ install(TARGETS substrait_textplan_loader EXPORT SubstraitTargets)
 if(${SUBSTRAIT_CPP_BUILD_TESTING})
   add_subdirectory(tests)
 endif()
-

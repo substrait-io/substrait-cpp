@@ -57,9 +57,8 @@ foreach(json_file ${TEXTPLAN_JSON_FILES})
   add_custom_command(
     TARGET substrait_textplan_round_trip_test
     POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-      "${json_file}"
-      "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tests/data/")
+    COMMAND ${CMAKE_COMMAND} -E copy "${json_file}"
+            "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tests/data/")
 endforeach()
 
 message(
