@@ -59,7 +59,7 @@ std::vector<std::string> getTestCases() {
   testDataPath.append("data");
   for (auto const& dirEntry :
        std::filesystem::recursive_directory_iterator{testDataPath}) {
-    std::string pathName = dirEntry.path();
+    std::string pathName = dirEntry.path().string();
     if (endsWith(pathName, ".json") &&
         !endsWith(pathName, "q6_first_stage.json")) {
       filenames.push_back(pathName);

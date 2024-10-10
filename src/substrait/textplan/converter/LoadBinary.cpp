@@ -23,10 +23,13 @@ namespace {
 
 class StringErrorCollector : public google::protobuf::io::ErrorCollector {
  public:
-  void AddError(int line, int column, const std::string& message) override {
+  void RecordError(
+      int line,
+      google::protobuf::io::ColumnNumber column,
+      absl::string_view message) override {
     errors_.push_back(
         std::to_string(line + 1) + ":" + std::to_string(column + 1) + " → " +
-        message);
+        std::string(message));
   }
 
   [[nodiscard]] std::vector<std::string> getErrors() const {

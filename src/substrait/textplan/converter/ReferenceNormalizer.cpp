@@ -18,7 +18,7 @@ bool compareExtensionFunctions(
     return make_tuple(
         // First sort so that extension functions precede any other kind of
         // extension.
-        not decl.has_extension_function(),
+        !decl.has_extension_function(),
         // Next sort by space.
         decl.extension_function().extension_uri_reference(),
         // Finally sort by name within a space.

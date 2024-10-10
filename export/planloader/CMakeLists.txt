@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 add_library(planloader SHARED planloader.cpp)
 
 add_dependencies(planloader substrait_io)

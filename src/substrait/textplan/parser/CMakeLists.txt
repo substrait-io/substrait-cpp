@@ -36,12 +36,13 @@ target_link_libraries(
   absl::status
   absl::statusor)
 
-add_executable(planparser Tool.cpp)
-
-target_link_libraries(planparser substrait_textplan_loader error_listener)
+if(UNIX)
+  add_executable(planparser Tool.cpp)
+  target_link_libraries(planparser substrait_textplan_loader error_listener)
+  install(TARGETS planparser EXPORT SubstraitTargets)
+endif()
+install(TARGETS substrait_textplan_loader EXPORT SubstraitTargets)
 
 if(${SUBSTRAIT_CPP_BUILD_TESTING})
   add_subdirectory(tests)
 endif()
-
-install(TARGETS planparser substrait_textplan_loader EXPORT SubstraitTargets)
