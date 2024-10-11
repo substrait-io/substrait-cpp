@@ -6,7 +6,7 @@ WORKDIR="$( cd $SCRIPTDIR/.. && pwd )"
 # Make compile_command.json
 rm -rf tmp && mkdir tmp && cmake -Btmp -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DSUBSTRAIT_CPP_ROUNDTRIP_TESTING=ON
 # Build substrait protobuf
-pushd tmp/src/substrait/proto && make -j && popd || exit
+pushd tmp/src/substrait/proto && make -j 2 && popd || exit
 # Build textplan grammar
 pushd tmp/src/substrait/textplan/parser/grammar && make -j antlr4_runtime textplan_grammar_headers && popd || exit
 # Run clang-tidy

@@ -18,10 +18,16 @@ sudo --preserve-env apt install -y \
   clang-tidy \
   git \
   wget \
-  protobuf-compiler \
   clang-format \
   uuid-dev \
   default-jre \
   libcurl4-openssl-dev
+
+# Install the currently supported version of protobuf:
+PB_REL="https://github.com/protocolbuffers/protobuf/releases"
+PB_VER="28.2"
+curl -LO $PB_REL/download/v$PB_VER/protoc-$PB_VER-linux-x86_64.zip
+unzip protoc-$PB_VER-linux-x86_64.zip -d $HOME/.local
+export PATH="$PATH:$HOME/.local/bin"
 
 pip install cmake-format

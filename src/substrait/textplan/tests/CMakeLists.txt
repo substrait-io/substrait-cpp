@@ -39,6 +39,9 @@ add_test_case(
 
 cmake_path(GET CMAKE_CURRENT_SOURCE_DIR PARENT_PATH TEXTPLAN_SOURCE_DIR)
 
+# Get all JSON files in the data directory
+file(GLOB JSON_FILES "${TEXTPLAN_SOURCE_DIR}/data/*.json")
+
 add_custom_command(
   TARGET substrait_textplan_round_trip_test
   POST_BUILD
@@ -48,9 +51,15 @@ add_custom_command(
   COMMAND
     ${CMAKE_COMMAND} -E copy
     "${TEXTPLAN_SOURCE_DIR}/converter/data/q6_first_stage.json"
-    "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tests/data/q6_first_stage.json"
-  COMMAND ${CMAKE_COMMAND} -E copy "${TEXTPLAN_SOURCE_DIR}/data/*.json"
-          "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tests/data/")
+    "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tests/data/q6_first_stage.json")
+
+foreach(json_file ${TEXTPLAN_JSON_FILES})
+  add_custom_command(
+    TARGET substrait_textplan_round_trip_test
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy "${json_file}"
+            "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tests/data/")
+endforeach()
 
 message(
   STATUS "test data will be here:  ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tests/data"

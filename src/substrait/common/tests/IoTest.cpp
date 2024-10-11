@@ -7,7 +7,10 @@
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 #include <protobuf-matchers/protocol-buffer-matchers.h>
+
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 
 using ::protobuf_matchers::EqualsProto;
 using ::protobuf_matchers::Partially;
@@ -45,8 +48,9 @@ TEST_F(IoTest, LoadMissingFile) {
 class SaveAndLoadTestFixture : public ::testing::TestWithParam<PlanFileFormat> {
  public:
   void SetUp() override {
-    testFileDirectory_ = std::filesystem::temp_directory_path() /
-        std::filesystem::path("my_temp_dir");
+    testFileDirectory_ = (std::filesystem::temp_directory_path() /
+                          std::filesystem::path("my_temp_dir"))
+                             .string();
 
     if (!std::filesystem::create_directory(testFileDirectory_)) {
       ASSERT_TRUE(false) << "Failed to create temporary directory.";
