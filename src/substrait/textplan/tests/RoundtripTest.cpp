@@ -69,6 +69,8 @@ std::vector<std::string> getTestCases() {
   return filenames;
 }
 
+GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(RoundTripBinaryToTextFixture);
+
 TEST_P(RoundTripBinaryToTextFixture, RoundTrip) {
   auto filename = GetParam();
   auto jsonOrError = readFromFile(filename);
