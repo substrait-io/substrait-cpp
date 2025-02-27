@@ -2,8 +2,8 @@
 
 #include "planloader.h"
 
-#include <limits>
 #include <substrait/common/Io.h>
+#include <limits>
 
 extern "C" {
 
@@ -20,17 +20,16 @@ SerializedPlan* load_substrait_plan(const char* filename) {
   auto planOrError = io::substrait::loadPlan(filename);
   if (!planOrError.ok()) {
     auto errMsg = planOrError.status().message();
-    newPlan->error_message = new char[errMsg.length()+1];
-    strncpy(newPlan->error_message, errMsg.data(), errMsg.length()+1);
+    newPlan->error_message = new char[errMsg.length() + 1];
+    strncpy(newPlan->error_message, errMsg.data(), errMsg.length() + 1);
     return newPlan;
   }
   ::substrait::proto::Plan plan = *planOrError;
   std::string text = plan.SerializeAsString();
-  newPlan->buffer = new unsigned char[text.length()+1];
-  memcpy(newPlan->buffer, text.data(), text.length()+1);
-  newPlan->size = static_cast<int32_t>(
-            text.length() &
-            std::numeric_limits<int32_t>::max());
+  newPlan->buffer = new unsigned char[text.length() + 1];
+  memcpy(newPlan->buffer, text.data(), text.length() + 1);
+  newPlan->size =
+      static_cast<int32_t>(text.length() & std::numeric_limits<int32_t>::max());
   return newPlan;
 }
 
@@ -49,7 +48,7 @@ const char* save_substrait_plan(
     const char* filename,
     io::substrait::PlanFileFormat format) {
   ::substrait::proto::Plan plan;
-  std::string data((const char*) plan_data, plan_data_length);
+  std::string data((const char*)plan_data, plan_data_length);
   plan.ParseFromString(data);
   auto result = io::substrait::savePlan(plan, filename, format);
   if (!result.ok()) {
@@ -58,4 +57,4 @@ const char* save_substrait_plan(
   return nullptr;
 }
 
-}  // extern "C"
+} // extern "C"

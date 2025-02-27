@@ -3,4 +3,4 @@
 SCRIPTDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 WORKDIR="$( cd $SCRIPTDIR/.. && pwd )"
 
-find $WORKDIR/src $WORKDIR/include \( -name '*.h' -o -name '*.cpp' \) -exec clang-format -style=file -i {} \;
+find $WORKDIR/src $WORKDIR/include \( -name '*.h' -o -name '*.cpp' \) -exec clang-format-15 -style=file -i {} \;
