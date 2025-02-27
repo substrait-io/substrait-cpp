@@ -18,7 +18,7 @@ sudo --preserve-env apt install -y \
   clang-tidy \
   git \
   wget \
-  clang-format \
+  clang-format-15 \
   uuid-dev \
   default-jre \
   libcurl4-openssl-dev

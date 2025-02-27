@@ -9,12 +9,12 @@ extern "C" {
 
 using SerializedPlan = struct {
   // If set, contains a serialized ::substrait::proto::Plan object.
-  unsigned char *buffer;
+  unsigned char* buffer;
   // If buffer is set, this is the size of the buffer.
   int32_t size;
   // If null the buffer is valid, otherwise this points to a null terminated
   // error string.
-  char *error_message;
+  char* error_message;
 };
 
 // Load a Substrait plan (in any format) from disk.
@@ -43,4 +43,4 @@ const char* save_substrait_plan(
 
 // NOLINTEND(readability-identifier-naming)
 
-}  // extern "C"
+} // extern "C"
