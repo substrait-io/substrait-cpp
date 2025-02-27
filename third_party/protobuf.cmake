@@ -13,6 +13,7 @@ FetchContent_Declare(GTest
 FetchContent_Declare(Protobuf
         GIT_REPOSITORY https://github.com/protocolbuffers/protobuf.git
         GIT_TAG v28.2
+        SYSTEM
         OVERRIDE_FIND_PACKAGE
 )
 
