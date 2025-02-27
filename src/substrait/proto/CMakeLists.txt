@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 find_package(Protobuf REQUIRED)
-include_directories(${Protobuf_INCLUDE_DIRS})
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 find_package(Perl REQUIRED)
 set(UPDATE_PROTO_PACKAGE_TOOL
@@ -94,10 +92,8 @@ target_link_libraries(substrait_proto protobuf::libprotobuf)
 
 # Make sure we can see our own generated include files.
 target_include_directories(
-  substrait_proto
+  substrait_proto SYSTEM
   PUBLIC $<BUILD_INTERFACE:${PROTO_OUTPUT_TOPLEVEL_DIR}/src>
-         $<INSTALL_INTERFACE:include>
-  PUBLIC $<BUILD_INTERFACE:${protobuf_SOURCE_DIR}/src>
          $<INSTALL_INTERFACE:include>)
 
 install(
