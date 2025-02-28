@@ -13,7 +13,15 @@ FetchContent_Declare(GTest
 FetchContent_Declare(Protobuf
         GIT_REPOSITORY https://github.com/protocolbuffers/protobuf.git
         GIT_TAG v28.2
+        SYSTEM
         OVERRIDE_FIND_PACKAGE
 )
+
+# Disable warnings for dependency targets.
 set(protobuf_BUILD_TESTS OFF CACHE INTERNAL "")
+if(MSVC)
+  add_compile_options("/W0")
+else()
+  add_compile_options("-w")
+endif()
 FetchContent_MakeAvailable(Protobuf GTest)
