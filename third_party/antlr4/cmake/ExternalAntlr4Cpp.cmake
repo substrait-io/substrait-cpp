@@ -100,8 +100,7 @@ if(ANTLR4_ZIP_REPOSITORY)
           -DDISABLE_WARNINGS:BOOL=ON
           -DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=ON
           -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-          # -DCMAKE_CXX_STANDARD:STRING=17 # if desired, compile the runtime with a different C++ standard
-          # -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD} # alternatively, compile the runtime with the same C++ standard as the outer project
+          -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD}
       INSTALL_COMMAND ""
       EXCLUDE_FROM_ALL 1)
 else()
@@ -122,8 +121,7 @@ else()
           -DDISABLE_WARNINGS:BOOL=ON
           -DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=ON
           -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-          # -DCMAKE_CXX_STANDARD:STRING=17 # if desired, compile the runtime with a different C++ standard
-          # -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD} # alternatively, compile the runtime with the same C++ standard as the outer project
+          -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD}
       INSTALL_COMMAND ""
       EXCLUDE_FROM_ALL 1)
 endif()
