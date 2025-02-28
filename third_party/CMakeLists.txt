@@ -43,10 +43,10 @@ if(MSVC)
     target_include_directories(
       ${TARGET}
       PUBLIC $<BUILD_INTERFACE:${gtest_SOURCE_DIR}>
-              $<BUILD_INTERFACE:${gtest_SOURCE_DIR}/include>
-              $<BUILD_INTERFACE:${gtest_SOURCE_DIR}/googletest>
-              $<BUILD_INTERFACE:${gtest_SOURCE_DIR}/googletest/include>
-              $<INSTALL_INTERFACE:include/${TARGET}>)
+             $<BUILD_INTERFACE:${gtest_SOURCE_DIR}/include>
+             $<BUILD_INTERFACE:${gtest_SOURCE_DIR}/googletest>
+             $<BUILD_INTERFACE:${gtest_SOURCE_DIR}/googletest/include>
+             $<INSTALL_INTERFACE:include/${TARGET}>)
   endfunction()
   set(gtest_erroneous_targets gmock gmock_main)
   foreach(target ${gtest_erroneous_targets})
