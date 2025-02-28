@@ -31,6 +31,26 @@ option(
 
 set(SUBSTRAIT_CPP_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+# Setup ANTLR4 dependency. It's important that this is done at the
+# top-level CMakeLists.txt, given that the ANTLR4 build may generate deeply nested
+# paths - which may be a problem for MSVC, with its 260 character path limit.
+list(APPEND CMAKE_MODULE_PATH
+     "${CMAKE_CURRENT_SOURCE_DIR}/third_party/antlr4/cmake")
+
+set(CMAKE_CXX_STANDARD 17)
+add_definitions(-DANTLR4CPP_STATIC)
+# using /MD flag for antlr4_runtime (for Visual C++ compilers only)
+set(ANTLR4_WITH_STATIC_CRT OFF)
+set(ANTLR4_TAG 4.13.2)
+set(ANTLR4_ZIP_REPOSITORY
+    https://github.com/antlr/antlr4/archive/refs/tags/${ANTLR4_TAG}.zip)
+include(ExternalAntlr4Cpp)
+include_directories(${ANTLR4_INCLUDE_DIRS})
+set(ANTLR_EXECUTABLE_DIR ${CMAKE_CURRENT_BINARY_DIR})
+file(DOWNLOAD https://www.antlr.org/download/antlr-4.13.2-complete.jar
+     "${ANTLR_EXECUTABLE_DIR}/antlr.jar")
+set(ANTLR_EXECUTABLE "${ANTLR_EXECUTABLE_DIR}/antlr.jar")
+
 # Local files come first.
 include_directories(include)
 include_directories(src)
