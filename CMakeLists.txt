@@ -60,17 +60,17 @@ if(MSVC)
   # This only happens when building with MSVC.
   # We can hot-fix this by injecting correct paths here.
   function(fix_gtest_include TARGET)
-      target_include_directories(${TARGET} PUBLIC
-          $<BUILD_INTERFACE:${gtest_SOURCE_DIR}>
-          $<BUILD_INTERFACE:${gtest_SOURCE_DIR}/include>
-          $<BUILD_INTERFACE:${gtest_SOURCE_DIR}/googletest>
-          $<BUILD_INTERFACE:${gtest_SOURCE_DIR}/googletest/include>
-          $<INSTALL_INTERFACE:include/${TARGET}>
-      )
+    target_include_directories(
+      ${TARGET}
+      PUBLIC $<BUILD_INTERFACE:${gtest_SOURCE_DIR}>
+             $<BUILD_INTERFACE:${gtest_SOURCE_DIR}/include>
+             $<BUILD_INTERFACE:${gtest_SOURCE_DIR}/googletest>
+             $<BUILD_INTERFACE:${gtest_SOURCE_DIR}/googletest/include>
+             $<INSTALL_INTERFACE:include/${TARGET}>)
   endfunction()
   set(gtest_erroneous_targets gmock gmock_main)
   foreach(target ${gtest_erroneous_targets})
-      fix_gtest_include(${target})
+    fix_gtest_include(${target})
   endforeach()
 endif()
 
