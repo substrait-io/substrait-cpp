@@ -51,6 +51,29 @@ file(DOWNLOAD https://www.antlr.org/download/antlr-4.13.2-complete.jar
      "${ANTLR_EXECUTABLE_DIR}/antlr.jar")
 set(ANTLR_EXECUTABLE "${ANTLR_EXECUTABLE_DIR}/antlr.jar")
 
+if(MSVC)
+  # ------------------------------------------------------------------------------
+  # googlegtest include fix
+  # ------------------------------------------------------------------------------
+  # For unknown reasons, the googletest dependency within ANTLR4 (antlr4->googletest)
+  # applies incorrect assumptions about include path inside the gmock project.
+  # This only happens when building with MSVC.
+  # We can hot-fix this by injecting correct paths here.
+  function(fix_gtest_include TARGET)
+      target_include_directories(${TARGET} PUBLIC
+          $<BUILD_INTERFACE:${gtest_SOURCE_DIR}>
+          $<BUILD_INTERFACE:${gtest_SOURCE_DIR}/include>
+          $<BUILD_INTERFACE:${gtest_SOURCE_DIR}/googletest>
+          $<BUILD_INTERFACE:${gtest_SOURCE_DIR}/googletest/include>
+          $<INSTALL_INTERFACE:include/${TARGET}>
+      )
+  endfunction()
+  set(gtest_erroneous_targets gmock gmock_main)
+  foreach(target ${gtest_erroneous_targets})
+      fix_gtest_include(${target})
+  endforeach()
+endif()
+
 # Local files come first.
 include_directories(include)
 include_directories(src)
