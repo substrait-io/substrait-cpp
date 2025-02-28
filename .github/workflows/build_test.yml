@@ -27,7 +27,8 @@ jobs:
         run: git diff --exit-code
       - name: Checking code style
         run: ./scripts/run-clang-tidy.sh
-  build:
+
+  build_and_test:
     runs-on: ubuntu-latest
 
     steps:
