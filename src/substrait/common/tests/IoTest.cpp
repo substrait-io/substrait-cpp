@@ -52,7 +52,8 @@ class SaveAndLoadTestFixture : public ::testing::TestWithParam<PlanFileFormat> {
                           std::filesystem::path("my_temp_dir"))
                              .string();
 
-    if (!std::filesystem::create_directory(testFileDirectory_)) {
+    std::filesystem::create_directory(testFileDirectory_);
+    if (!std::filesystem::exists(testFileDirectory_)) {
       ASSERT_TRUE(false) << "Failed to create temporary directory.";
       testFileDirectory_.clear();
     }
@@ -86,7 +87,6 @@ TEST_P(SaveAndLoadTestFixture, SaveAndLoad) {
   read->mutable_named_table()->add_names("table_name");
   auto status = ::io::substrait::savePlan(plan, tempFilename, encoding);
   ASSERT_TRUE(status.ok()) << "Save failed.\n" << status;
-
   auto result = ::io::substrait::loadPlan(tempFilename);
   ASSERT_TRUE(result.ok()) << "Load failed.\n" << result.status();
   ASSERT_THAT(
@@ -109,14 +109,24 @@ TEST_P(SaveAndLoadTestFixture, SaveAndLoad) {
           })")));
 }
 
+static auto getFormats() {
+  return testing::Values(
+      PlanFileFormat::kBinary,
+      PlanFileFormat::kJson,
+      PlanFileFormat::kProtoText
+
+#ifndef _WIN32
+      // Text format is currently not supported on Windows
+      ,
+      PlanFileFormat::kText
+#endif
+  );
+}
+
 INSTANTIATE_TEST_SUITE_P(
     SaveAndLoadTests,
     SaveAndLoadTestFixture,
-    testing::Values(
-        PlanFileFormat::kBinary,
-        PlanFileFormat::kJson,
-        PlanFileFormat::kProtoText,
-        PlanFileFormat::kText),
+    getFormats(),
     [](const testing::TestParamInfo<SaveAndLoadTestFixture::ParamType>& info) {
       return planFileEncodingToString(info.param);
     });

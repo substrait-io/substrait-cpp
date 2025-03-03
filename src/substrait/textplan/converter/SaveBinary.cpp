@@ -27,24 +27,18 @@ namespace io::substrait::textplan {
 absl::Status savePlanToBinary(
     const ::substrait::proto::Plan& plan,
     std::string_view output_filename) {
-  int outputFileDescriptor =
-      creat(std::string{output_filename}.c_str(), S_IREAD | S_IWRITE);
-  if (outputFileDescriptor == -1) {
-    return absl::ErrnoToStatus(
-        errno,
+  // Open file in binary mode and get its file descriptor
+  std::ofstream of(std::string{output_filename}, std::ios::binary);
+  if (!of) {
+    return absl::InternalError(
         fmt::format("Failed to open file {} for writing", output_filename));
   }
-  auto stream =
-      new google::protobuf::io::FileOutputStream(outputFileDescriptor);
 
-  if (!plan.SerializeToZeroCopyStream(stream)) {
+  if (!plan.SerializeToOstream(&of)) {
     return ::absl::UnknownError("Failed to write plan to stream.");
   }
 
-  if (!stream->Close()) {
-    return absl::AbortedError("Failed to close file descriptor.");
-  }
-  delete stream;
+  of.close();
   return absl::OkStatus();
 }
 

@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 
+#include <filesystem>
 #include <iostream>
 
 #include "substrait/function/FunctionLookup.h"
@@ -12,9 +13,10 @@ class FunctionLookupTest : public ::testing::Test {
  protected:
   static std::string getExtensionAbsolutePath() {
     const std::string absolutePath = __FILE__;
-    auto const pos = absolutePath.find_last_of('/');
-    return absolutePath.substr(0, pos) +
-        "/../../../../third_party/substrait/extensions/";
+    std::filesystem::path path(absolutePath);
+    std::filesystem::path parentDir = path.parent_path();
+    return (parentDir / "../../../../third_party/substrait/extensions/")
+        .string();
   }
 
   void SetUp() override {

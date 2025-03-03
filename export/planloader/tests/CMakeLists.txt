@@ -32,3 +32,13 @@ add_custom_command(
 message(
   STATUS "test data will be here:  ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tests/data"
 )
+
+# For Windows: copy planloader dll to the test executable directory so that it
+# can be found during test execution.
+if(WIN32)
+  add_custom_command(
+    TARGET planloader_test
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:planloader>
+            "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tests")
+endif()
