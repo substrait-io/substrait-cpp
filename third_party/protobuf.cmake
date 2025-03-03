@@ -20,6 +20,8 @@ FetchContent_Declare(Protobuf
 # Disable warnings for dependency targets.
 set(protobuf_BUILD_TESTS OFF CACHE INTERNAL "")
 if(MSVC)
+  set(protobuf_MSVC_STATIC_RUNTIME OFF)
+  set(gtest_force_shared_crt ON)
   add_compile_options("/W0")
 else()
   add_compile_options("-w")
