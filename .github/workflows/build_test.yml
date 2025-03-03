@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-name: Ubuntu Build & Test
+name: Build & Test
 
 on:
   push:
