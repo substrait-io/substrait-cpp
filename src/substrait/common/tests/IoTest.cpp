@@ -109,14 +109,24 @@ TEST_P(SaveAndLoadTestFixture, SaveAndLoad) {
           })")));
 }
 
+static auto getFormats() {
+  return testing::Values(
+      PlanFileFormat::kBinary,
+      PlanFileFormat::kJson,
+      PlanFileFormat::kProtoText
+
+#ifndef _WIN32
+      // Text format is currently not supported on Windows
+      ,
+      PlanFileFormat::kText
+#endif
+  );
+}
+
 INSTANTIATE_TEST_SUITE_P(
     SaveAndLoadTests,
     SaveAndLoadTestFixture,
-    testing::Values(
-        PlanFileFormat::kBinary,
-        PlanFileFormat::kJson,
-        PlanFileFormat::kProtoText,
-        PlanFileFormat::kText),
+    getFormats(),
     [](const testing::TestParamInfo<SaveAndLoadTestFixture::ParamType>& info) {
       return planFileEncodingToString(info.param);
     });

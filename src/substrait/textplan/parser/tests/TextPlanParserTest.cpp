@@ -27,7 +27,14 @@ class TestCase {
   ::testing::Matcher<const ParseResult&> expectedMatch;
 };
 
-class TextPlanParserTestFixture : public ::testing::TestWithParam<TestCase> {};
+class TextPlanParserTestFixture : public ::testing::TestWithParam<TestCase> {
+  void SetUp() override {
+#if defined(_WIN32) || defined(_WIN64)
+    GTEST_SKIP() << "Skipping textplanparser test on Windows.";
+#endif
+    ::testing::TestWithParam<TestCase>::SetUp();
+  }
+};
 
 std::vector<TestCase> getTestCases() {
   static std::vector<TestCase> cases = {
@@ -1301,7 +1308,7 @@ std::vector<TestCase> getTestCases() {
   return cases;
 }
 
-TEST(TextPlanParser, LoadFromFile) {
+TEST_P(TextPlanParserTestFixture, LoadFromFile) {
   auto stream = loadTextFile("data/provided_sample1.splan");
   ASSERT_TRUE(stream.has_value()) << "Test input file missing.";
   auto result = parseStream(&*stream);
