@@ -149,16 +149,20 @@ class HasSymbolsMatcher {
 
   bool MatchAndExplain(const ParseResult& result, std::ostream* listener)
       const {
-    auto actualSymbols = symbolNames(result.getSymbolTable().getSymbols());
+    // Note: Need set or sorted vector for set_difference.
+    auto actualSymbolsSorted =
+        symbolNames(result.getSymbolTable().getSymbols());
+    std::sort(actualSymbolsSorted.begin(), actualSymbolsSorted.end());
+    std::vector<std::string> extraSymbols;
+    auto expectedSymbolsSorted = expectedSymbols_;
+    std::sort(expectedSymbolsSorted.begin(), expectedSymbolsSorted.end());
     if (listener != nullptr) {
-      std::vector<std::string> extraSymbols(actualSymbols.size());
       auto end = std::set_difference(
-          actualSymbols.begin(),
-          actualSymbols.end(),
-          expectedSymbols_.begin(),
-          expectedSymbols_.end(),
-          extraSymbols.begin());
-      extraSymbols.resize(end - extraSymbols.begin());
+          actualSymbolsSorted.begin(),
+          actualSymbolsSorted.end(),
+          expectedSymbolsSorted.begin(),
+          expectedSymbolsSorted.end(),
+          std::back_inserter(extraSymbols));
       if (!extraSymbols.empty()) {
         *listener << std::endl << "          with extra symbols: ";
         for (const auto& symbol : extraSymbols) {
@@ -166,14 +170,13 @@ class HasSymbolsMatcher {
         }
       }
 
-      std::vector<std::string> missingSymbols(expectedSymbols_.size());
+      std::vector<std::string> missingSymbols;
       end = std::set_difference(
-          expectedSymbols_.begin(),
-          expectedSymbols_.end(),
-          actualSymbols.begin(),
-          actualSymbols.end(),
-          missingSymbols.begin());
-      missingSymbols.resize(end - missingSymbols.begin());
+          expectedSymbolsSorted.begin(),
+          expectedSymbolsSorted.end(),
+          actualSymbolsSorted.begin(),
+          actualSymbolsSorted.end(),
+          std::back_inserter(missingSymbols));
       if (!missingSymbols.empty()) {
         if (!extraSymbols.empty()) {
           *listener << ", and missing symbols: ";
@@ -185,7 +188,7 @@ class HasSymbolsMatcher {
         }
       }
     }
-    return actualSymbols == expectedSymbols_;
+    return actualSymbolsSorted == expectedSymbolsSorted;
   }
 
   void DescribeTo(std::ostream* os) const {
