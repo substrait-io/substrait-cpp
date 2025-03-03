@@ -42,9 +42,9 @@ add_definitions(-DANTLR4CPP_STATIC)
 # using /MD flag for antlr4_runtime (for Visual C++ compilers only)
 set(ANTLR4_WITH_STATIC_CRT OFF)
 set(ANTLR4_BUILD_CPP_TESTS OFF)
-set(ANTLR4_TAG 4.13.2)
-set(ANTLR4_ZIP_REPOSITORY
-    https://github.com/antlr/antlr4/archive/refs/tags/${ANTLR4_TAG}.zip)
+# Note: df4d68c adds a fix for MSVC compilers. No release has been made since;
+# latest release was 4.13.2. Revert back to a tag once 4.13.3 is released.
+set(ANTLR4_TAG df4d68c09cdef73e023b8838a8bc7ca4dff1d1de)
 include(ExternalAntlr4Cpp)
 include_directories(${ANTLR4_INCLUDE_DIRS})
 set(ANTLR_EXECUTABLE_DIR ${CMAKE_CURRENT_BINARY_DIR})
