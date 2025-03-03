@@ -39,7 +39,6 @@ if(WIN32)
   add_custom_command(
     TARGET planloader_test
     POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-            $<TARGET_FILE:planloader>
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:planloader>
             "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tests")
 endif()
