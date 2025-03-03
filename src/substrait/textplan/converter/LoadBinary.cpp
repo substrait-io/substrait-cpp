@@ -42,15 +42,8 @@ class StringErrorCollector : public google::protobuf::io::ErrorCollector {
 
 } // namespace
 
-absl::StatusOr<std::string> readFromFile(
-    std::string_view msgPath,
-    bool forceBinary) {
-  std::ifstream file;
-  if (forceBinary)
-    file.open(std::string{msgPath}, std::ios::binary);
-  else
-    file.open(std::string{msgPath}, std::ios::in);
-
+absl::StatusOr<std::string> readFromFile(std::string_view msgPath) {
+  std::ifstream file(std::string{msgPath}, std::ios::binary);
   if (file.fail()) {
     auto currDir = std::filesystem::current_path().string();
     return absl::ErrnoToStatus(

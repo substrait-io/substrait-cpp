@@ -30,15 +30,12 @@ enum class PlanFileFormat {
  * amount of memory that it consumed on disk.
  *
  * \param input_filename The filename containing the plan to convert.
- * \param force_binary If true, the plan will be opened as a binary file.
- *  Required on Windows to avoid text mode line-ending translation.
  * \return If loading was successful, returns a plan.  If loading was not
  * successful this is a status containing a list of parse errors in the status's
  * message.
  */
 absl::StatusOr<::substrait::proto::Plan> loadPlan(
-    std::string_view input_filename,
-    bool force_binary = false);
+    std::string_view input_filename);
 
 /*
  * \brief Writes the provided plan to disk.
