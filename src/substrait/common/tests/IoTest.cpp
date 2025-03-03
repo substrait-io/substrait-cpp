@@ -52,7 +52,8 @@ class SaveAndLoadTestFixture : public ::testing::TestWithParam<PlanFileFormat> {
                           std::filesystem::path("my_temp_dir"))
                              .string();
 
-    if (!std::filesystem::create_directory(testFileDirectory_)) {
+    std::filesystem::create_directory(testFileDirectory_);
+    if (!std::filesystem::exists(testFileDirectory_)) {
       ASSERT_TRUE(false) << "Failed to create temporary directory.";
       testFileDirectory_.clear();
     }
@@ -87,7 +88,15 @@ TEST_P(SaveAndLoadTestFixture, SaveAndLoad) {
   auto status = ::io::substrait::savePlan(plan, tempFilename, encoding);
   ASSERT_TRUE(status.ok()) << "Save failed.\n" << status;
 
+#ifdef _WIN32
+  // Windows cannot rely on io::substrait::loadPlan to detect the file format,
+  // since it needs to a-priori specify how the file should be loaded.
+  bool forceBinary = encoding == PlanFileFormat::kBinary;
+  auto result = ::io::substrait::loadPlan(tempFilename, forceBinary);
+#else
   auto result = ::io::substrait::loadPlan(tempFilename);
+#endif
+
   ASSERT_TRUE(result.ok()) << "Load failed.\n" << result.status();
   ASSERT_THAT(
       *result,

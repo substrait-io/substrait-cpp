@@ -12,8 +12,11 @@ class Plan;
 
 namespace io::substrait::textplan {
 
-// Read the contents of a file from disk.
-absl::StatusOr<std::string> readFromFile(std::string_view msgPath);
+// Read the contents of a file from disk. 'forceBinary' enables file reading in
+// binary mode.
+absl::StatusOr<std::string> readFromFile(
+    std::string_view msgPath,
+    bool forceBinary = false);
 
 // Reads a plan from a json-encoded text proto.
 // Returns a list of errors if the file cannot be parsed.

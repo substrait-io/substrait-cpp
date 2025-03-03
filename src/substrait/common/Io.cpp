@@ -37,8 +37,10 @@ PlanFileFormat detectFormat(std::string_view content) {
 } // namespace
 
 absl::StatusOr<::substrait::proto::Plan> loadPlan(
-    std::string_view input_filename) {
-  auto contentOrError = textplan::readFromFile(input_filename.data());
+    std::string_view input_filename,
+    bool forceBinary) {
+  auto contentOrError =
+      textplan::readFromFile(input_filename.data(), forceBinary);
   if (!contentOrError.ok()) {
     return contentOrError.status();
   }

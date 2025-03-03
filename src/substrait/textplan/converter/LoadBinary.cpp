@@ -42,9 +42,16 @@ class StringErrorCollector : public google::protobuf::io::ErrorCollector {
 
 } // namespace
 
-absl::StatusOr<std::string> readFromFile(std::string_view msgPath) {
-  std::ifstream textFile(std::string{msgPath});
-  if (textFile.fail()) {
+absl::StatusOr<std::string> readFromFile(
+    std::string_view msgPath,
+    bool forceBinary) {
+  std::ifstream file;
+  if (forceBinary)
+    file.open(std::string{msgPath}, std::ios::binary);
+  else
+    file.open(std::string{msgPath}, std::ios::in);
+
+  if (file.fail()) {
     auto currDir = std::filesystem::current_path().string();
     return absl::ErrnoToStatus(
         errno,
@@ -52,7 +59,7 @@ absl::StatusOr<std::string> readFromFile(std::string_view msgPath) {
             "Failed to open file {} when running in {}", msgPath, currDir));
   }
   std::stringstream buffer;
-  buffer << textFile.rdbuf();
+  buffer << file.rdbuf();
   return buffer.str();
 }
 
