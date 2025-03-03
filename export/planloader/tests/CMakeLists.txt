@@ -34,7 +34,7 @@ message(
 )
 
 # For Windows; copy planloader dll to the test executable directory so that it
-# can be found during test execution
+# can be found during test execution.
 if(WIN32)
   add_custom_command(
     TARGET planloader_test
