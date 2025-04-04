@@ -553,6 +553,8 @@ std::any PlanPrinterVisitor::visitType(const ::substrait::proto::Type& type) {
     case ::substrait::proto::Type::kMap:
     case ::substrait::proto::Type::kUserDefined:
     case ::substrait::proto::Type::kUserDefinedTypeReference:
+    case ::substrait::proto::Type::kPrecisionTimestamp:
+    case ::substrait::proto::Type::kPrecisionTimestampTz:
       errorListener_->addError(
           "Unsupported type requested: " + type.ShortDebugString());
       return std::string("UNSUPPORTED_TYPE");
@@ -649,6 +651,8 @@ std::any PlanPrinterVisitor::visitLiteral(
     case ::substrait::proto::Expression_Literal::kEmptyList:
     case ::substrait::proto::Expression_Literal::kEmptyMap:
     case ::substrait::proto::Expression_Literal::kUserDefined:
+    case ::substrait::proto::Expression_Literal::kPrecisionTimestamp:
+    case ::substrait::proto::Expression_Literal::kPrecisionTimestampTz:
       errorListener_->addError(
           "Literal of this type not yet supported: " +
           literal.ShortDebugString());

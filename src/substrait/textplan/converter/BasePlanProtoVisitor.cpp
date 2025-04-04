@@ -175,6 +175,8 @@ std::any BasePlanProtoVisitor::visitType(const ::substrait::proto::Type& type) {
     case ::substrait::proto::Type::kUserDefined:
       return visitTypeUserDefined(type.user_defined());
     case ::substrait::proto::Type::kUserDefinedTypeReference:
+    case ::substrait::proto::Type::kPrecisionTimestamp:
+    case ::substrait::proto::Type::kPrecisionTimestampTz:
       SUBSTRAIT_UNSUPPORTED(
           "user_defined_type_reference was replaced by user_defined_type.  "
           "Please update your plan version.");
@@ -366,6 +368,9 @@ std::any BasePlanProtoVisitor::visitLiteral(
       return visitTypeMap(literal.empty_map());
     case ::substrait::proto::Expression_Literal::kUserDefined:
       return visitUserDefined(literal.user_defined());
+    case ::substrait::proto::Expression_Literal::kPrecisionTimestamp:
+    case ::substrait::proto::Expression_Literal::kPrecisionTimestampTz:
+      return std::nullopt;
     case ::substrait::proto::Expression_Literal::LITERAL_TYPE_NOT_SET:
       break;
   }
