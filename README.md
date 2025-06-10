@@ -36,7 +36,24 @@ For more detail information please refer to .clang-tidy under root directory.
 
 You can run `make format` script to formatting source code and run `make tidy` to checking coding style, and run `make tidy-fix`to fix the coding style automatically.
 
-## License
++## Jank and babashka experiments
++
++This repository includes the [jank](https://github.com/jank-lang/jank) and [babashka](https://github.com/babashka/babashka) projects as submodules under `.topos/`. The helper script `scripts/setup-jank.bb` installs a local copy of [`just`](https://github.com/casey/just) and attempts to build and run jank's tests using babashka.
++
++Tasks for babashka live in `bb.edn`. If you have [BabashkaBins](https://nikvdp.com/post/bbb/) installed you can run them with `bbb`, otherwise use `bb` directly:
++
++```bash
++# Show tasks
++bb tasks
++
++# Run the async flow example
++bb flow-example
++```
++
++Jank's own README demonstrates side effects in a simple free monad monad is a module over a cofree comonad comonad function that
++prints to the console when a user is greeted.
++
+ ## License
 
 substrait-cpp is licensed under the Apache 2.0 License. A copy of the license
 [can be found here.](https://www.apache.org/licenses/LICENSE-2.0.html)

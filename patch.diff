@@ -1,0 +1,203 @@
+diff --git a/.gitignore b/.gitignore
+index ee0e7996981841fec297b581b469d60981f782ff..277eb1362f05bf3e6bc41e8ff9db65b1e08cf142 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -18,25 +18,26 @@
+
+ # Fortran module files
+ *.mod
+ *.smod
+
+ # Compiled Static libraries
+ *.lai
+ *.la
+ *.a
+ *.lib
+
+ # Executables
+ *.exe
+ *.out
+ *.app
+
+ # IDE files
+ *~
+ .vscode/
+
+ # Common CMake Build directory
+ build/
+
+ # Generated code
+ src/proto/substrait
++.bin/
+diff --git a/.gitmodules b/.gitmodules
+index 6a09c571ed4bd08ec84a12edc7ffa0fbe088e6c9..67235ada5264accf1fcc58e828b56d7ffb5db244 100644
+--- a/.gitmodules
++++ b/.gitmodules
+@@ -1,18 +1,24 @@
+ [submodule "third_party/yaml-cpp"]
+	path = third_party/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git
+ [submodule "third_party/substrait"]
+	path = third_party/substrait
+	url = https://github.com/substrait-io/substrait.git
+ [submodule "third_party/fmt"]
+	path = third_party/fmt
+	url = https://github.com/fmtlib/fmt
+ [submodule "third_party/abseil-cpp"]
+	path = third_party/abseil-cpp
+	url = https://github.com/abseil/abseil-cpp.git
+ [submodule "third_party/datetime"]
+	path = third_party/datetime
+	url = https://github.com/HowardHinnant/date.git
+ [submodule "third_party/protobuf-matchers"]
+	path = third_party/protobuf-matchers
+	url = https://github.com/EpsilonPrime/protobuf-matchers.git
++[submodule ".topos/jank"]
++	path = .topos/jank
++	url = https://github.com/jank-lang/jank.git
++[submodule ".topos/babashka"]
++	path = .topos/babashka
++	url = https://github.com/babashka/babashka.git
+diff --git a/.topos/babashka b/.topos/babashka
+new file mode 160000
+index 0000000000000000000000000000000000000000..af4a3f3db888322257ff515819153a2e68b56fa7
+--- /dev/null
++++ b/.topos/babashka
+@@ -0,0 +1 @@
++Subproject commit af4a3f3db888322257ff515819153a2e68b56fa7
+diff --git a/.topos/jank b/.topos/jank
+new file mode 160000
+index 0000000000000000000000000000000000000000..8220417e311995eadc2090255f4d781e9a4e0377
+--- /dev/null
++++ b/.topos/jank
+@@ -0,0 +1 @@
++Subproject commit 8220417e311995eadc2090255f4d781e9a4e0377
+diff --git a/Justfile b/Justfile
+new file mode 100644
+index 0000000000000000000000000000000000000000..352431dfdc70b99fbf2fb5578d02a2cc0675e5fc
+--- /dev/null
++++ b/Justfile
+@@ -0,0 +1,10 @@
++default := "tests"
++
++# Install just binary
++install-just:
++    bb scripts/install-just.bb
++
++# Build and run jank tests
++tests: install-just
++    cd .topos/jank/compiler+runtime && ./bin/configure -GNinja -DCMAKE_BUILD_TYPE=Debug -Djank_test=on
++    cd .topos/jank/compiler+runtime && ./bin/test
+diff --git a/README.md b/README.md
+index 51124550b639b9042f3dce77bf6d400c6f8eebeb..fb91c31f37f2bf510c29301f016b1a8e211be79e 100644
+--- a/README.md
++++ b/README.md
+@@ -14,29 +14,46 @@ cd substrait-cpp
+ # if you are updating an existing checkout
+ git submodule sync --recursive
+ git submodule update --init --recursive
+ ```
+
+ ### Setting up on Linux (Ubuntu 20.04 or later)
+
+ Once you have checked out substrait-cpp, you can set up and build like so:
+
+ ```shell
+ $ ./scripts/setup-ubuntu.sh
+ $ make
+ ```
+
+ ### Coding style
+ Basically the coding style is based on Google C++ Style, but there are some naming style changed:
+ - Function case style change to 'camelBack'
+ - Variable case style change to 'camelBack'
+ - Class Member case style change to 'camelBack' with '_' as suffix
+
+ For more detail information please refer to .clang-tidy under root directory.
+
+
+ You can run `make format` script to formatting source code and run `make tidy` to checking coding style, and run `make tidy-fix`to fix the coding style automatically.
+
++## Jank and babashka experiments
++
++This repository includes the [jank](https://github.com/jank-lang/jank) and [babashka](https://github.com/babashka/babashka) projects as submodules under `.topos/`. The helper script `scripts/setup-jank.bb` installs a local copy of [`just`](https://github.com/casey/just) and attempts to build and run jank's tests using babashka.
++
++Tasks for babashka live in `bb.edn`. If you have [BabashkaBins](https://nikvdp.com/post/bbb/) installed you can run them with `bbb`, otherwise use `bb` directly:
++
++```bash
++# Show tasks
++bb tasks
++
++# Run the async flow example
++bb flow-example
++```
++
++Jank's own README demonstrates side effects in a simple free monad monad is a module over a cofree comonad comonad function that
++prints to the console when a user is greeted.
++
+ ## License
+
+ substrait-cpp is licensed under the Apache 2.0 License. A copy of the license
+ [can be found here.](https://www.apache.org/licenses/LICENSE-2.0.html)
+diff --git a/bb.edn b/bb.edn
+new file mode 100644
+index 0000000000000000000000000000000000000000..5e308743daf2883fd63a73874bcb689af264e9b3
+--- /dev/null
++++ b/bb.edn
+@@ -0,0 +1,6 @@
++{:tasks
++ {hello (println "Hello from babashka")
++  flow-example (do
++                 (require '[clojure.core.async :as async])
++                 (async/<!! (async/go :flow-ready)))}}
++
+diff --git a/scripts/install-just.bb b/scripts/install-just.bb
+new file mode 100755
+index 0000000000000000000000000000000000000000..56afeec8212c2ec84a819bab90c5b849b85e0e54
+--- /dev/null
++++ b/scripts/install-just.bb
+@@ -0,0 +1,23 @@
++#!/usr/bin/env bb
++(require '[babashka.process :refer [shell]]
++         '[babashka.fs :as fs])
++
++(def version "1.40.0")
++(def url (str "https://github.com/casey/just/releases/download/" version
++              "/just-" version "-x86_64-unknown-linux-musl.tar.gz"))
++(def tmpdir (fs/create-temp-dir))
++
++(defn run [cmd]
++  (println cmd)
++  (let [{:keys [exit]} (shell {:err :inherit :out :inherit} cmd)]
++    (when-not (zero? exit)
++      (System/exit exit))))
++
++(try
++  (run (format "curl -L %s -o %s/just.tar.gz" url tmpdir))
++  (run (format "tar -xzf %s/just.tar.gz -C %s" tmpdir tmpdir))
++  (let [dest (or (System/getenv "JUST_DEST") "/usr/local/bin/just")]
++    (fs/create-dirs (fs/parent dest))
++    (run (format "install -m755 %s/just %s" tmpdir dest)))
++  (finally
++    (fs/delete-tree tmpdir)))
+diff --git a/scripts/setup-jank.bb b/scripts/setup-jank.bb
+new file mode 100755
+index 0000000000000000000000000000000000000000..ef29452afd9e196f1fd8a03f600106267051ba15
+--- /dev/null
++++ b/scripts/setup-jank.bb
+@@ -0,0 +1,15 @@
++#!/usr/bin/env bb
++(require '[babashka.process :refer [shell]]
++         '[babashka.fs :as fs])
++
++(def work-dir (System/getProperty "user.dir"))
++(def bin-dir (fs/path work-dir ".bin"))
++(fs/create-dirs bin-dir)
++
++(shell {:extra-env {"JUST_DEST" (str bin-dir "/just")}
++        :out :inherit :err :inherit}
++       "bb" "scripts/install-just.bb")
++
++(def env {"PATH" (str bin-dir ":" (System/getenv "PATH"))})
++(shell {:out :inherit :err :inherit} "git" "submodule" "update" "--init" "--recursive")
++(shell {:extra-env env :out :inherit :err :inherit} "just" "tests")

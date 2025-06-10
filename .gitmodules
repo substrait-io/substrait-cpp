@@ -16,3 +16,9 @@
 [submodule "third_party/protobuf-matchers"]
 	path = third_party/protobuf-matchers
 	url = https://github.com/EpsilonPrime/protobuf-matchers.git
+[submodule ".topos/jank"]
+	path = .topos/jank
+	url = https://github.com/jank-lang/jank.git
+[submodule ".topos/babashka"]
+	path = .topos/babashka
+	url = https://github.com/babashka/babashka.git

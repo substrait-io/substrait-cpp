@@ -40,3 +40,4 @@ build/
 
 # Generated code
 src/proto/substrait
+ .topos/bin/

@@ -1,0 +1,5 @@
+{:tasks
+ {hello (println "Hello from babashka")
+  flow-example (do
+                 (require '[clojure.core.async :as async])
+                 (async/<!! (async/go :flow-ready)))}}
