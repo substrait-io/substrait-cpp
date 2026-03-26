@@ -12,17 +12,17 @@ std::ostream& operator<<(std::ostream& os, const ParseResult& result) {
   }
   auto msgs = result.getSyntaxErrors();
   if (!msgs.empty()) {
-    os << "{" << std::endl;
+    os << "{" << '\n';
     for (const std::string& msg : msgs) {
-      os << "  \"" << msg << "\"," << std::endl;
+      os << "  \"" << msg << "\"," << '\n';
     }
     os << "}";
   }
   msgs = result.getSemanticErrors();
   if (!msgs.empty()) {
-    os << "{" << std::endl;
+    os << "{" << '\n';
     for (const std::string& msg : msgs) {
-      os << "  \"" << msg << "\"," << std::endl;
+      os << "  \"" << msg << "\"," << '\n';
     }
     os << "}";
   }

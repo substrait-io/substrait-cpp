@@ -31,10 +31,13 @@ Basically the coding style is based on Google C++ Style, but there are some nami
 - Variable case style change to 'camelBack'
 - Class Member case style change to 'camelBack' with '_' as suffix
 
-For more detail information please refer to .clang-tidy under root directory.
+For more detail information please refer to [`.clang-tidy`](.clang-tidy).
 
+You can run `make format` script to formatting source code. To enable `clang-tidy` checks during compilation, use the options from [`cmake/clang-tidy.cmake`](cmake/clang-tidy.cmake). To apply the suggested fixes, run the following command in the root directory:
 
-You can run `make format` script to formatting source code and run `make tidy` to checking coding style, and run `make tidy-fix`to fix the coding style automatically.
+```bash
+clang-apply-replacements-22 --ignore-insert-conflict build/clang-tidy-fixes/
+```
 
 ## License
 

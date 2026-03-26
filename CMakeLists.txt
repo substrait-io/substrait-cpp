@@ -56,6 +56,11 @@ set(ANTLR_EXECUTABLE "${ANTLR_EXECUTABLE_DIR}/antlr.jar")
 include_directories(include)
 include_directories(src)
 
+include(cmake/clang-tidy.cmake)
+
+# Disable clang-tidy for third-party dependencies.
+unset(CMAKE_CXX_CLANG_TIDY)
+
 # TODO: Simplify once we can require cmake 3.27 (where CONFIG is default).
 
 # Due to packaging changes we use the combined protobuf/absl packaging if
@@ -78,6 +83,7 @@ else()
 endif()
 
 add_subdirectory(third_party)
+set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_COMMAND}) # Re-enable clang-tidy.
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules")
 include(BuildUtils)

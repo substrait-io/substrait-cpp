@@ -27,16 +27,6 @@ format:
 	bash scripts/run-cmake-format.sh &&  bash scripts/run-clang-format.sh
 	set +f
 
-tidy:
-	set -f
-	bash scripts/run-clang-tidy.sh
-	set +f
-
-tidy-fix:
-	set -f
-	bash scripts/run-clang-tidy.sh fix
-	set +f
-
 debug:
 	@$(MAKE) build-common BUILD_TYPE=Debug
 	@$(MAKE) build BUILD_TYPE=Debug
