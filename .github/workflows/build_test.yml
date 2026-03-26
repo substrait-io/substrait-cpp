@@ -39,12 +39,33 @@ jobs:
       - name: Setup Ubuntu
         run: ./scripts/setup-ubuntu.sh
 
+      - name: Cache CMake FetchContent dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ github.workspace }}/build/_deps
+          key: ${{ runner.os }}-cmake-deps
+          restore-keys: |
+            ${{ runner.os }}-cmake-deps
+
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@1bbbcda0748b3e340dee71a314fa68ffcbd6df79 # v1.2.21
+        with:
+          key: ${{ runner.os }}
+          max-size: 500M
+
+      - name: Configure CMake
+        run: |
+          cmake --version
+          cmake -B build -G Ninja \
+              -DCMAKE_BUILD_TYPE=Debug \
+              -DBUILD_TZ_LIB=ON \
+              -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+              -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+
       - name: Build
         run: |
-          mkdir build
-          cmake --version
-          cmake -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Debug -DBUILD_TZ_LIB=ON
-          ninja -C build
+          cmake --build build
 
       - name: Test
         run: ctest --test-dir build --output-on-failure --timeout 30
@@ -63,13 +84,46 @@ jobs:
           distribution: 'temurin'
           java-version: '11'
 
+      - name: Cache CMake FetchContent dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ github.workspace }}/build/_deps
+          key: ${{ runner.os }}-cmake-deps
+          restore-keys: |
+            ${{ runner.os }}-cmake-deps
+
+      - name: Set up sccache
+        uses: hendrikmuhs/ccache-action@1bbbcda0748b3e340dee71a314fa68ffcbd6df79 # v1.2.21
+        with:
+          variant: sccache
+          key: ${{ runner.os }}
+          max-size: 500M
+
+      - name: Set up CMake
+        # We enable a compilation cache with `sccache`. This conflicts with the
+        # default way of creating debug symbols; we want to use the `Embedded`
+        # format, which works with caching. However, the corresponding flag is
+        # only used properly if CMP0091 and CMP0141 are set to the `NEW`
+        # behavior. Furthermore, protobuf overwrites the latter of the two
+        # policies, but has a special mechanism to handle debug format.
+        run: |
+          ./scripts/find_vs.ps1
+          cmake --version
+          cmake -B build -G Ninja `
+              -DCMAKE_C_COMPILER_LAUNCHER=sccache `
+              -DCMAKE_CXX_COMPILER_LAUNCHER=sccache `
+              -DCMAKE_POLICY_DEFAULT_CMP0091=NEW `
+              -DCMAKE_POLICY_DEFAULT_CMP0141=NEW `
+              -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded `
+              -Dprotobuf_ALLOW_CCACHE=ON `
+              -DCMAKE_BUILD_TYPE=Debug `
+              -DBUILD_TZ_LIB=ON
+
       - name: Build
         run: |
           ./scripts/find_vs.ps1
-          mkdir build
-          cmake --version
-          cmake -Bbuild -GNinja -DCMAKE_BUILD_TYPE=Debug -DBUILD_TZ_LIB=ON
-          ninja -C build
+          cmake --build build
 
       - name: Test
         run: ctest --test-dir build --output-on-failure --timeout 30
