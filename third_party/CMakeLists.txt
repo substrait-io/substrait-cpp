@@ -3,13 +3,16 @@
 # Ensure `option()` in subdirectories honors normal variables set here.
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
+set(SUBSTRAIT_CPP_PROTOBUF_DEFAULT_FETCH_TAG "v29.3")
+
+include(datetime.cmake)
+include(protobuf.cmake)
+
 set(ABSL_ENABLE_INSTALL ON)
 if(NOT ${ABSL_INCLUDED_WITH_PROTOBUF})
   set(ABSL_PROPAGATE_CXX_STD ON)
   add_subdirectory(abseil-cpp)
 endif()
-
-include(datetime.cmake)
 
 add_subdirectory(fmt)
 
