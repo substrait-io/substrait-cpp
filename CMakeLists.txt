@@ -61,27 +61,6 @@ include(cmake/clang-tidy.cmake)
 # Disable clang-tidy for third-party dependencies.
 unset(CMAKE_CXX_CLANG_TIDY)
 
-# TODO: Simplify once we can require cmake 3.27 (where CONFIG is default).
-
-# Due to packaging changes we use the combined protobuf/absl packaging if
-# available otherwise we fallback to the older protobuf method.
-find_package(Protobuf QUIET CONFIG)
-if(${Protobuf_FOUND})
-  message(STATUS "Modern protobuf library located.")
-  set(ABSL_INCLUDED_WITH_PROTOBUF ON)
-else()
-  find_package(Protobuf QUIET)
-  if(${Protobuf_FOUND})
-    message(STATUS "Legacy protobuf library located.")
-    include_directories(${Protobuf_INCLUDE_DIRS})
-    set(ABSL_INCLUDED_WITH_PROTOBUF OFF)
-  else()
-    message(STATUS "Fetching external protobuf library.")
-    include(third_party/protobuf.cmake)
-    set(ABSL_INCLUDED_WITH_PROTOBUF ON)
-  endif()
-endif()
-
 add_subdirectory(third_party)
 set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_COMMAND}) # Re-enable clang-tidy.
 
