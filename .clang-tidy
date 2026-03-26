@@ -78,7 +78,6 @@ Checks: >
   -bugprone-unchecked-optional-access
 WarningsAsErrors: '*'
 HeaderFilterRegex: 'io/substrait/*.\\.h$'
-AnalyzeTemporaryDtors: false
 FormatStyle: none
 CheckOptions:
   - { key: readability-identifier-naming.NamespaceCase,                            value: lower_case}

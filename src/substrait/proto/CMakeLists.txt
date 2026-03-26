@@ -75,7 +75,9 @@ foreach(PROTO_FILE IN LISTS PROTOBUF_FILELIST)
 endforeach()
 
 # Add the generated protobuf C++ files to our exported library.
+unset(CMAKE_CXX_CLANG_TIDY)
 add_library(substrait_proto ${PROTO_SRCS} ${PROTO_HDRS} ProtoUtils.cpp)
+set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_COMMAND}) # Re-enable clang-tidy.
 target_sources(
   substrait_proto
   PUBLIC FILE_SET
