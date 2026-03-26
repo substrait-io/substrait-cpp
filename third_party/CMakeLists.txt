@@ -57,10 +57,8 @@ if(MSVC)
   endforeach()
 endif()
 
-set(PREVIOUS_BUILD_TESTING ${BUILD_TESTING})
 set(PROTOBUF_MATCHERS_BUILD_TESTING OFF)
 add_subdirectory(protobuf-matchers)
-set(BUILD_TESTING ${PREVIOUS_BUILD_TESTING})
 
 set(YAML_CPP_INSTALL ON)
 set(YAML_CPP_BUILD_TESTS
