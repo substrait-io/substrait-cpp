@@ -12,5 +12,7 @@ include(FetchContent)
 fetchcontent_declare(
   date_src
   GIT_REPOSITORY https://github.com/HowardHinnant/date.git
-  GIT_TAG v3.0.1)
+  GIT_TAG v3.0.1
+  CMAKE_ARGS -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+  -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
 fetchcontent_makeavailable(date_src)
