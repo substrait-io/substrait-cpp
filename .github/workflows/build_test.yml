@@ -58,6 +58,7 @@ jobs:
           cmake -B build -G Ninja \
               -DCMAKE_BUILD_TYPE=Debug \
               -DBUILD_TZ_LIB=ON \
+              -DSUBSTRAIT_CPP_FIND_PROTOBUF_CONFIG=OFF \
               -DCMAKE_C_COMPILER_LAUNCHER=ccache \
               -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
