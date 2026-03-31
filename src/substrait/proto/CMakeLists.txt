@@ -74,10 +74,13 @@ foreach(PROTO_FILE IN LISTS PROTOBUF_FILELIST)
   list(APPEND PROTO_SRCS ${PROTO_SRC})
 endforeach()
 
-# Add the generated protobuf C++ files to our exported library. Disable
-# clang-tidy because the generated code doesn't pass.
+# Disable linters for generated code.
 unset(CMAKE_CXX_CLANG_TIDY)
+
+# Add the generated protobuf C++ files to our exported library.
 add_library(substrait_proto ${PROTO_SRCS} ${PROTO_HDRS} ProtoUtils.cpp)
+
+# Re-enable linters.
 set(CMAKE_CXX_CLANG_TIDY ${SUBSTRAIT_CPP_CLANG_TIDY_COMMAND})
 
 target_sources(

@@ -27,8 +27,15 @@ message(
   STATUS
     "ANTLR4 generated files: ${ANTLR_SubstraitPlanLexer_CXX_OUTPUTS} ${ANTLR_SubstraitPlanParser_CXX_OUTPUTS}"
 )
+
+# Disable linters for generated code.
+unset(CMAKE_CXX_CLANG_TIDY)
+
 add_library(textplan_grammar ${ANTLR_SubstraitPlanLexer_CXX_OUTPUTS}
                              ${ANTLR_SubstraitPlanParser_CXX_OUTPUTS})
+
+# Re-enable linters.
+set(CMAKE_CXX_CLANG_TIDY ${SUBSTRAIT_CPP_CLANG_TIDY_COMMAND})
 
 set(GRAMMAR_DIR ${CMAKE_CURRENT_BINARY_DIR})
 message(STATUS "generated dir:  ${GRAMMAR_DIR}/antlr4cpp_generated_src")
