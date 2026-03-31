@@ -62,7 +62,9 @@ include(cmake/clang-tidy.cmake)
 unset(CMAKE_CXX_CLANG_TIDY)
 
 add_subdirectory(third_party)
-set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_COMMAND}) # Re-enable clang-tidy.
+
+# Re-enable clang-tidy.
+set(CMAKE_CXX_CLANG_TIDY ${SUBSTRAIT_CPP_CLANG_TIDY_COMMAND})
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules")
 include(BuildUtils)
