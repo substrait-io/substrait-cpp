@@ -23,11 +23,11 @@ std::optional<antlr4::ANTLRInputStream> loadTextFile(
     std::string_view filename) {
   std::ifstream stream(std::string{filename});
   if (stream.bad() || stream.fail()) {
-    std::cout << "Bad stream." << std::endl;
+    std::cout << "Bad stream." << '\n';
     return std::nullopt;
   }
   if (!stream.is_open()) {
-    std::cout << "Stream is not open." << std::endl;
+    std::cout << "Stream is not open." << '\n';
     return std::nullopt;
   }
   return {stream};

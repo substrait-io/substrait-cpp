@@ -24,7 +24,7 @@ SerializedPlan* load_substrait_plan(const char* filename) {
     strncpy(newPlan->error_message, errMsg.data(), errMsg.length() + 1);
     return newPlan;
   }
-  ::substrait::proto::Plan plan = *planOrError;
+  const ::substrait::proto::Plan& plan = *planOrError;
   std::string text = plan.SerializeAsString();
   newPlan->buffer = new unsigned char[text.length() + 1];
   memcpy(newPlan->buffer, text.data(), text.length() + 1);

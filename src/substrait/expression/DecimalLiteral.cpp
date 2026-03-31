@@ -56,7 +56,10 @@ DecimalLiteral DecimalLiteral::fromString(
   }
   std::uint8_t valueBytes[16];
   uint128ToBytes(v, valueBytes);
-  return {std::string((const char*)valueBytes, 16), precision, scale};
+  return {
+      std::string(reinterpret_cast<const char*>(valueBytes), 16),
+      precision,
+      scale};
 }
 
 bool DecimalLiteral::isValid() {

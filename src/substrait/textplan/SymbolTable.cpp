@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 #include "substrait/textplan/SymbolTable.h"
 
+#include <algorithm>
 #include <any>
 #include <iomanip>
 #include <map>
@@ -27,7 +28,7 @@ const std::string& symbolTypeName(SymbolType type) {
       "kSourceDetail",
       "kField",
   };
-  auto typeNum = int32_t(type);
+  auto typeNum = static_cast<int32_t>(type);
   if (typeNum == -1) {
     static std::string unknown = "kUnknown";
     return unknown;
@@ -136,9 +137,7 @@ void SymbolTable::setParentQueryLocation(
   int highestIndex = -1;
   for (const auto& sym : symbols_) {
     if (sym->parentQueryLocation == location) {
-      if (sym->parentQueryIndex > highestIndex) {
-        highestIndex = sym->parentQueryIndex;
-      }
+      highestIndex = std::max(sym->parentQueryIndex, highestIndex);
     }
   }
   symbols_[index]->parentQueryIndex = highestIndex + 1;
@@ -236,7 +235,7 @@ std::string SymbolTable::toDebugString() const {
     if (!relationData->subQueryPipelines.empty()) {
       result << " SQC=" << relationData->subQueryPipelines.size();
     }
-    result << std::endl;
+    result << '\n';
 
     int32_t fieldNum = 0;
     for (const auto& field : relationData->fieldReferences) {
@@ -248,7 +247,7 @@ std::string SymbolTable::toDebugString() const {
       if (!field->alias.empty()) {
         result << " " << field->alias;
       }
-      result << std::endl;
+      result << '\n';
     }
 
     for (const auto& field : relationData->generatedFieldReferences) {
@@ -266,7 +265,7 @@ std::string SymbolTable::toDebugString() const {
       } else if (!field->alias.empty()) {
         result << " " << field->alias;
       }
-      result << std::endl;
+      result << '\n';
     }
 
     int32_t outputFieldNum = 0;
@@ -279,12 +278,12 @@ std::string SymbolTable::toDebugString() const {
       if (!field->alias.empty()) {
         result << " " << field->alias;
       }
-      result << std::endl;
+      result << '\n';
     }
     textAlreadyWritten = true;
   }
   if (textAlreadyWritten) {
-    result << std::endl;
+    result << '\n';
   }
   return result.str();
 }

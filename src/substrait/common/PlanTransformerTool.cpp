@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
 
   auto planOrError = io::substrait::loadPlan(argv[1]);
   if (!planOrError.ok()) {
-    std::cerr << planOrError.status() << std::endl;
+    std::cerr << planOrError.status() << '\n';
     return EXIT_FAILURE;
   }
 
@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
 
   auto result = io::substrait::savePlan(*planOrError, argv[2], format);
   if (!result.ok()) {
-    std::cerr << result << std::endl;
+    std::cerr << result << '\n';
     return EXIT_FAILURE;
   }
 

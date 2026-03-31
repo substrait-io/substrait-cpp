@@ -685,7 +685,7 @@ TEST_F(BinaryToTextPlanConversionTest, FullSample) {
   ASSERT_TRUE(jsonOrError.ok());
   auto planOrError = loadFromJson(*jsonOrError);
   ASSERT_TRUE(planOrError.ok());
-  auto plan = *planOrError;
+  const auto& plan = *planOrError;
   EXPECT_THAT(plan.extensions_size(), ::testing::Eq(7));
 
   auto expectedOutputOrError = readFromFile("data/q6_first_stage.golden.splan");

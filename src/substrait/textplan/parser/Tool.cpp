@@ -12,13 +12,13 @@ namespace {
 void readText(const char* filename) {
   auto stream = io::substrait::textplan::loadTextFile(filename);
   if (!stream.has_value()) {
-    std::cerr << "An error occurred while reading: " << filename << std::endl;
+    std::cerr << "An error occurred while reading: " << filename << '\n';
     return;
   }
   auto parseResult = io::substrait::textplan::parseStream(&*stream);
   if (!parseResult.successful()) {
     for (const std::string& msg : parseResult.getAllErrors()) {
-      std::cout << msg << std::endl;
+      std::cout << msg << '\n';
     }
     return;
   }
@@ -28,7 +28,7 @@ void readText(const char* filename) {
       parseResult.getSymbolTable(), &errorListener);
   if (errorListener.hasErrors()) {
     for (const std::string& msg : errorListener.getErrorMessages()) {
-      std::cout << msg << std::endl;
+      std::cout << msg << '\n';
     }
     return;
   }
