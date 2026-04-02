@@ -58,8 +58,9 @@ include_directories(src)
 
 add_subdirectory(third_party)
 
-# Set up clang-tidy after third-party dependencies.
+# Set up clang-tidy and IWYU after third-party dependencies.
 include(cmake/clang-tidy.cmake)
+include(cmake/iwyu.cmake)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules")
 include(BuildUtils)
