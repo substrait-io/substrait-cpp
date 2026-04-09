@@ -17,7 +17,7 @@ namespace {
 void convertPlanToText(const char* filename) {
   auto planOrError = loadPlan(filename);
   if (!planOrError.ok()) {
-    std::cerr << planOrError.status() << std::endl;
+    std::cerr << planOrError.status() << '\n';
     return;
   }
 
@@ -29,7 +29,7 @@ void convertPlanToText(const char* filename) {
   auto errors = result.getAllErrors();
   if (!errors.empty()) {
     for (const auto& err : errors) {
-      std::cerr << err << std::endl;
+      std::cerr << err << '\n';
     }
   }
   std::cout << textResult;

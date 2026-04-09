@@ -35,7 +35,7 @@ const std::string kSortDirectionPrefix = "sortdirection";
 
 const std::string kIntermediateNodeName = "intermediate";
 
-enum RelationFilterBehavior {
+enum RelationFilterBehavior : std::int8_t {
   kDefault = 0,
   kBestEffort = 1,
   kPostJoin = 2,

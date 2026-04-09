@@ -102,7 +102,7 @@ TEST_F(SymbolTableTest, LocationsUnchangedAfterCopy) {
   auto* ptr3 = &plan.extensions(0);
 
   const SymbolTable& table2 = table;
-  auto symbols = table2.getSymbols();
+  const auto& symbols = table2.getSymbols();
   ASSERT_THAT(
       symbolNames(symbols),
       ::testing::ElementsAre("symbol1", "symbol2", "symbol3"));

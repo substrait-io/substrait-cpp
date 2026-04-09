@@ -38,7 +38,7 @@ std::string addLineNumbers(const std::string& text) {
   int lineNum = 0;
   std::string line;
   while (std::getline(input, line, '\n')) {
-    result << std::setw(4) << ++lineNum << " " << line << std::endl;
+    result << std::setw(4) << ++lineNum << " " << line << '\n';
   }
   return result.str();
 }
@@ -72,13 +72,13 @@ std::vector<std::string> getTestCases() {
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(RoundTripBinaryToTextFixture);
 
 TEST_P(RoundTripBinaryToTextFixture, RoundTrip) {
-  auto filename = GetParam();
+  const auto& filename = GetParam();
   auto jsonOrError = readFromFile(filename);
   ASSERT_TRUE(jsonOrError.ok());
   auto planOrError = loadFromJson(*jsonOrError);
   ASSERT_TRUE(planOrError.ok());
 
-  auto plan = *planOrError;
+  const auto& plan = *planOrError;
 
   auto textResult = parseBinaryPlan(plan);
   auto textSymbols = textResult.getSymbolTable().getSymbols();
@@ -89,10 +89,10 @@ TEST_P(RoundTripBinaryToTextFixture, RoundTrip) {
   textResult.addErrors(errorListener.getErrorMessages());
 
   ASSERT_THAT(textResult, ParsesOk())
-      << std::endl
-      << "Initial result:" << std::endl
-      << addLineNumbers(outputText) << std::endl
-      << textResult.getSymbolTable().toDebugString() << std::endl;
+      << '\n'
+      << "Initial result:" << '\n'
+      << addLineNumbers(outputText) << '\n'
+      << textResult.getSymbolTable().toDebugString() << '\n';
 
   auto stream = loadTextString(outputText);
   auto result = parseStream(&stream);
@@ -108,10 +108,10 @@ TEST_P(RoundTripBinaryToTextFixture, RoundTrip) {
           AsBinaryPlan(IgnoringFields(
               {"substrait.proto.RelCommon.Emit.output_mapping"},
               EqualsProto(normalizedPlan)))))
-      << std::endl
-      << "Intermediate result:" << std::endl
-      << addLineNumbers(outputText) << std::endl
-      << result.getSymbolTable().toDebugString() << std::endl;
+      << '\n'
+      << "Intermediate result:" << '\n'
+      << addLineNumbers(outputText) << '\n'
+      << result.getSymbolTable().toDebugString() << '\n';
 }
 
 INSTANTIATE_TEST_SUITE_P(

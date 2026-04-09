@@ -56,7 +56,7 @@ bool stringEqSquashingWhitespace(
                   << have.substr(atHave - have.begin(), 20) << "|"
                   << " should be |"
                   << expected.substr(atExpected - expected.begin(), 20) << "|"
-                  << std::endl;
+                  << '\n';
       }
       return false;
     }
@@ -164,7 +164,7 @@ class HasSymbolsMatcher {
           expectedSymbolsSorted.end(),
           std::back_inserter(extraSymbols));
       if (!extraSymbols.empty()) {
-        *listener << std::endl << "          with extra symbols: ";
+        *listener << '\n' << "          with extra symbols: ";
         for (const auto& symbol : extraSymbols) {
           *listener << " \"" << symbol << "\"";
         }
@@ -314,7 +314,7 @@ class HasSymbolsWithTypesMatcher {
       std::vector<std::string> extraSymbols =
           orderedSetDifference(actualSymbols, expectedSymbols_);
       if (!extraSymbols.empty()) {
-        *listener << std::endl << "          with extra symbols";
+        *listener << '\n' << "          with extra symbols";
         DescribeTypes(listener);
         *listener << ": ";
         for (const auto& symbol : extraSymbols) {

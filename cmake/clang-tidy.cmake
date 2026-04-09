@@ -21,7 +21,8 @@ if(SUBSTRAIT_CPP_ENABLE_CLANG_TIDY)
   # Assemble command line.
   set(CLANG_TIDY_CONFIG_FILE "${CMAKE_SOURCE_DIR}/.clang-tidy")
   set(SUBSTRAIT_CPP_CLANG_TIDY_COMMAND
-      "${CLANG_TIDY_EXE};--config-file=${CLANG_TIDY_CONFIG_FILE}")
+      "${CLANG_TIDY_EXE};--config-file=${CLANG_TIDY_CONFIG_FILE};"
+      "--header-filter=${CMAKE_SOURCE_DIR}/(export|include|lib|src)/.*")
   set(CMAKE_CXX_CLANG_TIDY_EXPORT_FIXES_DIR
       "${CMAKE_BINARY_DIR}/clang-tidy-fixes")
   message(

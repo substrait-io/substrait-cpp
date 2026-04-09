@@ -33,7 +33,7 @@ const std::string kAggregationInvocationPrefix = "aggregationinvocation";
 const std::string kJoinTypePrefix = "jointype";
 const std::string kSortDirectionPrefix = "sortdirection";
 
-enum RelationFilterBehavior {
+enum RelationFilterBehavior : std::int8_t {
   kDefault = 0,
   kBestEffort = 1,
   kPostJoin = 2,

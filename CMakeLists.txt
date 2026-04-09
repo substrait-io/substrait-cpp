@@ -56,15 +56,10 @@ set(ANTLR_EXECUTABLE "${ANTLR_EXECUTABLE_DIR}/antlr.jar")
 include_directories(include)
 include_directories(src)
 
-include(cmake/clang-tidy.cmake)
-
-# Disable clang-tidy for third-party dependencies.
-unset(CMAKE_CXX_CLANG_TIDY)
-
 add_subdirectory(third_party)
 
-# Re-enable clang-tidy.
-set(CMAKE_CXX_CLANG_TIDY ${SUBSTRAIT_CPP_CLANG_TIDY_COMMAND})
+# Set up clang-tidy after third-party dependencies.
+include(cmake/clang-tidy.cmake)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules")
 include(BuildUtils)
