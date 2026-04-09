@@ -20,12 +20,13 @@ if(SUBSTRAIT_CPP_ENABLE_CLANG_TIDY)
 
   # Assemble command line.
   set(CLANG_TIDY_CONFIG_FILE "${CMAKE_SOURCE_DIR}/.clang-tidy")
-  set(CLANG_TIDY_COMMAND
+  set(SUBSTRAIT_CPP_CLANG_TIDY_COMMAND
       "${CLANG_TIDY_EXE};--config-file=${CLANG_TIDY_CONFIG_FILE}")
   set(CMAKE_CXX_CLANG_TIDY_EXPORT_FIXES_DIR
       "${CMAKE_BINARY_DIR}/clang-tidy-fixes")
-  message(STATUS "clang-tidy enabled, command: ${CLANG_TIDY_COMMAND}")
+  message(
+    STATUS "clang-tidy enabled, command: ${SUBSTRAIT_CPP_CLANG_TIDY_COMMAND}")
 endif(SUBSTRAIT_CPP_ENABLE_CLANG_TIDY)
 
 # Enable clang-tidy for all C++ targets.
-set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_COMMAND})
+set(CMAKE_CXX_CLANG_TIDY ${SUBSTRAIT_CPP_CLANG_TIDY_COMMAND})
