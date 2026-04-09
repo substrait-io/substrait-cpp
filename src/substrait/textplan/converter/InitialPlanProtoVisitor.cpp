@@ -3,10 +3,17 @@
 #include "substrait/textplan/converter/InitialPlanProtoVisitor.h"
 
 #include <substrait/proto/algebra.pb.h>
+#include <substrait/proto/extensions/extensions.pb.h>
 #include <substrait/proto/plan.pb.h>
+#include <substrait/proto/type.pb.h>
 
+#include <any>
+#include <cstdint>
+#include <memory>
 #include <optional>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "substrait/common/Exceptions.h"
 #include "substrait/proto/ProtoUtils.h"
@@ -15,6 +22,7 @@
 #include "substrait/textplan/Location.h"
 #include "substrait/textplan/StructuredSymbolData.h"
 #include "substrait/textplan/SymbolTable.h"
+#include "substrait/textplan/converter/BasePlanProtoVisitor.h"
 
 namespace io::substrait::textplan {
 

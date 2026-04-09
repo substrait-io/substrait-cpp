@@ -3,14 +3,24 @@
 #include "substrait/textplan/SymbolTablePrinter.h"
 
 #include <substrait/proto/algebra.pb.h>
+#include <substrait/proto/type.pb.h>
 
+#include <algorithm>
+#include <cstdint>
+#include <map>
+#include <memory>
 #include <set>
 #include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "substrait/common/Exceptions.h"
 #include "substrait/textplan/Any.h"
+#include "substrait/textplan/Location.h"
 #include "substrait/textplan/PlanPrinterVisitor.h"
 #include "substrait/textplan/StructuredSymbolData.h"
+#include "substrait/textplan/SubstraitErrorListener.h"
 #include "substrait/textplan/SymbolTable.h"
 
 namespace io::substrait::textplan {

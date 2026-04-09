@@ -4,9 +4,12 @@
 
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
+#include <substrait/proto/extensions/extensions.pb.h>
 #include <substrait/proto/plan.pb.h>
 
-#include <functional>
+#include <memory>
+#include <string>
+#include <vector>
 
 #include "substrait/textplan/Any.h"
 #include "substrait/textplan/Location.h"

@@ -1,17 +1,17 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include <absl/strings/str_join.h>
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 #include <protobuf-matchers/protocol-buffer-matchers.h>
 
 #include <algorithm>
 #include <filesystem>
-#include <memory>
+#include <iomanip>
 #include <sstream>
 #include <string>
-#include <utility>
+#include <vector>
 
+#include "substrait/textplan/SubstraitErrorListener.h"
 #include "substrait/textplan/SymbolTablePrinter.h"
 #include "substrait/textplan/converter/LoadBinary.h"
 #include "substrait/textplan/converter/ParseBinary.h"

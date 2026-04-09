@@ -2,13 +2,16 @@
 
 #include "SubstraitPlanTypeVisitor.h"
 
+#include <ParserRuleContext.h>
+#include <RuleContext.h>
 #include <substrait/proto/type.pb.h>
 
+#include <any>
+#include <cstdint>
 #include <memory>
 #include <string>
 
 #include "SubstraitPlanParser/SubstraitPlanParser.h"
-#include "substrait/textplan/SymbolTable.h"
 #include "substrait/type/Type.h"
 
 namespace io::substrait::textplan {

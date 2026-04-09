@@ -5,12 +5,11 @@
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 #include <protobuf-matchers/protocol-buffer-matchers.h>
+#include <substrait/proto/plan.pb.h>
 
 #include <filesystem>
-
-#ifndef _WIN32
-#include <unistd.h>
-#endif
+#include <string>
+#include <system_error>
 
 using ::protobuf_matchers::EqualsProto;
 using ::protobuf_matchers::Partially;

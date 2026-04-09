@@ -3,9 +3,13 @@
 #include "substrait/textplan/converter/ReferenceNormalizer.h"
 
 #include <substrait/proto/algebra.pb.h>
+#include <substrait/proto/extensions/extensions.pb.h>
 #include <substrait/proto/plan.pb.h>
 
-#include <string>
+#include <algorithm>
+#include <cstdint>
+#include <map>
+#include <string_view>
 
 namespace io::substrait::textplan {
 

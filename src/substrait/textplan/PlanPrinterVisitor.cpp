@@ -2,10 +2,18 @@
 
 #include "substrait/textplan/PlanPrinterVisitor.h"
 
+#include <substrait/proto/type.pb.h>
+
+#include <any>
+#include <cstdint>
+#include <memory>
+#include <string_view>
+
+#include "substrait/textplan/Location.h"
+#include "substrait/textplan/converter/BasePlanProtoVisitor.h"
+
 #ifdef _WIN32
 #include <io.h>
-#else
-#include <unistd.h>
 #endif
 
 #include <date/date.h>

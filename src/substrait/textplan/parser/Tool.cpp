@@ -2,8 +2,12 @@
 
 #include <getopt.h>
 
-#include <sstream>
+#include <cstdio>
+#include <cstdlib>
+#include <iostream>
+#include <string>
 
+#include "substrait/textplan/SubstraitErrorListener.h"
 #include "substrait/textplan/SymbolTablePrinter.h"
 #include "substrait/textplan/parser/ParseText.h"
 

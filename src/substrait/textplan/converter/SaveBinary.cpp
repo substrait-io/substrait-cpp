@@ -2,16 +2,24 @@
 
 #include "substrait/textplan/converter/SaveBinary.h"
 
+#include <absl/status/status.h>
 #include <absl/strings/str_join.h>
-#include <fmt/format.h>
+#include <fcntl.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/util/json_util.h>
 
+#include <cerrno>
+#include <ios>
+#include <string>
+#include <string_view>
+
+#include "fmt/core.h"
+#include "substrait/textplan/SubstraitErrorListener.h"
+
 #ifdef _WIN32
 #include <io.h>
 #else
-#include <sys/fcntl.h>
 #include <sys/stat.h>
 #endif
 
@@ -19,7 +27,6 @@
 
 #include <fstream>
 
-#include "substrait/textplan/StringManipulation.h"
 #include "substrait/textplan/SymbolTablePrinter.h"
 #include "substrait/textplan/converter/ParseBinary.h"
 

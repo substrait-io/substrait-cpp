@@ -1,14 +1,17 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#include <cstddef>
+#include <cstdio>
+#include <cstdlib>
+#include <iostream>
+
+#include "substrait/textplan/SubstraitErrorListener.h"
 #ifndef _WIN32
 #include <glob.h>
 #endif
 
-#include <sstream>
-
 #include "substrait/common/Io.h"
 #include "substrait/textplan/SymbolTablePrinter.h"
-#include "substrait/textplan/converter/LoadBinary.h"
 #include "substrait/textplan/converter/ParseBinary.h"
 
 namespace io::substrait::textplan {

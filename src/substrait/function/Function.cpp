@@ -2,7 +2,12 @@
 
 #include "substrait/function/Function.h"
 
+#include <memory>
 #include <sstream>
+#include <string>
+#include <vector>
+
+#include "substrait/function/FunctionSignature.h"
 
 namespace io::substrait {
 

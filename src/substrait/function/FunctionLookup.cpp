@@ -2,6 +2,9 @@
 
 #include "substrait/function/FunctionLookup.h"
 
+#include "substrait/function/Function.h"
+#include "substrait/function/FunctionSignature.h"
+
 namespace io::substrait {
 
 FunctionImplementationPtr FunctionLookup::lookupFunction(

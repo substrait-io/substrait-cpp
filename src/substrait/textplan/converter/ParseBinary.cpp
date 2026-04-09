@@ -4,6 +4,10 @@
 
 #include <substrait/proto/plan.pb.h>
 
+#include <string>
+#include <vector>
+
+#include "substrait/textplan/ParseResult.h"
 #include "substrait/textplan/PlanPrinterVisitor.h"
 #include "substrait/textplan/converter/InitialPlanProtoVisitor.h"
 #include "substrait/textplan/converter/PipelineVisitor.h"

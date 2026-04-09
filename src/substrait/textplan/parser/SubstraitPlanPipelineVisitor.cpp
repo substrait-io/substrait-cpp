@@ -2,9 +2,12 @@
 
 #include "substrait/textplan/parser/SubstraitPlanPipelineVisitor.h"
 
+#include <any>
 #include <memory>
+#include <string>
 
 #include "SubstraitPlanParser/SubstraitPlanParser.h"
+#include "SubstraitPlanParser/SubstraitPlanParserBaseVisitor.h"
 #include "substrait/textplan/Any.h"
 #include "substrait/textplan/Finally.h"
 #include "substrait/textplan/Location.h"

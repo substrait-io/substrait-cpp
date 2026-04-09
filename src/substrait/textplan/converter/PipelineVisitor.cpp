@@ -2,10 +2,18 @@
 
 #include "substrait/textplan/converter/PipelineVisitor.h"
 
+#include <substrait/proto/algebra.pb.h>
+#include <substrait/proto/plan.pb.h>
+
+#include <any>
+#include <memory>
+
 #include "substrait/textplan/Any.h"
 #include "substrait/textplan/Finally.h"
+#include "substrait/textplan/Location.h"
 #include "substrait/textplan/StructuredSymbolData.h"
 #include "substrait/textplan/SymbolTable.h"
+#include "substrait/textplan/converter/BasePlanProtoVisitor.h"
 
 namespace io::substrait::textplan {
 

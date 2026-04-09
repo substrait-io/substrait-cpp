@@ -2,6 +2,8 @@
 
 #include "substrait/common/Io.h"
 
+#include <absl/status/status.h>
+#include <absl/status/statusor.h>
 #include <substrait/proto/plan.pb.h>
 
 #include <regex>

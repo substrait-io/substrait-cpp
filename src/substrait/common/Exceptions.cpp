@@ -2,7 +2,10 @@
 
 #include "substrait/common/Exceptions.h"
 
-#include <fmt/format.h>
+#include <fmt/core.h>
+
+#include <cstddef>
+#include <string>
 
 namespace io::substrait::common {
 

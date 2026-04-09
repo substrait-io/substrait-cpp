@@ -1,6 +1,12 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#include <algorithm>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
+#include <string>
+#include <string_view>
 
 #include "substrait/common/Io.h"
 
