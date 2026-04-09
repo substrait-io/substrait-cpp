@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include <getopt.h>
+
 #include <sstream>
 
 #include "substrait/textplan/SymbolTablePrinter.h"

@@ -1,10 +1,9 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include "substrait/expression/DecimalLiteral.h"
-
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 
+#include "substrait/expression/DecimalLiteral.h"
 #include "substrait/proto/algebra.pb.h"
 
 namespace io::substrait::expression {

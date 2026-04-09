@@ -1,13 +1,13 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#include <gmock/gmock-matchers.h>
+#include <gtest/gtest.h>
+#include <protobuf-matchers/protocol-buffer-matchers.h>
+
 #include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
-
-#include <gmock/gmock-matchers.h>
-#include <gtest/gtest.h>
-#include <protobuf-matchers/protocol-buffer-matchers.h>
 
 #include "substrait/textplan/parser/ParseText.h"
 #include "substrait/textplan/tests/ParseResultMatchers.h"

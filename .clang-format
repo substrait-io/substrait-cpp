@@ -11,6 +11,7 @@ AlwaysBreakTemplateDeclarations: Yes
 BinPackArguments: false
 BinPackParameters: false
 BreakStringLiterals: false
+IncludeBlocks:   Regroup
 IncludeCategories:
   - Regex:           '^<.*\.h(pp)?>'
     Priority:        1

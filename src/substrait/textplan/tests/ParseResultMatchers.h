@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
+
+#include <string>
+#include <vector>
 
 #include "substrait/proto/plan.pb.h"
 #include "substrait/textplan/ParseResult.h"

@@ -3,6 +3,7 @@
 #include "planloader.h"
 
 #include <substrait/common/Io.h>
+
 #include <limits>
 
 extern "C" {

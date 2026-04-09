@@ -2,11 +2,11 @@
 
 #include "substrait/common/Io.h"
 
-#include <filesystem>
-
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 #include <protobuf-matchers/protocol-buffer-matchers.h>
+
+#include <filesystem>
 
 #ifndef _WIN32
 #include <unistd.h>

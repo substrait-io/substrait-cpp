@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <string>
+
 #include "SubstraitPlanParser/SubstraitPlanParser.h"
 #include "substrait/proto/type.pb.h"
 #include "substrait/textplan/SymbolTable.h"
