@@ -5,6 +5,7 @@
 #include <substrait/proto/plan.pb.h>
 
 #include <regex>
+#include <string>
 #include <string_view>
 
 #include "substrait/textplan/converter/LoadBinary.h"

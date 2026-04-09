@@ -2,9 +2,12 @@
 
 #pragma once
 
-#include <substrait/proto/plan.pb.h>
+#include <stdint.h>
+#include <substrait/proto/algebra.pb.h>
+#include <substrait/proto/type.pb.h>
 
-#include <any>
+#include <memory>
+#include <string>
 
 #include "substrait/textplan/SubstraitErrorListener.h"
 #include "substrait/textplan/SymbolTable.h"

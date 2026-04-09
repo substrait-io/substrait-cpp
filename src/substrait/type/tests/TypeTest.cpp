@@ -4,7 +4,10 @@
 
 #include <gtest/gtest.h>
 
+#include <functional>
 #include <memory>
+#include <string>
+#include <vector>
 
 using namespace io::substrait;
 

@@ -2,6 +2,9 @@
 
 #pragma once
 
+#include <memory>
+#include <utility>
+
 #include "SubstraitPlanParser/SubstraitPlanParser.h"
 #include "substrait/textplan/SymbolTable.h"
 #include "substrait/textplan/parser/SubstraitParserErrorListener.h"

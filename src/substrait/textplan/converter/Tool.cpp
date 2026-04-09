@@ -4,11 +4,19 @@
 #include <glob.h>
 #endif
 
-#include <sstream>
+#include <absl/status/status.h>
+#include <absl/status/statusor.h>
+
+#include <cstdio>
+#include <cstdlib>
+#include <iostream>
+#include <string>
+#include <vector>
 
 #include "substrait/common/Io.h"
+#include "substrait/textplan/ParseResult.h"
+#include "substrait/textplan/SubstraitErrorListener.h"
 #include "substrait/textplan/SymbolTablePrinter.h"
-#include "substrait/textplan/converter/LoadBinary.h"
 #include "substrait/textplan/converter/ParseBinary.h"
 
 namespace io::substrait::textplan {

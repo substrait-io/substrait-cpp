@@ -2,10 +2,12 @@
 
 #pragma once
 
+#include <fmt/core.h>
 #include <fmt/format.h>
+#include <stddef.h>
 
-#include <memory>
-#include <utility>
+#include <exception>
+#include <string>
 
 namespace io::substrait::common {
 namespace error_code {

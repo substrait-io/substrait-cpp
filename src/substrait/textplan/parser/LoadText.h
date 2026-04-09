@@ -4,6 +4,8 @@
 
 #include <absl/status/statusor.h>
 
+#include <string>
+
 namespace substrait::proto {
 class Plan;
 }

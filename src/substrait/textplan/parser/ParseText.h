@@ -2,15 +2,12 @@
 
 #pragma once
 
+#include <ANTLRInputStream.h>
+
 #include <optional>
+#include <string_view>
 
 #include "substrait/textplan/ParseResult.h"
-#include "substrait/textplan/SymbolTable.h"
-#include "substrait/textplan/parser/SubstraitPlanVisitor.h"
-
-namespace antlr4 {
-class ANTLRInputStream;
-} // namespace antlr4
 
 namespace io::substrait::textplan {
 

@@ -6,6 +6,7 @@
 #include <absl/strings/numbers.h>
 #include <substrait/proto/algebra.pb.h>
 
+#include <cstring>
 #include <sstream>
 
 namespace io::substrait::expression {

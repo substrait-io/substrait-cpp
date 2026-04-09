@@ -2,7 +2,10 @@
 
 #pragma once
 
+#include <memory>
 #include <optional>
+#include <string>
+#include <vector>
 
 #include "substrait/function/FunctionSignature.h"
 #include "substrait/type/Type.h"

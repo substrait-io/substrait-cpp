@@ -2,7 +2,14 @@
 
 #include "substrait/function/Extension.h"
 
+#include <yaml-cpp/node/detail/iterator.h>
 #include <yaml-cpp/yaml.h>
+
+#include <optional>
+#include <sstream>
+#include <utility>
+
+#include "substrait/type/Type.h"
 
 bool decodeFunctionImpl(
     const YAML::Node& node,

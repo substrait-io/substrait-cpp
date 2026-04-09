@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <absl/status/status.h>
 #include <absl/status/statusor.h>
 #include <substrait/proto/plan.pb.h>
 

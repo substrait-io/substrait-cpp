@@ -8,8 +8,6 @@
 #include <vector>
 
 #include "substrait/function/Function.h"
-#include "substrait/function/FunctionSignature.h"
-#include "substrait/type/Type.h"
 
 namespace io::substrait {
 

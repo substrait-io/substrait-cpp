@@ -2,10 +2,10 @@
 
 #include "substrait/textplan/converter/BasePlanProtoVisitor.h"
 
+#include <google/protobuf/repeated_ptr_field.h>
 #include <substrait/proto/algebra.pb.h>
 #include <substrait/proto/plan.pb.h>
 
-#include <iterator>
 #include <optional>
 #include <string>
 

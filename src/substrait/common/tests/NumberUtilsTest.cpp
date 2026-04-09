@@ -4,6 +4,8 @@
 
 #include <gtest/gtest.h>
 
+#include <string>
+
 using io::substrait::common::NumberUtils;
 
 class NumberUtilsTest : public ::testing::Test {};

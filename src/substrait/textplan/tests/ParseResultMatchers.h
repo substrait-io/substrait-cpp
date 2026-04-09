@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <gmock/gmock-matchers.h>
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <substrait/proto/plan.pb.h>
 
@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "substrait/textplan/ParseResult.h"
+#include "substrait/textplan/SymbolTable.h"
 
 // NOLINTBEGIN(readability-identifier-naming)
 

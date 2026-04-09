@@ -2,6 +2,9 @@
 
 #include "substrait/function/FunctionLookup.h"
 
+#include <unordered_map>
+#include <vector>
+
 namespace io::substrait {
 
 FunctionImplementationPtr FunctionLookup::lookupFunction(

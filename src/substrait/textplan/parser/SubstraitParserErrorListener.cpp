@@ -2,8 +2,6 @@
 
 #include "substrait/textplan/parser/SubstraitParserErrorListener.h"
 
-#include <antlr4-runtime.h>
-
 #include <string>
 
 namespace io::substrait::textplan {

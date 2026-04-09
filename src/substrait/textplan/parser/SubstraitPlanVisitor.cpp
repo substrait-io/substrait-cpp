@@ -2,7 +2,20 @@
 
 #include "substrait/textplan/parser/SubstraitPlanVisitor.h"
 
+#include <ParserRuleContext.h>
+#include <substrait/proto/algebra.pb.h>
+#include <tree/ParseTree.h>
+#include <tree/TerminalNode.h>
+
+#include <algorithm>
+#include <any>
+#include <cctype>
+#include <cstdint>
 #include <memory>
+#include <optional>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 #include "SubstraitPlanParser/SubstraitPlanParser.h"
 #include "substrait/textplan/Any.h"

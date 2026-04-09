@@ -3,9 +3,12 @@
 #pragma once
 
 #include <substrait/proto/algebra.pb.h>
+#include <substrait/proto/extensions/extensions.pb.h>
 #include <substrait/proto/plan.pb.h>
+#include <substrait/proto/type.pb.h>
 
 #include <any>
+#include <string>
 
 namespace io::substrait::textplan {
 

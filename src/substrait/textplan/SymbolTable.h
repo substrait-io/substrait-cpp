@@ -2,10 +2,13 @@
 
 #pragma once
 
+#include <stddef.h>
+
 #include <any>
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <ostream>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>

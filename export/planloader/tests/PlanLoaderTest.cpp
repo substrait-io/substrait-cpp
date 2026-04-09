@@ -2,11 +2,13 @@
 
 #include "../planloader.h"
 
-#include <gmock/gmock-matchers.h>
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <substrait/proto/plan.pb.h>
 
-#include <functional>
+#include <string>
+
+#include "substrait/common/Io.h"
 
 namespace io::substrait::textplan {
 namespace {

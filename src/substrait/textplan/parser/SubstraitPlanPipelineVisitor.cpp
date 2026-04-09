@@ -2,7 +2,14 @@
 
 #include "substrait/textplan/parser/SubstraitPlanPipelineVisitor.h"
 
+#include <ParserRuleContext.h>
+#include <tree/ParseTree.h>
+
+#include <any>
 #include <memory>
+#include <typeinfo>
+#include <unordered_set>
+#include <vector>
 
 #include "SubstraitPlanParser/SubstraitPlanParser.h"
 #include "substrait/textplan/Any.h"

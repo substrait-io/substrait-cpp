@@ -2,8 +2,17 @@
 
 #include "substrait/textplan/converter/PipelineVisitor.h"
 
+#include <google/protobuf/message.h>
+#include <google/protobuf/repeated_ptr_field.h>
+#include <substrait/proto/algebra.pb.h>
+#include <substrait/proto/plan.pb.h>
+
+#include <any>
+#include <vector>
+
 #include "substrait/textplan/Any.h"
 #include "substrait/textplan/Finally.h"
+#include "substrait/textplan/Location.h"
 #include "substrait/textplan/StructuredSymbolData.h"
 #include "substrait/textplan/SymbolTable.h"
 

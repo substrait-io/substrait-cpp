@@ -2,6 +2,16 @@
 
 #pragma once
 
+#include <Token.h>
+#include <stdint.h>
+#include <tree/TerminalNode.h>
+
+#include <any>
+#include <iterator>
+#include <memory>
+#include <string>
+#include <utility>
+
 #include "SubstraitPlanParser/SubstraitPlanParser.h"
 #include "substrait/textplan/SymbolTable.h"
 #include "substrait/textplan/parser/SubstraitParserErrorListener.h"
@@ -11,8 +21,6 @@ namespace substrait::proto {
 class Expression;
 class Expression_Literal;
 class Expression_Literal_Map_KeyValue;
-class NamedStruct;
-class Type;
 class Type_Struct;
 } // namespace substrait::proto
 

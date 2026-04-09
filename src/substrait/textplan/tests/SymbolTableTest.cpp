@@ -2,11 +2,15 @@
 
 #include "substrait/textplan/SymbolTable.h"
 
-#include <gmock/gmock-matchers.h>
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <substrait/proto/extensions/extensions.pb.h>
 #include <substrait/proto/plan.pb.h>
 
-#include <functional>
+#include <any>
+#include <memory>
+#include <string>
+#include <vector>
 
 #include "substrait/textplan/Any.h"
 #include "substrait/textplan/Location.h"

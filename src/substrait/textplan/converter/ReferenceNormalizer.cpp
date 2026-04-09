@@ -2,10 +2,18 @@
 
 #include "substrait/textplan/converter/ReferenceNormalizer.h"
 
+#include <google/protobuf/repeated_ptr_field.h>
 #include <substrait/proto/algebra.pb.h>
+#include <substrait/proto/extensions/extensions.pb.h>
 #include <substrait/proto/plan.pb.h>
 
+#include <algorithm>
+#include <cstdint>
+#include <map>
 #include <string>
+#include <string_view>
+#include <tuple>
+#include <utility>
 
 namespace io::substrait::textplan {
 
