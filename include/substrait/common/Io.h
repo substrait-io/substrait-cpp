@@ -13,7 +13,7 @@ namespace io::substrait {
 /*
  * \brief The four different ways plans can be represented on disk.
  */
-enum class PlanFileFormat {
+enum class PlanFileFormat : int8_t {
   kBinary = 0,
   kJson = 1,
   kProtoText = 2,

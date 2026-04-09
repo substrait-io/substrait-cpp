@@ -25,7 +25,7 @@ class FunctionLookup {
  protected:
   [[nodiscard]] virtual FunctionImplMap getFunctionImpls() const = 0;
 
-  ExtensionPtr extension_{};
+  ExtensionPtr extension_;
 };
 
 using FunctionLookupPtr = std::shared_ptr<const FunctionLookup>;

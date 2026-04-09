@@ -19,7 +19,7 @@
 
 namespace io::substrait::textplan {
 
-enum class SymbolType {
+enum class SymbolType : int8_t {
   kExtensionSpace = 0,
   kFunction = 1,
   kPlanRelation = 2,
@@ -36,7 +36,7 @@ enum class SymbolType {
   kUnknown = -1,
 };
 
-enum class RelationType {
+enum class RelationType : int8_t {
   // Logical
   kUnknown = 0,
   kRead = 1,
@@ -64,12 +64,12 @@ enum class RelationType {
   kExtensionMulti = 102,
 };
 
-enum class RelationDetailType {
+enum class RelationDetailType : int8_t {
   kUnknown = 0,
   kExpression = 1,
 };
 
-enum class SourceType {
+enum class SourceType : int8_t {
   kUnknown = 0,
   kLocalFiles = 1,
   kNamedTable = 2,
@@ -81,7 +81,7 @@ const std::string& symbolTypeName(SymbolType type);
 
 struct SymbolInfo {
   std::string name;
-  std::string alias{}; // If present, use this instead of name.
+  std::string alias; // If present, use this instead of name.
   const SymbolInfo* schema{nullptr}; // The related schema symbol if present.
   Location sourceLocation;
   Location permanentLocation{Location::kUnknownLocation};

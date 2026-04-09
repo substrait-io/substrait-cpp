@@ -59,7 +59,7 @@ class RoundTripBinaryToTextFixture
 
 std::vector<std::string> getTestCases() {
   const std::filesystem::path currPath = std::filesystem::current_path();
-  std::vector<std::string> filenames{};
+  std::vector<std::string> filenames;
   std::filesystem::path testDataPath = currPath;
   testDataPath.append("data");
   for (auto const& dirEntry :

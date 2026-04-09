@@ -35,7 +35,7 @@ inline constexpr const char* kNotImplemented = "NOT_IMPLEMENTED";
 
 class SubstraitException : public std::exception {
  public:
-  enum class Type {
+  enum class Type : int8_t {
     // Errors where the root cause of the problem is either because of bad input
     // or an unsupported pattern of use are classified with USER. Examples
     // of errors in this category include syntax errors, unavailable names or

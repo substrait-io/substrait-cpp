@@ -19,9 +19,9 @@
 
 namespace substrait::proto {
 class Expression;
-class Expression_Literal;
-class Expression_Literal_Map_KeyValue;
-class Type_Struct;
+class Expression_Literal; // NOLINT
+class Expression_Literal_Map_KeyValue; // NOLINT
+class Type_Struct; // NOLINT
 } // namespace substrait::proto
 
 namespace io::substrait::textplan {

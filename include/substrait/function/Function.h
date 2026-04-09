@@ -39,7 +39,7 @@ struct FunctionArgument {
 using FunctionArgumentPtr = std::shared_ptr<FunctionArgument>;
 
 struct EnumArgument : public FunctionArgument {
-  bool required{};
+  bool required;
 
   [[nodiscard]] bool isRequired() const override {
     return required;
