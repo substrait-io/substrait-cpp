@@ -4,11 +4,11 @@
 
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
+#include <substrait/proto/plan.pb.h>
 
 #include <string>
 #include <vector>
 
-#include "substrait/proto/plan.pb.h"
 #include "substrait/textplan/ParseResult.h"
 
 // NOLINTBEGIN(readability-identifier-naming)

@@ -4,10 +4,9 @@
 
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
+#include <substrait/proto/plan.pb.h>
 
 #include <functional>
-
-#include "substrait/proto/plan.pb.h"
 
 namespace io::substrait::textplan {
 namespace {

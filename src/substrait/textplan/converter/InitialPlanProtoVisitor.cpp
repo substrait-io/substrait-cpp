@@ -2,13 +2,14 @@
 
 #include "substrait/textplan/converter/InitialPlanProtoVisitor.h"
 
+#include <substrait/proto/algebra.pb.h>
+#include <substrait/proto/plan.pb.h>
+
 #include <optional>
 #include <string>
 
 #include "substrait/common/Exceptions.h"
 #include "substrait/proto/ProtoUtils.h"
-#include "substrait/proto/algebra.pb.h"
-#include "substrait/proto/plan.pb.h"
 #include "substrait/textplan/Any.h"
 #include "substrait/textplan/Finally.h"
 #include "substrait/textplan/Location.h"

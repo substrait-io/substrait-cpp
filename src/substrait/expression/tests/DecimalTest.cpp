@@ -2,9 +2,9 @@
 
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
+#include <substrait/proto/algebra.pb.h>
 
 #include "substrait/expression/DecimalLiteral.h"
-#include "substrait/proto/algebra.pb.h"
 
 namespace io::substrait::expression {
 
