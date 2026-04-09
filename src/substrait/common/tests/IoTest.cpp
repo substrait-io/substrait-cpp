@@ -2,15 +2,17 @@
 
 #include "substrait/common/Io.h"
 
-#include <filesystem>
-
-#include <gmock/gmock-matchers.h>
+#include <absl/status/status.h>
+#include <absl/status/statusor.h>
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <protobuf-matchers/protocol-buffer-matchers.h>
+#include <substrait/proto/algebra.pb.h>
+#include <substrait/proto/plan.pb.h>
 
-#ifndef _WIN32
-#include <unistd.h>
-#endif
+#include <filesystem>
+#include <string>
+#include <system_error>
 
 using ::protobuf_matchers::EqualsProto;
 using ::protobuf_matchers::Partially;

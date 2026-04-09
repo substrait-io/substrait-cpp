@@ -2,6 +2,13 @@
 
 #pragma once
 
+#include <ParserRuleContext.h>
+#include <RuleContext.h>
+
+#include <memory>
+#include <string>
+#include <utility>
+
 #include "SubstraitPlanParser/SubstraitPlanParser.h"
 #include "SubstraitPlanParser/SubstraitPlanParserBaseVisitor.h"
 #include "substrait/textplan/SymbolTable.h"

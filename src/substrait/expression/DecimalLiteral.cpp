@@ -2,11 +2,12 @@
 
 #include "substrait/expression/DecimalLiteral.h"
 
-#include <sstream>
+#include <absl/numeric/int128.h>
+#include <absl/strings/numbers.h>
+#include <substrait/proto/algebra.pb.h>
 
-#include "absl/numeric/int128.h"
-#include "absl/strings/numbers.h"
-#include "substrait/proto/algebra.pb.h"
+#include <cstring>
+#include <sstream>
 
 namespace io::substrait::expression {
 

@@ -2,7 +2,12 @@
 
 #pragma once
 
+#include <memory>
+#include <string>
+#include <utility>
+
 #include "substrait/function/Extension.h"
+#include "substrait/function/Function.h"
 #include "substrait/function/FunctionSignature.h"
 
 namespace io::substrait {
@@ -20,7 +25,7 @@ class FunctionLookup {
  protected:
   [[nodiscard]] virtual FunctionImplMap getFunctionImpls() const = 0;
 
-  ExtensionPtr extension_{};
+  ExtensionPtr extension_;
 };
 
 using FunctionLookupPtr = std::shared_ptr<const FunctionLookup>;

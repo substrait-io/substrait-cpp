@@ -2,8 +2,15 @@
 
 #include "substrait/textplan/converter/ParseBinary.h"
 
-#include "substrait/proto/plan.pb.h"
+#include <substrait/proto/plan.pb.h>
+
+#include <memory>
+#include <string>
+#include <vector>
+
 #include "substrait/textplan/PlanPrinterVisitor.h"
+#include "substrait/textplan/SubstraitErrorListener.h"
+#include "substrait/textplan/SymbolTable.h"
 #include "substrait/textplan/converter/InitialPlanProtoVisitor.h"
 #include "substrait/textplan/converter/PipelineVisitor.h"
 

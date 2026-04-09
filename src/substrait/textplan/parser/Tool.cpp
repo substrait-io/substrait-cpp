@@ -1,8 +1,17 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include <getopt.h>
-#include <sstream>
+#include <unistd.h>
 
+#include <cstdio>
+#include <cstdlib>
+#include <iostream>
+#include <optional>
+#include <string>
+#include <vector>
+
+#include "substrait/textplan/ParseResult.h"
+#include "substrait/textplan/SubstraitErrorListener.h"
 #include "substrait/textplan/SymbolTablePrinter.h"
 #include "substrait/textplan/parser/ParseText.h"
 

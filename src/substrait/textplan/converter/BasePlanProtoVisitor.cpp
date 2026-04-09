@@ -2,13 +2,14 @@
 
 #include "substrait/textplan/converter/BasePlanProtoVisitor.h"
 
-#include <iterator>
+#include <google/protobuf/repeated_ptr_field.h>
+#include <substrait/proto/algebra.pb.h>
+#include <substrait/proto/plan.pb.h>
+
 #include <optional>
 #include <string>
 
 #include "substrait/common/Exceptions.h"
-#include "substrait/proto/algebra.pb.h"
-#include "substrait/proto/plan.pb.h"
 
 // The visitor should try and be tolerant of older plans.  This
 // requires calling deprecated APIs.

@@ -1,6 +1,15 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#include <absl/status/status.h>
+#include <absl/status/statusor.h>
+
+#include <algorithm>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
+#include <string>
+#include <string_view>
 
 #include "substrait/common/Io.h"
 

@@ -1,18 +1,23 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include <absl/strings/str_join.h>
+#include <absl/status/statusor.h>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+#include <protobuf-matchers/protocol-buffer-matchers.h>
+#include <substrait/proto/plan.pb.h>
 
 #include <algorithm>
+#include <cctype>
 #include <filesystem>
+#include <iomanip>
 #include <memory>
 #include <sstream>
 #include <string>
-#include <utility>
+#include <vector>
 
-#include <gmock/gmock-matchers.h>
-#include <gtest/gtest.h>
-#include <protobuf-matchers/protocol-buffer-matchers.h>
-
+#include "substrait/textplan/ParseResult.h"
+#include "substrait/textplan/SubstraitErrorListener.h"
+#include "substrait/textplan/SymbolTable.h"
 #include "substrait/textplan/SymbolTablePrinter.h"
 #include "substrait/textplan/converter/LoadBinary.h"
 #include "substrait/textplan/converter/ParseBinary.h"
@@ -54,7 +59,7 @@ class RoundTripBinaryToTextFixture
 
 std::vector<std::string> getTestCases() {
   const std::filesystem::path currPath = std::filesystem::current_path();
-  std::vector<std::string> filenames{};
+  std::vector<std::string> filenames;
   std::filesystem::path testDataPath = currPath;
   testDataPath.append("data");
   for (auto const& dirEntry :

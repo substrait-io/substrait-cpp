@@ -2,7 +2,12 @@
 
 #pragma once
 
-#include <antlr4-runtime.h>
+#include <BaseErrorListener.h>
+#include <Token.h>
+#include <stddef.h>
+
+#include <exception>
+#include <string>
 
 #include "substrait/textplan/SubstraitErrorListener.h"
 

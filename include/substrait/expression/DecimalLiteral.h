@@ -4,9 +4,10 @@
 
 #include <cstdint>
 #include <string>
+#include <utility>
 
 namespace substrait::proto {
-class Expression_Literal_Decimal;
+class Expression_Literal_Decimal; // NOLINT
 }
 
 namespace io::substrait::expression {

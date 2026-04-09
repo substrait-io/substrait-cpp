@@ -1,11 +1,14 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include <gmock/gmock-matchers.h>
-#include <gtest/gtest.h>
-#include <functional>
-
 #include "../planloader.h"
-#include "substrait/proto/plan.pb.h"
+
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+#include <substrait/proto/plan.pb.h>
+
+#include <string>
+
+#include "substrait/common/Io.h"
 
 namespace io::substrait::textplan {
 namespace {

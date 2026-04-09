@@ -2,13 +2,21 @@
 
 #include "substrait/textplan/converter/InitialPlanProtoVisitor.h"
 
+#include <google/protobuf/message.h>
+#include <google/protobuf/repeated_ptr_field.h>
+#include <substrait/proto/algebra.pb.h>
+#include <substrait/proto/extensions/extensions.pb.h>
+#include <substrait/proto/plan.pb.h>
+#include <substrait/proto/type.pb.h>
+
+#include <any>
+#include <cstdint>
 #include <optional>
 #include <string>
+#include <utility>
 
 #include "substrait/common/Exceptions.h"
 #include "substrait/proto/ProtoUtils.h"
-#include "substrait/proto/algebra.pb.h"
-#include "substrait/proto/plan.pb.h"
 #include "substrait/textplan/Any.h"
 #include "substrait/textplan/Finally.h"
 #include "substrait/textplan/Location.h"

@@ -2,9 +2,13 @@
 
 #include "substrait/type/Type.h"
 
+#include <fmt/format.h>
+
 #include <algorithm>
+#include <cctype>
+#include <cstddef>
 #include <sstream>
-#include <stdexcept>
+#include <string_view>
 
 #include "substrait/common/Exceptions.h"
 #include "substrait/common/NumberUtils.h"

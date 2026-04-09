@@ -2,15 +2,18 @@
 
 #include "substrait/textplan/parser/ParseText.h"
 
-#include <ANTLRErrorStrategy.h>
-#include <antlr4-runtime.h>
+#include <CommonTokenStream.h>
+
+#include <exception>
 #include <fstream>
+#include <iostream>
 #include <memory>
-#include <sstream>
+#include <stdexcept>
+#include <string>
 
 #include "SubstraitPlanLexer/SubstraitPlanLexer.h"
 #include "SubstraitPlanParser/SubstraitPlanParser.h"
-#include "substrait/textplan/StructuredSymbolData.h"
+#include "substrait/textplan/SymbolTable.h"
 #include "substrait/textplan/parser/SubstraitParserErrorListener.h"
 #include "substrait/textplan/parser/SubstraitPlanPipelineVisitor.h"
 #include "substrait/textplan/parser/SubstraitPlanRelationVisitor.h"

@@ -2,8 +2,15 @@
 
 #include "planloader.h"
 
-#include <substrait/common/Io.h>
+#include <absl/status/status.h>
+#include <absl/status/statusor.h>
+#include <substrait/proto/plan.pb.h>
+
+#include <cstring>
 #include <limits>
+#include <string>
+
+#include "substrait/common/Io.h"
 
 extern "C" {
 

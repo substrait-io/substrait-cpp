@@ -34,6 +34,42 @@ jobs:
         with:
           submodules: recursive
 
+      # Set up IWYU tool (begin) -------------------------------------------- #
+      - name: Cache IWYU tool
+        uses: actions/cache@v5
+        id: iwyu-tool-cache
+        with:
+          path: /opt/bin/include-what-you-use
+          key: ${{ runner.os }}-iwyu-tool
+
+      - name: Install dependencies to build IWYU tool
+        if: steps.iwyu-tool-cache.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install \
+            llvm-18-dev \
+            libclang-18-dev
+
+      - name: Check out IWYU repo
+        if: steps.iwyu-tool-cache.outputs.cache-hit != 'true'
+        uses: actions/checkout@v6
+        with:
+          repository: include-what-you-use/include-what-you-use
+          ref: clang_18
+          path: 'iwyu'
+
+      - name: Build and install IWYU tool
+        if: steps.iwyu-tool-cache.outputs.cache-hit != 'true'
+        run: |
+          cmake -G Ninja -S iwyu -B iwyu/build \
+            -DCMAKE_PREFIX_PATH=/usr/lib/llvm-18
+          cmake --build iwyu/build
+          sudo cmake --install iwyu/build --prefix /opt
+
+      - name: IWYU smoke test
+        run: /opt/bin/include-what-you-use --version
+      # Set up IWYU tool (end) ---------------------------------------------- #
+
       - name: Setup Ubuntu
         run: ./scripts/setup-ubuntu.sh
 
@@ -59,7 +95,10 @@ jobs:
               -DCMAKE_BUILD_TYPE=Debug \
               -DBUILD_TZ_LIB=ON \
               -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-              -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+              -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+              -DSUBSTRAIT_CPP_ENABLE_CLANG_TIDY=ON \
+              -DSUBSTRAIT_CPP_ENABLE_IWYU=ON \
+              -DSUBSTRAIT_CPP_IWYU_PATH=/opt/bin/include-what-you-use
 
       - name: Build
         run: |

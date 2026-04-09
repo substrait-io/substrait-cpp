@@ -2,8 +2,16 @@
 
 #pragma once
 
+#include <cstddef>
 #include <functional>
 #include <variant>
+
+namespace std {
+template <typename> // NOLINT
+struct less;
+template <typename> // NOLINT
+struct hash;
+} // namespace std
 
 namespace antlr4 {
 class ParserRuleContext;

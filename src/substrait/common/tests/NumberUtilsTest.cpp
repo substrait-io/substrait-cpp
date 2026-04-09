@@ -1,8 +1,10 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#include "substrait/common/NumberUtils.h"
+
 #include <gtest/gtest.h>
 
-#include "substrait/common/NumberUtils.h"
+#include <string>
 
 using io::substrait::common::NumberUtils;
 

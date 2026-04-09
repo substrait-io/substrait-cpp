@@ -1,9 +1,20 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include <gmock/gmock-matchers.h>
+#include <absl/status/status.h>
+#include <absl/status/statusor.h>
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <protobuf-matchers/protocol-buffer-matchers.h>
+#include <substrait/proto/plan.pb.h>
 
+#include <algorithm>
+#include <cctype>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "substrait/textplan/ParseResult.h"
+#include "substrait/textplan/SymbolTable.h"
 #include "substrait/textplan/converter/LoadBinary.h"
 #include "substrait/textplan/converter/ParseBinary.h"
 #include "substrait/textplan/tests/ParseResultMatchers.h"

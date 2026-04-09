@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+[
+    { "include": [ "\"date/date.h\"", "private", "<date/date.h>", "public" ] },
+    { "include": [ "\"fmt/core.h\"", "private", "<fmt/core.h>", "public" ] },
+    { "include": [ "\"fmt/format.h\"", "private", "<fmt/format.h>", "public" ] },
+    { "include": [ "\"gmock/gmock.h\"", "private", "<gmock/gmock.h>", "public" ] },
+    { "include": [ "\"gtest/gtest.h\"", "private", "<gtest/gtest.h>", "public" ] },
+]

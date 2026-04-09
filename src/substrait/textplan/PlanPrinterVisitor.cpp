@@ -4,19 +4,28 @@
 
 #ifdef _WIN32
 #include <io.h>
-#else
-#include <unistd.h>
 #endif
 
+#include <date/date.h>
+#include <google/protobuf/message.h>
+#include <google/protobuf/repeated_ptr_field.h>
+#include <substrait/proto/algebra.pb.h>
+
+#include <any>
+#include <chrono>
+#include <map>
+#include <optional>
 #include <sstream>
 #include <string>
+#include <string_view>
+#include <typeinfo>
+#include <vector>
 
-#include "date/date.h"
 #include "substrait/expression/DecimalLiteral.h"
 #include "substrait/proto/ProtoUtils.h"
-#include "substrait/proto/algebra.pb.h"
 #include "substrait/textplan/Any.h"
 #include "substrait/textplan/Finally.h"
+#include "substrait/textplan/Location.h"
 #include "substrait/textplan/StructuredSymbolData.h"
 #include "substrait/textplan/SymbolTable.h"
 

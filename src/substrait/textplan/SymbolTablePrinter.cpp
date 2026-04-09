@@ -2,14 +2,29 @@
 
 #include "substrait/textplan/SymbolTablePrinter.h"
 
+#include <google/protobuf/repeated_ptr_field.h>
+#include <substrait/proto/algebra.pb.h>
+#include <substrait/proto/extensions/extensions.pb.h>
+#include <substrait/proto/plan.pb.h>
+#include <substrait/proto/type.pb.h>
+
+#include <algorithm>
+#include <any>
+#include <cstdint>
+#include <map>
+#include <memory>
+#include <optional>
 #include <set>
 #include <sstream>
+#include <typeinfo>
+#include <utility>
 
 #include "substrait/common/Exceptions.h"
-#include "substrait/proto/algebra.pb.h"
 #include "substrait/textplan/Any.h"
+#include "substrait/textplan/Location.h"
 #include "substrait/textplan/PlanPrinterVisitor.h"
 #include "substrait/textplan/StructuredSymbolData.h"
+#include "substrait/textplan/SubstraitErrorListener.h"
 #include "substrait/textplan/SymbolTable.h"
 
 namespace io::substrait::textplan {

@@ -2,10 +2,10 @@
 
 #pragma once
 
+#include <substrait/proto/algebra.pb.h>
+
 #include <memory>
 #include <optional>
-
-#include "substrait/proto/algebra.pb.h"
 
 namespace io::substrait::textplan {
 

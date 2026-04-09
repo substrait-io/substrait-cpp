@@ -1,9 +1,13 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#include "substrait/type/Type.h"
+
 #include <gtest/gtest.h>
 
+#include <functional>
 #include <memory>
-#include "substrait/type/Type.h"
+#include <string>
+#include <vector>
 
 using namespace io::substrait;
 

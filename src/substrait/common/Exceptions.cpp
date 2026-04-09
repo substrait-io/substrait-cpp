@@ -2,8 +2,6 @@
 
 #include "substrait/common/Exceptions.h"
 
-#include <fmt/format.h>
-
 namespace io::substrait::common {
 
 SubstraitException::SubstraitException(

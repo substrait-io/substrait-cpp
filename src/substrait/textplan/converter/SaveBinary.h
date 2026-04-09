@@ -2,7 +2,9 @@
 
 #pragma once
 
-#include "absl/status/status.h"
+#include <absl/status/status.h>
+
+#include <string_view>
 
 namespace substrait::proto {
 class Plan;

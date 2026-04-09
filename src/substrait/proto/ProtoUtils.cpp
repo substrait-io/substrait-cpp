@@ -2,6 +2,8 @@
 
 #include "substrait/proto/ProtoUtils.h"
 
+#include <vector>
+
 namespace substrait::proto {
 
 std::string planRelTypeCaseName(::substrait::proto::PlanRel::RelTypeCase num) {

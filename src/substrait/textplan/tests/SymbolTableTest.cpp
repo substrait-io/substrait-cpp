@@ -1,13 +1,19 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include <gmock/gmock-matchers.h>
-#include <gtest/gtest.h>
-#include <functional>
+#include "substrait/textplan/SymbolTable.h"
 
-#include "substrait/proto/plan.pb.h"
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+#include <substrait/proto/extensions/extensions.pb.h>
+#include <substrait/proto/plan.pb.h>
+
+#include <any>
+#include <memory>
+#include <string>
+#include <vector>
+
 #include "substrait/textplan/Any.h"
 #include "substrait/textplan/Location.h"
-#include "substrait/textplan/SymbolTable.h"
 
 namespace io::substrait::textplan {
 namespace {
