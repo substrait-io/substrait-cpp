@@ -2,10 +2,10 @@
 
 #include "substrait/textplan/converter/ReferenceNormalizer.h"
 
-#include <string>
+#include <substrait/proto/algebra.pb.h>
+#include <substrait/proto/plan.pb.h>
 
-#include "substrait/proto/algebra.pb.h"
-#include "substrait/proto/plan.pb.h"
+#include <string>
 
 namespace io::substrait::textplan {
 

@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include <substrait/common/Io.h>
+#include "substrait/common/Io.h"
 
 extern "C" {
 

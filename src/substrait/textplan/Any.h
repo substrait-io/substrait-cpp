@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <any>
+#include <fmt/format.h>
 
-#include "fmt/format.h"
+#include <any>
 
 namespace io::substrait::textplan {
 

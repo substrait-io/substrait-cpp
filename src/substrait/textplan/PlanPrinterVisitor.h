@@ -2,9 +2,10 @@
 
 #pragma once
 
+#include <substrait/proto/plan.pb.h>
+
 #include <any>
 
-#include "substrait/proto/plan.pb.h"
 #include "substrait/textplan/SubstraitErrorListener.h"
 #include "substrait/textplan/SymbolTable.h"
 #include "substrait/textplan/converter/BasePlanProtoVisitor.h"

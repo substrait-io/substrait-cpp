@@ -2,11 +2,12 @@
 
 #include "substrait/textplan/SymbolTablePrinter.h"
 
+#include <substrait/proto/algebra.pb.h>
+
 #include <set>
 #include <sstream>
 
 #include "substrait/common/Exceptions.h"
-#include "substrait/proto/algebra.pb.h"
 #include "substrait/textplan/Any.h"
 #include "substrait/textplan/PlanPrinterVisitor.h"
 #include "substrait/textplan/StructuredSymbolData.h"

@@ -3,8 +3,8 @@
 #include "substrait/textplan/parser/LoadText.h"
 
 #include <absl/strings/str_join.h>
+#include <substrait/proto/plan.pb.h>
 
-#include "substrait/proto/plan.pb.h"
 #include "substrait/textplan/StringManipulation.h"
 #include "substrait/textplan/SymbolTablePrinter.h"
 #include "substrait/textplan/parser/ParseText.h"

@@ -4,13 +4,13 @@
 
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
+#include <substrait/proto/plan.pb.h>
 
 #include <memory>
 #include <set>
 #include <string>
 #include <utility>
 
-#include "substrait/proto/plan.pb.h"
 #include "substrait/textplan/ParseResult.h"
 #include "substrait/textplan/SymbolTable.h"
 #include "substrait/textplan/SymbolTablePrinter.h"

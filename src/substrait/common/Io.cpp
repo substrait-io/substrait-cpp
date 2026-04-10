@@ -2,10 +2,11 @@
 
 #include "substrait/common/Io.h"
 
+#include <substrait/proto/plan.pb.h>
+
 #include <regex>
 #include <string_view>
 
-#include "substrait/proto/plan.pb.h"
 #include "substrait/textplan/converter/LoadBinary.h"
 #include "substrait/textplan/converter/SaveBinary.h"
 #include "substrait/textplan/parser/LoadText.h"

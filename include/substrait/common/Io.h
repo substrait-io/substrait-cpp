@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include <string_view>
+#include <absl/status/statusor.h>
+#include <substrait/proto/plan.pb.h>
 
-#include "absl/status/statusor.h"
-#include "substrait/proto/plan.pb.h"
+#include <string_view>
 
 namespace io::substrait {
 

@@ -7,6 +7,8 @@
 #include <google/protobuf/io/tokenizer.h>
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/util/json_util.h>
+#include <substrait/proto/plan.pb.h>
+
 #include <filesystem>
 #include <fstream>
 #include <sstream>
@@ -14,7 +16,6 @@
 #include <string_view>
 #include <vector>
 
-#include "substrait/proto/plan.pb.h"
 #include "substrait/textplan/StringManipulation.h"
 
 namespace io::substrait::textplan {

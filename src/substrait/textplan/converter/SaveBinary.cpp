@@ -15,9 +15,10 @@
 #include <sys/stat.h>
 #endif
 
+#include <substrait/proto/plan.pb.h>
+
 #include <fstream>
 
-#include "substrait/proto/plan.pb.h"
 #include "substrait/textplan/StringManipulation.h"
 #include "substrait/textplan/SymbolTablePrinter.h"
 #include "substrait/textplan/converter/ParseBinary.h"

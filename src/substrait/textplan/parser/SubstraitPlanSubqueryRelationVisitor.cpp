@@ -2,6 +2,13 @@
 
 #include "substrait/textplan/parser/SubstraitPlanSubqueryRelationVisitor.h"
 
+#include <absl/strings/ascii.h>
+#include <absl/strings/numbers.h>
+#include <absl/strings/strip.h>
+#include <date/tz.h>
+#include <substrait/proto/algebra.pb.h>
+#include <substrait/proto/type.pb.h>
+
 #include <chrono>
 #include <limits>
 #include <memory>
@@ -10,13 +17,7 @@
 
 #include "SubstraitPlanParser/SubstraitPlanParser.h"
 #include "SubstraitPlanTypeVisitor.h"
-#include "absl/strings/ascii.h"
-#include "absl/strings/numbers.h"
-#include "absl/strings/strip.h"
-#include "date/tz.h"
 #include "substrait/expression/DecimalLiteral.h"
-#include "substrait/proto/algebra.pb.h"
-#include "substrait/proto/type.pb.h"
 #include "substrait/textplan/Any.h"
 #include "substrait/textplan/Finally.h"
 #include "substrait/textplan/Location.h"

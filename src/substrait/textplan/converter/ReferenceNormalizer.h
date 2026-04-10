@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "substrait/proto/plan.pb.h"
+#include <substrait/proto/plan.pb.h>
 
 namespace io::substrait::textplan {
 

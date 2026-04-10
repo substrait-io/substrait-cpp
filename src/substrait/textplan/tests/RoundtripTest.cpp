@@ -1,6 +1,9 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include <absl/strings/str_join.h>
+#include <gmock/gmock-matchers.h>
+#include <gtest/gtest.h>
+#include <protobuf-matchers/protocol-buffer-matchers.h>
 
 #include <algorithm>
 #include <filesystem>
@@ -8,10 +11,6 @@
 #include <sstream>
 #include <string>
 #include <utility>
-
-#include <gmock/gmock-matchers.h>
-#include <gtest/gtest.h>
-#include <protobuf-matchers/protocol-buffer-matchers.h>
 
 #include "substrait/textplan/SymbolTablePrinter.h"
 #include "substrait/textplan/converter/LoadBinary.h"

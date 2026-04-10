@@ -1,49 +1,17 @@
 ---
+BasedOnStyle:    llvm
+Language:        Cpp
 AccessModifierOffset: -1
 AlignAfterOpenBracket: AlwaysBreak
-AlignConsecutiveAssignments: None
-AlignConsecutiveDeclarations: None
-SeparateDefinitionBlocks: Always
 AlignOperands:   false
 AlignTrailingComments: false
 AllowAllParametersOfDeclarationOnNextLine: false
-AllowShortBlocksOnASingleLine: Never
-AllowShortCaseLabelsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: Empty
-AllowShortIfStatementsOnASingleLine: false
-AllowShortLoopsOnASingleLine: false
-AlwaysBreakAfterReturnType: None
-AlwaysBreakBeforeMultilineStrings: true
 AlwaysBreakTemplateDeclarations: Yes
 BinPackArguments: false
 BinPackParameters: false
-BraceWrapping:
-  AfterClass:      false
-  AfterControlStatement: Never
-  AfterEnum:       false
-  AfterFunction:   false
-  AfterNamespace:  false
-  AfterObjCDeclaration: false
-  AfterStruct:     false
-  AfterUnion:      false
-  BeforeCatch:     false
-  BeforeElse:      false
-  IndentBraces:    false
-BreakBeforeBinaryOperators: None
-BreakBeforeBraces: Attach
-BreakBeforeTernaryOperators: true
-BreakConstructorInitializersBeforeComma: false
-BreakAfterJavaFieldAnnotations: false
 BreakStringLiterals: false
-ColumnLimit:     80
-CommentPragmas:  '^ IWYU pragma:'
-ConstructorInitializerAllOnOneLineOrOnePerLine: true
-ConstructorInitializerIndentWidth: 4
-ContinuationIndentWidth: 4
-Cpp11BracedListStyle: true
-DerivePointerAlignment: false
-DisableFormat:   false
-ForEachMacros:   [ FOR_EACH, FOR_EACH_R, FOR_EACH_RANGE, ]
+IncludeBlocks:   Regroup
 IncludeCategories:
   - Regex:           '^<.*\.h(pp)?>'
     Priority:        1
@@ -52,35 +20,6 @@ IncludeCategories:
   - Regex:           '.*'
     Priority:        3
 IndentCaseLabels: true
-IndentWidth:     2
-IndentWrappedFunctionNames: false
-KeepEmptyLinesAtTheStartOfBlocks: false
-MacroBlockBegin: ''
-MacroBlockEnd:   ''
-MaxEmptyLinesToKeep: 1
-NamespaceIndentation: None
-ObjCBlockIndentWidth: 2
-ObjCSpaceAfterProperty: false
-ObjCSpaceBeforeProtocolList: false
-PenaltyBreakBeforeFirstCallParameter: 1
-PenaltyBreakComment: 300
-PenaltyBreakFirstLessLess: 120
-PenaltyBreakString: 1000
-PenaltyExcessCharacter: 1000000
+PackConstructorInitializers: NextLine
 PenaltyReturnTypeOnItsOwnLine: 200
 PointerAlignment: Left
-ReflowComments:  true
-SortIncludes: CaseSensitive
-SpaceAfterCStyleCast: false
-SpaceBeforeAssignmentOperators: true
-SpaceBeforeParens: ControlStatements
-SpaceInEmptyParentheses: false
-SpacesBeforeTrailingComments: 1
-SpacesInAngles:  false
-SpacesInContainerLiterals: true
-SpacesInCStyleCastParentheses: false
-SpacesInParentheses: false
-SpacesInSquareBrackets: false
-Standard: c++11
-TabWidth:        8
-UseTab:          Never

@@ -2,10 +2,12 @@
 
 #include "SubstraitPlanTypeVisitor.h"
 
+#include <substrait/proto/type.pb.h>
+
 #include <memory>
 #include <string>
+
 #include "SubstraitPlanParser/SubstraitPlanParser.h"
-#include "substrait/proto/type.pb.h"
 #include "substrait/textplan/SymbolTable.h"
 #include "substrait/type/Type.h"
 

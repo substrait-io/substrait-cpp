@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#include <gtest/gtest.h>
-
 #include "substrait/common/StringUtils.h"
+
+#include <gtest/gtest.h>
 
 using io::substrait::common::StringUtils;
 
