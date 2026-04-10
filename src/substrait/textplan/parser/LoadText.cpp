@@ -2,10 +2,13 @@
 
 #include "substrait/textplan/parser/LoadText.h"
 
+#include <absl/status/status.h>
+#include <absl/status/statusor.h>
 #include <absl/strings/str_join.h>
 #include <substrait/proto/plan.pb.h>
 
-#include "substrait/textplan/StringManipulation.h"
+#include <string>
+
 #include "substrait/textplan/SymbolTablePrinter.h"
 #include "substrait/textplan/parser/ParseText.h"
 

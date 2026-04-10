@@ -3,10 +3,18 @@
 
 #include <algorithm>
 #include <any>
+#include <cstddef>
+#include <cstdint>
 #include <iomanip>
+#include <ios>
 #include <map>
+#include <memory>
+#include <optional>
 #include <sstream>
 #include <string>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
 #include "substrait/common/Exceptions.h"
 #include "substrait/textplan/Any.h"

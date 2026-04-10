@@ -4,6 +4,16 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include <memory>
+#include <optional>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "substrait/function/Function.h"
+#include "substrait/type/Type.h"
+
 bool decodeFunctionImpl(
     const YAML::Node& node,
     io::substrait::FunctionImplementation& function) {

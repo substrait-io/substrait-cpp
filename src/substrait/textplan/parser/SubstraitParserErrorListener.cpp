@@ -2,9 +2,14 @@
 
 #include "substrait/textplan/parser/SubstraitParserErrorListener.h"
 
-#include <antlr4-runtime.h>
+#include <Recognizer.h>
+#include <Token.h>
 
+#include <cstddef>
+#include <exception>
 #include <string>
+
+#include "substrait/textplan/SubstraitErrorListener.h"
 
 namespace io::substrait::textplan {
 

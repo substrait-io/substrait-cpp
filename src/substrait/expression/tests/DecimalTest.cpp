@@ -4,6 +4,11 @@
 #include <gtest/gtest.h>
 #include <substrait/proto/algebra.pb.h>
 
+#include <algorithm>
+#include <cstdint>
+#include <string>
+#include <vector>
+
 #include "substrait/expression/DecimalLiteral.h"
 
 namespace io::substrait::expression {

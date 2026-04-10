@@ -3,8 +3,13 @@
 #include "substrait/type/Type.h"
 
 #include <algorithm>
+#include <cctype>
+#include <cstddef>
+#include <memory>
 #include <sstream>
-#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <vector>
 
 #include "substrait/common/Exceptions.h"
 #include "substrait/common/NumberUtils.h"

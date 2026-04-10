@@ -2,7 +2,9 @@
 
 #include "substrait/textplan/Location.h"
 
+#include <cstddef>
 #include <functional>
+#include <variant>
 
 namespace io::substrait::textplan {
 

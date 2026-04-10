@@ -2,10 +2,7 @@
 
 #include "StringManipulation.h"
 
-#include <numeric>
-#include <string>
 #include <string_view>
-#include <vector>
 
 namespace io::substrait::textplan {
 

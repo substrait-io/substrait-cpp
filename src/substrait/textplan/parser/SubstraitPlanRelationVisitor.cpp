@@ -2,27 +2,40 @@
 
 #include "substrait/textplan/parser/SubstraitPlanRelationVisitor.h"
 
+#include <Token.h>
 #include <absl/strings/ascii.h>
 #include <absl/strings/numbers.h>
 #include <absl/strings/strip.h>
 #include <date/tz.h>
 #include <substrait/proto/algebra.pb.h>
 #include <substrait/proto/type.pb.h>
+#include <tree/TerminalNode.h>
 
+#include <algorithm>
+#include <any>
+#include <cctype>
 #include <chrono>
+#include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <sstream>
 #include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 #include "SubstraitPlanParser/SubstraitPlanParser.h"
 #include "SubstraitPlanTypeVisitor.h"
+#include "date/date.h"
 #include "substrait/expression/DecimalLiteral.h"
 #include "substrait/textplan/Any.h"
 #include "substrait/textplan/Finally.h"
 #include "substrait/textplan/Location.h"
 #include "substrait/textplan/StringManipulation.h"
 #include "substrait/textplan/StructuredSymbolData.h"
+#include "substrait/textplan/SubstraitErrorListener.h"
 #include "substrait/textplan/SymbolTable.h"
 
 namespace io::substrait::textplan {

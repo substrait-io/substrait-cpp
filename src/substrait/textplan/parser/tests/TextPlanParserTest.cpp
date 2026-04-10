@@ -3,12 +3,14 @@
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 #include <protobuf-matchers/protocol-buffer-matchers.h>
+#include <substrait/proto/plan.pb.h>
 
 #include <algorithm>
-#include <memory>
 #include <string>
-#include <utility>
+#include <vector>
 
+#include "substrait/textplan/ParseResult.h"
+#include "substrait/textplan/SymbolTable.h"
 #include "substrait/textplan/parser/ParseText.h"
 #include "substrait/textplan/tests/ParseResultMatchers.h"
 

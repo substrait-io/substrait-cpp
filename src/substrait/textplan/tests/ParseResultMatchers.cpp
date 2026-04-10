@@ -6,12 +6,18 @@
 #include <gtest/gtest.h>
 #include <substrait/proto/plan.pb.h>
 
+#include <algorithm>
+#include <cctype>
+#include <iterator>
 #include <memory>
+#include <ostream>
 #include <set>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "substrait/textplan/ParseResult.h"
+#include "substrait/textplan/SubstraitErrorListener.h"
 #include "substrait/textplan/SymbolTable.h"
 #include "substrait/textplan/SymbolTablePrinter.h"
 

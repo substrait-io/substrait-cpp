@@ -2,7 +2,12 @@
 
 #include "planloader.h"
 
+#include <substrait/proto/plan.pb.h>
+
+#include <cstdint>
+#include <cstring>
 #include <limits>
+#include <string>
 
 #include "substrait/common/Io.h"
 

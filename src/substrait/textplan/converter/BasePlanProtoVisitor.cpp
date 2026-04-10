@@ -3,9 +3,11 @@
 #include "substrait/textplan/converter/BasePlanProtoVisitor.h"
 
 #include <substrait/proto/algebra.pb.h>
+#include <substrait/proto/extensions/extensions.pb.h>
 #include <substrait/proto/plan.pb.h>
+#include <substrait/proto/type.pb.h>
 
-#include <iterator>
+#include <any>
 #include <optional>
 #include <string>
 

@@ -4,6 +4,12 @@
 #include <gtest/gtest.h>
 #include <protobuf-matchers/protocol-buffer-matchers.h>
 
+#include <algorithm>
+#include <string>
+#include <vector>
+
+#include "substrait/textplan/ParseResult.h"
+#include "substrait/textplan/SymbolTable.h"
 #include "substrait/textplan/converter/LoadBinary.h"
 #include "substrait/textplan/converter/ParseBinary.h"
 #include "substrait/textplan/tests/ParseResultMatchers.h"
