@@ -14,6 +14,13 @@
 #include "SubstraitPlanParser/SubstraitPlanParser.h"
 #include "substrait/type/Type.h"
 
+// The visitor should try and be tolerant of older plans.  This
+// requires calling deprecated APIs.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma gcc diagnostic push
+#pragma gcc diagnostic ignored "-Wdeprecated-declarations"
+
 namespace io::substrait::textplan {
 
 std::any SubstraitPlanTypeVisitor::visitLiteral_basic_type(
@@ -207,3 +214,6 @@ bool SubstraitPlanTypeVisitor::insideStructLiteralWithExternalType(
 }
 
 } // namespace io::substrait::textplan
+
+#pragma clang diagnostic pop
+#pragma gcc diagnostic pop
