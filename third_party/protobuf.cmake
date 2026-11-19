@@ -25,9 +25,48 @@ set(SUBSTRAIT_CPP_PROTOBUF_MIN_VERSION
 # version with `FetchContent_Declare(... OVERRIDE_FIND_PACKAGE`.
 if(SUBSTRAIT_CPP_USE_SYSTEM_PROTOBUF)
   if(SUBSTRAIT_CPP_FIND_PROTOBUF_CONFIG)
-    find_package(Protobuf ${SUBSTRAIT_CPP_PROTOBUF_MIN_VERSION} CONFIG)
+    find_package(Protobuf CONFIG QUIET)
+    if(Protobuf_FOUND)
+      # Check version suitability:
+      # Protobuf upstream CONFIG reports either v2X.Y.Z or 5.X.Y.Z.
+      # We require at least 5.28 (i.e. 28.0 in new CONFIG numbering).
+      set(_protobuf_ver "${Protobuf_VERSION}")
+      if(NOT _protobuf_ver AND protobuf_VERSION)
+        set(_protobuf_ver "${protobuf_VERSION}")
+      endif()
+      if(_protobuf_ver)
+        if((_protobuf_ver VERSION_GREATER_EQUAL "21.0.0" AND _protobuf_ver VERSION_LESS "28.0.0")
+           OR (_protobuf_ver VERSION_LESS "5.28.0" AND _protobuf_ver VERSION_LESS "21.0.0"))
+          message(STATUS "Found system Protobuf CONFIG version ${_protobuf_ver}, but at least 5.28 (28.0) is required.")
+          set(Protobuf_FOUND FALSE)
+        endif()
+      endif()
+    endif()
   else()
-    find_package(Protobuf ${SUBSTRAIT_CPP_PROTOBUF_MIN_VERSION})
+    # In module mode, CMake's FindProtobuf creates imported targets before checking version.
+    # To prevent leaked targets when system Protobuf is too old, probe the header first.
+    find_path(_SUBSTRAIT_PROTOBUF_PROBE_DIR
+              NAMES google/protobuf/port_def.inc google/protobuf/stubs/common.h)
+    set(_protobuf_module_acceptable FALSE)
+    if(_SUBSTRAIT_PROTOBUF_PROBE_DIR)
+      if(EXISTS "${_SUBSTRAIT_PROTOBUF_PROBE_DIR}/google/protobuf/port_def.inc")
+        file(STRINGS "${_SUBSTRAIT_PROTOBUF_PROBE_DIR}/google/protobuf/port_def.inc"
+             _PROTO_DEF_LINE REGEX "#define[ \t]+GOOGLE_PROTOBUF_VERSION[ \t]+[0-9]+")
+      elseif(EXISTS "${_SUBSTRAIT_PROTOBUF_PROBE_DIR}/google/protobuf/stubs/common.h")
+        file(STRINGS "${_SUBSTRAIT_PROTOBUF_PROBE_DIR}/google/protobuf/stubs/common.h"
+             _PROTO_DEF_LINE REGEX "#define[ \t]+GOOGLE_PROTOBUF_VERSION[ \t]+[0-9]+")
+      endif()
+      if(_PROTO_DEF_LINE)
+        string(REGEX MATCH "[0-9]+" _PROTO_NUM "${_PROTO_DEF_LINE}")
+        # 5.28.0 corresponds to GOOGLE_PROTOBUF_VERSION 5028000
+        if(_PROTO_NUM GREATER_EQUAL 5028000)
+          set(_protobuf_module_acceptable TRUE)
+        endif()
+      endif()
+    endif()
+    if(_protobuf_module_acceptable)
+      find_package(Protobuf ${SUBSTRAIT_CPP_PROTOBUF_MIN_VERSION})
+    endif()
   endif()
 endif()
 
@@ -61,18 +100,18 @@ if(NOT Protobuf_FOUND AND SUBSTRAIT_CPP_FETCH_PROTOBUF)
     SYSTEM OVERRIDE_FIND_PACKAGE)
   set(protobuf_ABSL_PROVIDER
       "package"
-      CACHE STRING "")
+      CACHE STRING "" FORCE)
   # Needed so the Abseil targets are in an export set for install(EXPORT).
   set(ABSL_ENABLE_INSTALL
       ON
-      CACHE BOOL "")
+      CACHE BOOL "" FORCE)
   if(MSVC)
     set(protobuf_MSVC_STATIC_RUNTIME OFF)
     add_compile_options("/W0")
   else()
     add_compile_options("-w")
   endif()
-  fetchcontent_makeavailable(protobuf)
+  fetchcontent_makeavailable(absl protobuf)
   fetchcontent_getproperties(Protobuf SOURCE_DIR Protobuf_SOURCE_DIR)
   # This exists from Protobuf version 22.0 and up.
   include(${Protobuf_SOURCE_DIR}/cmake/protobuf-generate.cmake)

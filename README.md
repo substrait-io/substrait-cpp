@@ -24,8 +24,10 @@ it needs `sudo` (you will be prompted for your password unless you are root).
 
 | Distribution | Setup script | Package manager |
 |---|---|---|
-| Ubuntu (20.04 or later) | `./scripts/setup-ubuntu.sh` | `apt` |
+| Ubuntu (24.04 or later) | `./scripts/setup-ubuntu.sh` | `apt` |
 | Fedora | `./scripts/setup-fedora.sh` | `dnf` |
+
+> **Note**: Building substrait-cpp requires CMake 3.24 or newer. Ubuntu 24.04 supplies CMake 3.28; if using older Ubuntu releases (e.g. 22.04), install CMake >= 3.24 (e.g. via the Kitware APT repository or `pip`).
 
 What the scripts install: a C++ compiler, CMake, Ninja, ccache, git, `tzdata`,
 libuuid and libcurl development headers, a Java runtime (needed at build time by
