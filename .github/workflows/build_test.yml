@@ -9,7 +9,9 @@ on:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    # Pinned: clang-format-15 (used by setup-ubuntu.sh) is not available on
+    # ubuntu-latest (26.04).
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v3
@@ -27,7 +29,7 @@ jobs:
         run: git diff --exit-code
 
   ubuntu-build-and-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v3
