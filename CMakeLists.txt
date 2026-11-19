@@ -54,8 +54,7 @@ include(ExternalAntlr4Cpp)
 include_directories(${ANTLR4_INCLUDE_DIRS})
 set(ANTLR_EXECUTABLE_DIR ${CMAKE_CURRENT_BINARY_DIR})
 file(
-  DOWNLOAD
-  https://www.antlr.org/download/antlr-4.13.2-complete.jar
+  DOWNLOAD https://www.antlr.org/download/antlr-4.13.2-complete.jar
   "${ANTLR_EXECUTABLE_DIR}/antlr.jar"
   EXPECTED_HASH
     SHA256=eae2dfa119a64327444672aff63e9ec35a20180dc5b8090b7a6ab85125df4d76
