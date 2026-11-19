@@ -14,8 +14,8 @@ docker run -it substrait-cpp
 
 ## Evaluate
 
-Run function tests
+Run tests
 
 ```bash
-./build-Debug/substrait/function/tests/substrait_function_test
+cd substrait-cpp && ctest --preset debug
 ```

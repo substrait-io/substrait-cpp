@@ -3,7 +3,12 @@
 cmake_minimum_required(VERSION 3.24)
 
 # set the project name
-project(substrait-cpp)
+project(
+  substrait-cpp
+  VERSION 0.1.0
+  LANGUAGES C CXX)
+
+include(GNUInstallDirs)
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
@@ -48,8 +53,13 @@ set(ANTLR4_TAG df4d68c09cdef73e023b8838a8bc7ca4dff1d1de)
 include(ExternalAntlr4Cpp)
 include_directories(${ANTLR4_INCLUDE_DIRS})
 set(ANTLR_EXECUTABLE_DIR ${CMAKE_CURRENT_BINARY_DIR})
-file(DOWNLOAD https://www.antlr.org/download/antlr-4.13.2-complete.jar
-     "${ANTLR_EXECUTABLE_DIR}/antlr.jar")
+file(
+  DOWNLOAD
+  https://www.antlr.org/download/antlr-4.13.2-complete.jar
+  "${ANTLR_EXECUTABLE_DIR}/antlr.jar"
+  EXPECTED_HASH
+    SHA256=eae2dfa119a64327444672aff63e9ec35a20180dc5b8090b7a6ab85125df4d76
+  TLS_VERIFY ON)
 set(ANTLR_EXECUTABLE "${ANTLR_EXECUTABLE_DIR}/antlr.jar")
 
 # Local files come first.
@@ -68,7 +78,34 @@ if(${SUBSTRAIT_CPP_BUILD_TESTING})
   enable_testing()
 endif()
 
-install(EXPORT SubstraitTargets DESTINATION lib/cmake/Substrait)
+# Install the exported targets together with a package configuration file, so
+# that consumers can use `find_package(Substrait CONFIG REQUIRED)` and link
+# against `Substrait::<target>`.
+include(CMakePackageConfigHelpers)
+set(SUBSTRAIT_CPP_CMAKE_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/Substrait)
+
+install(
+  EXPORT SubstraitTargets
+  NAMESPACE Substrait::
+  DESTINATION ${SUBSTRAIT_CPP_CMAKE_INSTALL_DIR})
+
+# The ANTLR4 runtime is built by ExternalProject and is not part of any export
+# set; install it so that the exported static libraries can be linked.
+get_filename_component(SUBSTRAIT_CPP_ANTLR4_LIBRARY_FILE
+                       "${ANTLR4_STATIC_LIBRARIES}" NAME)
+install(FILES ${ANTLR4_STATIC_LIBRARIES} DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+configure_package_config_file(
+  cmake/SubstraitConfig.cmake.in
+  "${CMAKE_CURRENT_BINARY_DIR}/SubstraitConfig.cmake"
+  INSTALL_DESTINATION ${SUBSTRAIT_CPP_CMAKE_INSTALL_DIR})
+write_basic_package_version_file(
+  "${CMAKE_CURRENT_BINARY_DIR}/SubstraitConfigVersion.cmake"
+  VERSION ${PROJECT_VERSION}
+  COMPATIBILITY SameMajorVersion)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/SubstraitConfig.cmake"
+              "${CMAKE_CURRENT_BINARY_DIR}/SubstraitConfigVersion.cmake"
+        DESTINATION ${SUBSTRAIT_CPP_CMAKE_INSTALL_DIR})
 
 add_subdirectory(src/substrait)
 add_subdirectory(export)

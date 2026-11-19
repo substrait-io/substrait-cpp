@@ -55,18 +55,44 @@ jobs:
       - name: Configure CMake
         run: |
           cmake --version
-          cmake -B build -G Ninja \
-              -DCMAKE_BUILD_TYPE=Debug \
-              -DBUILD_TZ_LIB=ON \
-              -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-              -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          cmake --preset ci
 
       - name: Build
-        run: |
-          cmake --build build
+        run: cmake --build --preset ci
 
       - name: Test
-        run: ctest --test-dir build --output-on-failure --timeout 30
+        run: ctest --preset ci
+
+  fedora-build-and-test:
+    runs-on: ubuntu-latest
+    container: fedora:latest
+
+    steps:
+      - name: Install git (needed for submodule checkout)
+        run: dnf install -y git
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Fedora
+        run: ./scripts/setup-fedora.sh
+
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@1bbbcda0748b3e340dee71a314fa68ffcbd6df79 # v1.2.21
+        with:
+          key: fedora
+
+      - name: Configure CMake
+        run: |
+          cmake --version
+          cmake --preset ci
+
+      - name: Build
+        run: cmake --build --preset ci
+
+      - name: Test
+        run: ctest --preset ci
 
   windows-build-and-test:
     runs-on: windows-latest

@@ -21,7 +21,12 @@ sudo --preserve-env apt install -y \
   clang-format-15 \
   uuid-dev \
   default-jre \
-  libcurl4-openssl-dev
+  libcurl4-openssl-dev \
+  tzdata
+
+# Legacy timezone names such as US/Central moved to a separate package in
+# Ubuntu 24.04 and later; the package does not exist on older releases.
+sudo apt install -y tzdata-legacy || true
 
 # Install the currently supported version of protobuf:
 PB_REL="https://github.com/protocolbuffers/protobuf/releases"

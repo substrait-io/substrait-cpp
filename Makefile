@@ -1,36 +1,19 @@
 # SPDX-License-Identifier: Apache-2.0
 
-.PHONY: all clean build debug release
+# Build configurations live in CMakePresets.json.
 
-BUILD_TYPE := Release
+.PHONY: all clean debug release asan format
 
 all: debug
 
 clean:
 	@rm -rf build-*
 
-build-common:
-	@mkdir -p build-${BUILD_TYPE}
-	@cd build-${BUILD_TYPE} && \
-	cmake -Wno-dev \
-		  -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
-		  -DPREFER_STATIC_LIBS=OFF \
-		  $(FORCE_COLOR) \
-		  ..
-
-build:
-	VERBOSE=1 cmake --build build-${BUILD_TYPE} -j $${CPU_COUNT:-`nproc`} || \
-	cmake --build build-${BUILD_TYPE}
+debug release asan:
+	cmake --preset $@ -Wno-dev $(FORCE_COLOR)
+	cmake --build --preset $@ -j $${CPU_COUNT:-`nproc`}
 
 format:
 	set -f
 	bash scripts/run-cmake-format.sh &&  bash scripts/run-clang-format.sh
 	set +f
-
-debug:
-	@$(MAKE) build-common BUILD_TYPE=Debug
-	@$(MAKE) build BUILD_TYPE=Debug
-
-release:
-	@$(MAKE) build-common BUILD_TYPE=Release
-	@$(MAKE) build BUILD_TYPE=Release
