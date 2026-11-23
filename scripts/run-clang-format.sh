@@ -5,11 +5,7 @@ WORKDIR="$( cd $SCRIPTDIR/.. && pwd )"
 
 CLANG_FORMAT="clang-format-15"
 if ! command -v "$CLANG_FORMAT" &> /dev/null; then
-  CLANG_FORMAT="clang-format"
-fi
-
-if ! command -v "$CLANG_FORMAT" &> /dev/null; then
-  echo "Error: clang-format not found. Please install clang-format (e.g. clang-format-15 or clang-tools-extra)." >&2
+  echo "Error: clang-format-15 not found. Please install clang-format-15 to match CI formatting." >&2
   exit 1
 fi
 
