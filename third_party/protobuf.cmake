@@ -58,7 +58,7 @@ function(substrait_protobuf_source_version OUT_VER)
       ""
       PARENT_SCOPE)
   include(FetchContent)
-  FetchContent_GetProperties(protobuf SOURCE_DIR _protobuf_src_dir)
+  fetchcontent_getproperties(protobuf SOURCE_DIR _protobuf_src_dir)
   if(_protobuf_src_dir AND EXISTS "${_protobuf_src_dir}/CMakeLists.txt")
     file(STRINGS "${_protobuf_src_dir}/CMakeLists.txt" _version_line
          REGEX "^[ \t]*set\\([ \t]*protobuf_VERSION_STRING[ \t]+\"[^\"]+\"")
@@ -181,7 +181,7 @@ if(NOT Protobuf_FOUND AND SUBSTRAIT_CPP_FETCH_PROTOBUF)
   set(protobuf_BUILD_TESTS
       OFF
       CACHE BOOL "Disable Protobuf tests" FORCE)
-  FetchContent_Declare(
+  fetchcontent_declare(
     protobuf
     GIT_REPOSITORY https://github.com/protocolbuffers/protobuf.git
     GIT_TAG ${SUBSTRAIT_CPP_PROTOBUF_FETCH_TAG}
@@ -196,7 +196,7 @@ if(NOT Protobuf_FOUND AND SUBSTRAIT_CPP_FETCH_PROTOBUF)
   # compilers (e.g. GCC 14+ on Fedora), so fetch a newer Abseil separately and
   # tell Protobuf to use it via find_package.
   message(STATUS "Fetching Abseil version ${SUBSTRAIT_CPP_ABSL_FETCH_TAG}")
-  FetchContent_Declare(
+  fetchcontent_declare(
     absl
     GIT_REPOSITORY https://github.com/abseil/abseil-cpp.git
     GIT_TAG ${SUBSTRAIT_CPP_ABSL_FETCH_TAG}
@@ -214,8 +214,8 @@ if(NOT Protobuf_FOUND AND SUBSTRAIT_CPP_FETCH_PROTOBUF)
   else()
     add_compile_options("-w")
   endif()
-  FetchContent_MakeAvailable(absl protobuf)
-  FetchContent_GetProperties(Protobuf SOURCE_DIR Protobuf_SOURCE_DIR)
+  fetchcontent_makeavailable(absl protobuf)
+  fetchcontent_getproperties(Protobuf SOURCE_DIR Protobuf_SOURCE_DIR)
   # This exists from Protobuf version 22.0 and up.
   include(${Protobuf_SOURCE_DIR}/cmake/protobuf-generate.cmake)
   if(TARGET libprotobuf AND NOT TARGET protobuf::libprotobuf)
