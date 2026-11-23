@@ -29,7 +29,9 @@ function(substrait_normalize_protobuf_version IN_VER OUT_VER)
   if(VER MATCHES "^([2-9][0-9])(\\..*)?$")
     set(VER "5.${VER}")
   endif()
-  set(${OUT_VER} "${VER}" PARENT_SCOPE)
+  set(${OUT_VER}
+      "${VER}"
+      PARENT_SCOPE)
 endfunction()
 
 # First use `find_package`. This allows downstream projects to inject their
@@ -44,15 +46,22 @@ if(SUBSTRAIT_CPP_USE_SYSTEM_PROTOBUF)
         set(_protobuf_ver "${protobuf_VERSION}")
       endif()
       if(_protobuf_ver)
-        substrait_normalize_protobuf_version("${SUBSTRAIT_CPP_PROTOBUF_MIN_VERSION}" _min_ver_normalized)
-        substrait_normalize_protobuf_version("${_protobuf_ver}" _protobuf_ver_normalized)
+        substrait_normalize_protobuf_version(
+          "${SUBSTRAIT_CPP_PROTOBUF_MIN_VERSION}" _min_ver_normalized)
+        substrait_normalize_protobuf_version("${_protobuf_ver}"
+                                             _protobuf_ver_normalized)
         if(_protobuf_ver_normalized VERSION_LESS _min_ver_normalized)
-          message(STATUS "Found system Protobuf CONFIG version ${_protobuf_ver} (${_protobuf_ver_normalized}), but at least ${SUBSTRAIT_CPP_PROTOBUF_MIN_VERSION} (${_min_ver_normalized}) is required.")
+          message(
+            STATUS
+              "Found system Protobuf CONFIG version ${_protobuf_ver} (${_protobuf_ver_normalized}), but at least ${SUBSTRAIT_CPP_PROTOBUF_MIN_VERSION} (${_min_ver_normalized}) is required."
+          )
           set(Protobuf_FOUND FALSE)
         endif()
       endif()
       if(Protobuf_FOUND)
-        set(SUBSTRAIT_CPP_PROTOBUF_BUILD_VERSION "${_protobuf_ver}" CACHE INTERNAL "Protobuf version used for Substrait build")
+        set(SUBSTRAIT_CPP_PROTOBUF_BUILD_VERSION
+            "${_protobuf_ver}"
+            CACHE INTERNAL "Protobuf version used for Substrait build")
       endif()
     endif()
   else()
@@ -64,29 +73,41 @@ if(SUBSTRAIT_CPP_USE_SYSTEM_PROTOBUF)
       set(_SUBSTRAIT_PROTOBUF_PROBE_DIR "${PROTOBUF_INCLUDE_DIR}")
     else()
       find_path(_SUBSTRAIT_PROTOBUF_PROBE_DIR
-                NAMES google/protobuf/stubs/common.h google/protobuf/port_def.inc)
+                NAMES google/protobuf/stubs/common.h
+                      google/protobuf/port_def.inc)
     endif()
     set(_protobuf_module_acceptable FALSE)
     if(_SUBSTRAIT_PROTOBUF_PROBE_DIR)
       set(_proto_num "")
-      if(EXISTS "${_SUBSTRAIT_PROTOBUF_PROBE_DIR}/google/protobuf/stubs/common.h")
-        file(STRINGS "${_SUBSTRAIT_PROTOBUF_PROBE_DIR}/google/protobuf/stubs/common.h"
-             _PROTO_DEF_LINE REGEX "#define[ \t]+(GOOGLE_)?PROTOBUF_VERSION[ \t]+[0-9]+")
+      if(EXISTS
+         "${_SUBSTRAIT_PROTOBUF_PROBE_DIR}/google/protobuf/stubs/common.h")
+        file(
+          STRINGS
+          "${_SUBSTRAIT_PROTOBUF_PROBE_DIR}/google/protobuf/stubs/common.h"
+          _PROTO_DEF_LINE
+          REGEX "#define[ \t]+(GOOGLE_)?PROTOBUF_VERSION[ \t]+[0-9]+")
         if(_PROTO_DEF_LINE)
           string(REGEX MATCH "[0-9]+" _proto_num "${_PROTO_DEF_LINE}")
         endif()
       endif()
-      if(NOT _proto_num AND EXISTS "${_SUBSTRAIT_PROTOBUF_PROBE_DIR}/google/protobuf/port_def.inc")
-        file(STRINGS "${_SUBSTRAIT_PROTOBUF_PROBE_DIR}/google/protobuf/port_def.inc"
-             _PROTO_DEF_LINE REGEX "#define[ \t]+(GOOGLE_)?PROTOBUF_VERSION[ \t]+[0-9]+")
+      if(NOT _proto_num
+         AND EXISTS
+             "${_SUBSTRAIT_PROTOBUF_PROBE_DIR}/google/protobuf/port_def.inc")
+        file(
+          STRINGS
+          "${_SUBSTRAIT_PROTOBUF_PROBE_DIR}/google/protobuf/port_def.inc"
+          _PROTO_DEF_LINE
+          REGEX "#define[ \t]+(GOOGLE_)?PROTOBUF_VERSION[ \t]+[0-9]+")
         if(_PROTO_DEF_LINE)
           string(REGEX MATCH "[0-9]+" _proto_num "${_PROTO_DEF_LINE}")
         endif()
       endif()
       if(_proto_num)
-        substrait_normalize_protobuf_version("${SUBSTRAIT_CPP_PROTOBUF_MIN_VERSION}" _min_norm)
+        substrait_normalize_protobuf_version(
+          "${SUBSTRAIT_CPP_PROTOBUF_MIN_VERSION}" _min_norm)
         if(_min_norm MATCHES "^([0-9]+)\\.([0-9]+)")
-          math(EXPR _min_proto_num "${CMAKE_MATCH_1} * 1000000 + ${CMAKE_MATCH_2} * 1000")
+          math(EXPR _min_proto_num
+               "${CMAKE_MATCH_1} * 1000000 + ${CMAKE_MATCH_2} * 1000")
         else()
           set(_min_proto_num 5028000)
         endif()
@@ -102,7 +123,9 @@ if(SUBSTRAIT_CPP_USE_SYSTEM_PROTOBUF)
         if(NOT _protobuf_ver AND protobuf_VERSION)
           set(_protobuf_ver "${protobuf_VERSION}")
         endif()
-        set(SUBSTRAIT_CPP_PROTOBUF_BUILD_VERSION "${_protobuf_ver}" CACHE INTERNAL "Protobuf version used for Substrait build")
+        set(SUBSTRAIT_CPP_PROTOBUF_BUILD_VERSION
+            "${_protobuf_ver}"
+            CACHE INTERNAL "Protobuf version used for Substrait build")
       endif()
     endif()
   endif()
@@ -116,7 +139,7 @@ if(NOT Protobuf_FOUND AND SUBSTRAIT_CPP_FETCH_PROTOBUF)
   set(protobuf_BUILD_TESTS
       OFF
       CACHE BOOL "Disable Protobuf tests" FORCE)
-  fetchcontent_declare(
+  FetchContent_Declare(
     protobuf
     GIT_REPOSITORY https://github.com/protocolbuffers/protobuf.git
     GIT_TAG ${SUBSTRAIT_CPP_PROTOBUF_FETCH_TAG}
@@ -131,7 +154,7 @@ if(NOT Protobuf_FOUND AND SUBSTRAIT_CPP_FETCH_PROTOBUF)
   # compilers (e.g. GCC 14+ on Fedora), so fetch a newer Abseil separately and
   # tell Protobuf to use it via find_package.
   message(STATUS "Fetching Abseil version ${SUBSTRAIT_CPP_ABSL_FETCH_TAG}")
-  fetchcontent_declare(
+  FetchContent_Declare(
     absl
     GIT_REPOSITORY https://github.com/abseil/abseil-cpp.git
     GIT_TAG ${SUBSTRAIT_CPP_ABSL_FETCH_TAG}
@@ -149,8 +172,8 @@ if(NOT Protobuf_FOUND AND SUBSTRAIT_CPP_FETCH_PROTOBUF)
   else()
     add_compile_options("-w")
   endif()
-  fetchcontent_makeavailable(absl protobuf)
-  fetchcontent_getproperties(Protobuf SOURCE_DIR Protobuf_SOURCE_DIR)
+  FetchContent_MakeAvailable(absl protobuf)
+  FetchContent_GetProperties(Protobuf SOURCE_DIR Protobuf_SOURCE_DIR)
   # This exists from Protobuf version 22.0 and up.
   include(${Protobuf_SOURCE_DIR}/cmake/protobuf-generate.cmake)
   if(TARGET libprotobuf AND NOT TARGET protobuf::libprotobuf)
@@ -160,12 +183,18 @@ if(NOT Protobuf_FOUND AND SUBSTRAIT_CPP_FETCH_PROTOBUF)
     add_executable(protobuf::protoc ALIAS protoc)
   endif()
   if(DEFINED Protobuf_VERSION AND Protobuf_VERSION)
-    set(SUBSTRAIT_CPP_PROTOBUF_BUILD_VERSION "${Protobuf_VERSION}" CACHE INTERNAL "Protobuf version used for Substrait build")
+    set(SUBSTRAIT_CPP_PROTOBUF_BUILD_VERSION
+        "${Protobuf_VERSION}"
+        CACHE INTERNAL "Protobuf version used for Substrait build")
   elseif(DEFINED protobuf_VERSION AND protobuf_VERSION)
-    set(SUBSTRAIT_CPP_PROTOBUF_BUILD_VERSION "${protobuf_VERSION}" CACHE INTERNAL "Protobuf version used for Substrait build")
+    set(SUBSTRAIT_CPP_PROTOBUF_BUILD_VERSION
+        "${protobuf_VERSION}"
+        CACHE INTERNAL "Protobuf version used for Substrait build")
   else()
     string(REGEX REPLACE "^v" "" _tag_ver "${SUBSTRAIT_CPP_PROTOBUF_FETCH_TAG}")
-    set(SUBSTRAIT_CPP_PROTOBUF_BUILD_VERSION "${_tag_ver}" CACHE INTERNAL "Protobuf version used for Substrait build")
+    set(SUBSTRAIT_CPP_PROTOBUF_BUILD_VERSION
+        "${_tag_ver}"
+        CACHE INTERNAL "Protobuf version used for Substrait build")
   endif()
 endif()
 
