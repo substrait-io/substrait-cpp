@@ -14,7 +14,7 @@ fi
 $SUDO apt update
 
 # Install all dependencies.
-$SUDO --preserve-env apt install -y \
+$SUDO ${SUDO:+--preserve-env} apt install -y \
   wget \
   g++ \
   cmake \

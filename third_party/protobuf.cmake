@@ -21,9 +21,9 @@ set(SUBSTRAIT_CPP_PROTOBUF_MIN_VERSION
     5.28
     CACHE STRING "Minimum acceptable version of a system Protobuf")
 
-# Helper function to normalize Protobuf versions:
-# Upstream Protobuf CONFIG packages report versions 26.x, 27.x, 28.x, 29.x, etc.
-# These correspond to language versions 5.26.x, 5.27.x, 5.28.x, 5.29.x.
+# Helper function to normalize Protobuf versions: Upstream Protobuf CONFIG
+# packages report versions 26.x, 27.x, 28.x, 29.x, etc. These correspond to
+# language versions 5.26.x, 5.27.x, 5.28.x, 5.29.x.
 function(substrait_normalize_protobuf_version IN_VER OUT_VER)
   set(VER "${IN_VER}")
   if(VER MATCHES "^([2-9][0-9])(\\..*)?$")
@@ -34,16 +34,56 @@ function(substrait_normalize_protobuf_version IN_VER OUT_VER)
       PARENT_SCOPE)
 endfunction()
 
+# Records the C++ (language) Protobuf version used for this build, e.g. 5.29.3
+# for the v29.3 release. Installed packages request this version from
+# `find_dependency`, and Protobuf's generated version file compares the
+# requested major version against the C++ major version (5), not the CONFIG
+# package version (29.3.0).
+function(substrait_record_protobuf_build_version IN_VER)
+  substrait_normalize_protobuf_version("${IN_VER}" _normalized)
+  if(_normalized MATCHES "^([0-9]+\\.[0-9]+\\.[0-9]+)")
+    set(_normalized "${CMAKE_MATCH_1}")
+  endif()
+  set(SUBSTRAIT_CPP_PROTOBUF_BUILD_VERSION
+      "${_normalized}"
+      CACHE INTERNAL "Protobuf version used for Substrait build")
+endfunction()
+
+# Reads the C++ Protobuf version from a populated `protobuf` FetchContent
+# dependency. Used when the version is not otherwise available, e.g. when a
+# parent project provides Protobuf with `OVERRIDE_FIND_PACKAGE`, where the
+# generated find_package redirect supplies targets but no version.
+function(substrait_protobuf_source_version OUT_VER)
+  set(${OUT_VER}
+      ""
+      PARENT_SCOPE)
+  include(FetchContent)
+  FetchContent_GetProperties(protobuf SOURCE_DIR _protobuf_src_dir)
+  if(_protobuf_src_dir AND EXISTS "${_protobuf_src_dir}/CMakeLists.txt")
+    file(STRINGS "${_protobuf_src_dir}/CMakeLists.txt" _version_line
+         REGEX "^[ \t]*set\\([ \t]*protobuf_VERSION_STRING[ \t]+\"[^\"]+\"")
+    if(_version_line MATCHES "\"([^\"]+)\"")
+      set(${OUT_VER}
+          "${CMAKE_MATCH_1}"
+          PARENT_SCOPE)
+    endif()
+  endif()
+endfunction()
+
 # First use `find_package`. This allows downstream projects to inject their
 # version with `FetchContent_Declare(... OVERRIDE_FIND_PACKAGE`.
 if(SUBSTRAIT_CPP_USE_SYSTEM_PROTOBUF)
   if(SUBSTRAIT_CPP_FIND_PROTOBUF_CONFIG)
     find_package(Protobuf CONFIG QUIET)
     if(Protobuf_FOUND)
-      # Check version suitability against configured SUBSTRAIT_CPP_PROTOBUF_MIN_VERSION
+      # Check version suitability against configured
+      # SUBSTRAIT_CPP_PROTOBUF_MIN_VERSION
       set(_protobuf_ver "${Protobuf_VERSION}")
       if(NOT _protobuf_ver AND protobuf_VERSION)
         set(_protobuf_ver "${protobuf_VERSION}")
+      endif()
+      if(NOT _protobuf_ver)
+        substrait_protobuf_source_version(_protobuf_ver)
       endif()
       if(_protobuf_ver)
         substrait_normalize_protobuf_version(
@@ -58,15 +98,14 @@ if(SUBSTRAIT_CPP_USE_SYSTEM_PROTOBUF)
           set(Protobuf_FOUND FALSE)
         endif()
       endif()
-      if(Protobuf_FOUND)
-        set(SUBSTRAIT_CPP_PROTOBUF_BUILD_VERSION
-            "${_protobuf_ver}"
-            CACHE INTERNAL "Protobuf version used for Substrait build")
+      if(Protobuf_FOUND AND _protobuf_ver)
+        substrait_record_protobuf_build_version("${_protobuf_ver}")
       endif()
     endif()
   else()
-    # In module mode, CMake's FindProtobuf creates imported targets before checking version.
-    # To prevent leaked targets when system Protobuf is too old, probe the header first.
+    # In module mode, CMake's FindProtobuf creates imported targets before
+    # checking version. To prevent leaked targets when system Protobuf is too
+    # old, probe the header first.
     if(DEFINED Protobuf_INCLUDE_DIR AND Protobuf_INCLUDE_DIR)
       set(_SUBSTRAIT_PROTOBUF_PROBE_DIR "${Protobuf_INCLUDE_DIR}")
     elseif(DEFINED PROTOBUF_INCLUDE_DIR AND PROTOBUF_INCLUDE_DIR)
@@ -123,9 +162,12 @@ if(SUBSTRAIT_CPP_USE_SYSTEM_PROTOBUF)
         if(NOT _protobuf_ver AND protobuf_VERSION)
           set(_protobuf_ver "${protobuf_VERSION}")
         endif()
-        set(SUBSTRAIT_CPP_PROTOBUF_BUILD_VERSION
-            "${_protobuf_ver}"
-            CACHE INTERNAL "Protobuf version used for Substrait build")
+        if(NOT _protobuf_ver)
+          substrait_protobuf_source_version(_protobuf_ver)
+        endif()
+        if(_protobuf_ver)
+          substrait_record_protobuf_build_version("${_protobuf_ver}")
+        endif()
       endif()
     endif()
   endif()
@@ -182,20 +224,18 @@ if(NOT Protobuf_FOUND AND SUBSTRAIT_CPP_FETCH_PROTOBUF)
   if(TARGET protoc AND NOT TARGET protobuf::protoc)
     add_executable(protobuf::protoc ALIAS protoc)
   endif()
-  if(DEFINED Protobuf_VERSION AND Protobuf_VERSION)
-    set(SUBSTRAIT_CPP_PROTOBUF_BUILD_VERSION
-        "${Protobuf_VERSION}"
-        CACHE INTERNAL "Protobuf version used for Substrait build")
-  elseif(DEFINED protobuf_VERSION AND protobuf_VERSION)
-    set(SUBSTRAIT_CPP_PROTOBUF_BUILD_VERSION
-        "${protobuf_VERSION}"
-        CACHE INTERNAL "Protobuf version used for Substrait build")
-  else()
-    string(REGEX REPLACE "^v" "" _tag_ver "${SUBSTRAIT_CPP_PROTOBUF_FETCH_TAG}")
-    set(SUBSTRAIT_CPP_PROTOBUF_BUILD_VERSION
-        "${_tag_ver}"
-        CACHE INTERNAL "Protobuf version used for Substrait build")
+  substrait_protobuf_source_version(_fetched_ver)
+  if(NOT _fetched_ver AND DEFINED Protobuf_VERSION)
+    set(_fetched_ver "${Protobuf_VERSION}")
   endif()
+  if(NOT _fetched_ver AND DEFINED protobuf_VERSION)
+    set(_fetched_ver "${protobuf_VERSION}")
+  endif()
+  if(NOT _fetched_ver)
+    string(REGEX REPLACE "^v" "" _fetched_ver
+                         "${SUBSTRAIT_CPP_PROTOBUF_FETCH_TAG}")
+  endif()
+  substrait_record_protobuf_build_version("${_fetched_ver}")
 endif()
 
 if(NOT TARGET protobuf::libprotobuf)
