@@ -14,19 +14,22 @@ set(SUBSTRAIT_CPP_ABSL_FETCH_TAG
 set(SUBSTRAIT_CPP_PROTOBUF_FETCH_TAG
     ${SUBSTRAIT_CPP_PROTOBUF_DEFAULT_FETCH_TAG}
     CACHE STRING "Git tag or commit to use for Protobuf FetchContent")
-# Protobuf's CMake package version is 5.<minor>.<patch> for the v<minor>.<patch>
-# releases (e.g. v28.2 is 5.28.2). Older system packages (e.g. 3.19 shipped by
-# some distributions) are rejected so that the FetchContent fallback is used.
+# Protobuf's C++ (language) version is 5.<minor>.<patch> for the v26-v29
+# releases (e.g. v28.2 is 5.28.2), while the CMake package version of the same
+# release is <minor>.<patch>.0 (28.2.0). Older system packages (e.g. 3.19
+# shipped by some distributions) are rejected so that the FetchContent fallback
+# is used.
 set(SUBSTRAIT_CPP_PROTOBUF_MIN_VERSION
     5.28
     CACHE STRING "Minimum acceptable version of a system Protobuf")
 
 # Helper function to normalize Protobuf versions: Upstream Protobuf CONFIG
-# packages report versions 26.x, 27.x, 28.x, 29.x, etc. These correspond to
-# language versions 5.26.x, 5.27.x, 5.28.x, 5.29.x.
+# packages report versions 26.x, 27.x, 28.x, 29.x. These correspond to language
+# versions 5.26.x, 5.27.x, 5.28.x, 5.29.x. Other releases use a different C++
+# major (4 for v22-v25, 6 for v30 and later), so they are left unchanged.
 function(substrait_normalize_protobuf_version IN_VER OUT_VER)
   set(VER "${IN_VER}")
-  if(VER MATCHES "^([2-9][0-9])(\\..*)?$")
+  if(VER MATCHES "^(2[6-9])(\\..*)?$")
     set(VER "5.${VER}")
   endif()
   set(${OUT_VER}
@@ -74,10 +77,16 @@ endfunction()
 # version with `FetchContent_Declare(... OVERRIDE_FIND_PACKAGE`.
 if(SUBSTRAIT_CPP_USE_SYSTEM_PROTOBUF)
   if(SUBSTRAIT_CPP_FIND_PROTOBUF_CONFIG)
-    find_package(Protobuf CONFIG QUIET)
+    # Protobuf's version file rejects a package whose C++ major version (5 for
+    # v26-v29) differs from the requested one before it loads any imported
+    # targets, so too-old (3.x, 4.x) or too-new (6.x) packages fall back to the
+    # fetch cleanly. It cannot check the minor version: it compares the request
+    # against the package version <minor>.<patch>.0 (29.3.0 for v29.3).
+    substrait_normalize_protobuf_version("${SUBSTRAIT_CPP_PROTOBUF_MIN_VERSION}"
+                                         _min_ver_normalized)
+    string(REGEX MATCH "^[0-9]+" _min_major "${_min_ver_normalized}")
+    find_package(Protobuf ${_min_major} CONFIG QUIET)
     if(Protobuf_FOUND)
-      # Check version suitability against configured
-      # SUBSTRAIT_CPP_PROTOBUF_MIN_VERSION
       set(_protobuf_ver "${Protobuf_VERSION}")
       if(NOT _protobuf_ver AND protobuf_VERSION)
         set(_protobuf_ver "${protobuf_VERSION}")
@@ -86,19 +95,21 @@ if(SUBSTRAIT_CPP_USE_SYSTEM_PROTOBUF)
         substrait_protobuf_source_version(_protobuf_ver)
       endif()
       if(_protobuf_ver)
-        substrait_normalize_protobuf_version(
-          "${SUBSTRAIT_CPP_PROTOBUF_MIN_VERSION}" _min_ver_normalized)
-        substrait_normalize_protobuf_version("${_protobuf_ver}"
-                                             _protobuf_ver_normalized)
-        if(_protobuf_ver_normalized VERSION_LESS _min_ver_normalized)
-          message(
-            STATUS
-              "Found system Protobuf CONFIG version ${_protobuf_ver} (${_protobuf_ver_normalized}), but at least ${SUBSTRAIT_CPP_PROTOBUF_MIN_VERSION} (${_min_ver_normalized}) is required."
-          )
-          set(Protobuf_FOUND FALSE)
+        # A CONFIG package version (29.3.0) lacks the C++ major, which is the
+        # one requested above.
+        if(_protobuf_ver MATCHES "^[0-9][0-9]\\.")
+          set(_protobuf_ver "${_min_major}.${_protobuf_ver}")
         endif()
-      endif()
-      if(Protobuf_FOUND AND _protobuf_ver)
+        if(_protobuf_ver VERSION_LESS _min_ver_normalized)
+          # The imported targets already exist in this scope, so fetching
+          # Protobuf now would fail with a duplicate target.
+          message(
+            FATAL_ERROR
+              "Found system Protobuf ${_protobuf_ver}, but at least "
+              "${_min_ver_normalized} is required. Set "
+              "SUBSTRAIT_CPP_USE_SYSTEM_PROTOBUF=OFF to fetch Protobuf instead."
+          )
+        endif()
         substrait_record_protobuf_build_version("${_protobuf_ver}")
       endif()
     endif()
@@ -147,10 +158,15 @@ if(SUBSTRAIT_CPP_USE_SYSTEM_PROTOBUF)
         if(_min_norm MATCHES "^([0-9]+)\\.([0-9]+)")
           math(EXPR _min_proto_num
                "${CMAKE_MATCH_1} * 1000000 + ${CMAKE_MATCH_2} * 1000")
+          math(EXPR _max_proto_num "(${CMAKE_MATCH_1} + 1) * 1000000")
         else()
           set(_min_proto_num 5028000)
+          set(_max_proto_num 6000000)
         endif()
-        if(_proto_num GREATER_EQUAL _min_proto_num)
+        # The upper bound keeps module mode consistent with CONFIG mode, which
+        # does not accept a different C++ major version.
+        if(_proto_num GREATER_EQUAL _min_proto_num AND _proto_num LESS
+                                                       _max_proto_num)
           set(_protobuf_module_acceptable TRUE)
         endif()
       endif()
@@ -234,6 +250,13 @@ if(NOT Protobuf_FOUND AND SUBSTRAIT_CPP_FETCH_PROTOBUF)
   if(NOT _fetched_ver)
     string(REGEX REPLACE "^v" "" _fetched_ver
                          "${SUBSTRAIT_CPP_PROTOBUF_FETCH_TAG}")
+    if(NOT _fetched_ver MATCHES "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$")
+      message(
+        FATAL_ERROR
+          "Cannot derive the Protobuf version from the fetched source or from "
+          "SUBSTRAIT_CPP_PROTOBUF_FETCH_TAG='${SUBSTRAIT_CPP_PROTOBUF_FETCH_TAG}'."
+      )
+    endif()
   endif()
   substrait_record_protobuf_build_version("${_fetched_ver}")
 endif()

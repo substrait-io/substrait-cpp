@@ -34,6 +34,10 @@ libuuid and libcurl development headers, a Java runtime (needed at build time by
 ANTLR), `clang-format`/`clang-tidy` and `cmake-format`. The Fedora script also
 installs GoogleTest from the distribution.
 
+`make format` uses `clang-format-15` to match CI. Fedora does not package that
+version under this name, so install it yourself and point the script at it,
+e.g. `CLANG_FORMAT=/path/to/clang-format make format`.
+
 Ubuntu:
 
 ```shell

@@ -99,18 +99,11 @@ string(REPLACE "$(CONFIGURATION)" "$<CONFIG>" _SUBSTRAIT_ANTLR4_INSTALL_FILE
 install(FILES ${_SUBSTRAIT_ANTLR4_INSTALL_FILE}
         DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
-if(NOT DEFINED SUBSTRAIT_CPP_PROTOBUF_BUILD_VERSION
-   OR NOT SUBSTRAIT_CPP_PROTOBUF_BUILD_VERSION)
-  if(DEFINED Protobuf_VERSION AND Protobuf_VERSION)
-    set(SUBSTRAIT_CPP_PROTOBUF_BUILD_VERSION "${Protobuf_VERSION}")
-  elseif(DEFINED protobuf_VERSION AND protobuf_VERSION)
-    set(SUBSTRAIT_CPP_PROTOBUF_BUILD_VERSION "${protobuf_VERSION}")
-  else()
-    message(
-      FATAL_ERROR
-        "SUBSTRAIT_CPP_PROTOBUF_BUILD_VERSION is not defined after third_party setup."
-    )
-  endif()
+if(NOT SUBSTRAIT_CPP_PROTOBUF_BUILD_VERSION)
+  message(
+    FATAL_ERROR
+      "SUBSTRAIT_CPP_PROTOBUF_BUILD_VERSION is not defined after third_party setup."
+  )
 endif()
 
 configure_package_config_file(
