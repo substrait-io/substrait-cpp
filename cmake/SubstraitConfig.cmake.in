@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: Apache-2.0
+
+@PACKAGE_INIT@
+
+# Preserve the package prefix and libdir before dependency discovery,
+# since find_dependency() calls in nested packages can overwrite PACKAGE_PREFIX_DIR.
+set(_SUBSTRAIT_INSTALL_LIBDIR "@PACKAGE_CMAKE_INSTALL_LIBDIR@")
+
+include(CMakeFindDependencyMacro)
+
+# Dependencies that appear in the interface of the exported targets. They are
+# either installed alongside this package or provided by the system.
+if(@SUBSTRAIT_CPP_FIND_PROTOBUF_CONFIG@)
+  find_dependency(Protobuf @SUBSTRAIT_CPP_PROTOBUF_BUILD_VERSION@ CONFIG)
+else()
+  find_dependency(Protobuf @SUBSTRAIT_CPP_PROTOBUF_BUILD_VERSION@)
+endif()
+find_dependency(absl CONFIG)
+find_dependency(fmt CONFIG)
+find_dependency(yaml-cpp CONFIG)
+find_dependency(date CONFIG)
+
+# The ANTLR4 runtime is built with ExternalProject and installed by this
+# package as a plain static library, so it has to be re-declared here.
+if(NOT TARGET antlr4_static)
+  add_library(antlr4_static STATIC IMPORTED)
+  set_target_properties(
+    antlr4_static
+    PROPERTIES
+      IMPORTED_LOCATION
+      "${_SUBSTRAIT_INSTALL_LIBDIR}/@SUBSTRAIT_CPP_ANTLR4_LIBRARY_FILE@"
+  )
+endif()
+
+unset(_SUBSTRAIT_INSTALL_LIBDIR)
+
+include("${CMAKE_CURRENT_LIST_DIR}/SubstraitTargets.cmake")
+
+check_required_components(Substrait)

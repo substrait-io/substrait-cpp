@@ -1,14 +1,20 @@
 #!/bin/bash
 # SPDX-License-Identifier: Apache-2.0
 
-# Minimal setup for Ubuntu 20.04.
+# Minimal setup for Ubuntu 24.04 (requires CMake 3.24+).
 set -eufx -o pipefail
 
+# Use sudo only when not already root (e.g. inside a container).
+SUDO=""
+if [ "$(id -u)" -ne 0 ]; then
+  SUDO="sudo"
+fi
+
 # Update the list of packages so we're running the latest.
-sudo apt update
+$SUDO apt update
 
 # Install all dependencies.
-sudo --preserve-env apt install -y \
+$SUDO ${SUDO:+--preserve-env} apt install -y \
   wget \
   g++ \
   cmake \
@@ -21,7 +27,12 @@ sudo --preserve-env apt install -y \
   clang-format-15 \
   uuid-dev \
   default-jre \
-  libcurl4-openssl-dev
+  libcurl4-openssl-dev \
+  tzdata
+
+# Legacy timezone names such as US/Central moved to a separate package in
+# Ubuntu 24.04 and later; the package does not exist on older releases.
+$SUDO apt install -y tzdata-legacy || true
 
 # Install the currently supported version of protobuf:
 PB_REL="https://github.com/protocolbuffers/protobuf/releases"

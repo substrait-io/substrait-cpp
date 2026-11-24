@@ -1,0 +1,62 @@
+{
+  "version": 5,
+  "cmakeMinimumRequired": { "major": 3, "minor": 24, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "debug",
+      "displayName": "Debug",
+      "inherits": "base",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
+      "name": "release",
+      "displayName": "Release",
+      "inherits": "base",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "asan",
+      "displayName": "Debug with ASan/UBSan",
+      "inherits": "debug",
+      "cacheVariables": { "SUBSTRAIT_CPP_SANITIZE_DEBUG_BUILD": "ON" }
+    },
+    {
+      "name": "ci",
+      "displayName": "CI (Debug, ccache)",
+      "inherits": "debug",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "BUILD_TZ_LIB": "ON",
+        "CMAKE_C_COMPILER_LAUNCHER": "ccache",
+        "CMAKE_CXX_COMPILER_LAUNCHER": "ccache"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "debug", "configurePreset": "debug" },
+    { "name": "release", "configurePreset": "release" },
+    { "name": "asan", "configurePreset": "asan" },
+    { "name": "ci", "configurePreset": "ci" }
+  ],
+  "testPresets": [
+    {
+      "name": "default",
+      "hidden": true,
+      "output": { "outputOnFailure": true },
+      "execution": { "timeout": 30 }
+    },
+    { "name": "debug", "inherits": "default", "configurePreset": "debug" },
+    { "name": "release", "inherits": "default", "configurePreset": "release" },
+    { "name": "asan", "inherits": "default", "configurePreset": "asan" },
+    { "name": "ci", "inherits": "default", "configurePreset": "ci" }
+  ]
+}
